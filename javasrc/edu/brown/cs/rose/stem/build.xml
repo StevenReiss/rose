@@ -1,0 +1,50 @@
+<project name='rose.stem' default='compile'>
+
+   <property file='../../../../../../build.properties' />
+   <property name='PRO' value='/pro' />
+   <property name='ROSE' value='${PRO}/rose' />
+   <property name='BUBBLES' value='${PRO}/bubbles' />
+   <available file="${PRO}/ivy" type="dir" property="ivy.present" />
+   <target name="init1" if="ivy.present" >
+      <property name='IVYBIN' value='${PRO}/ivy/java' />
+   </target>
+   <target name="init2" unless="ivy.present" >
+      <property name='IVYBIN' value='${BUBBLES}/lib/ivy.jar' />
+   </target>
+   <target name='init' depends='init1,init2' >
+      <path id='rose.classpath'>
+	 <pathelement location='${PRO}/rose/java' />
+	 <pathelement location='${BUBBLES}/java' />
+	 <pathelement location='${IVYBIN}' />
+	 <fileset dir='${PRO}/ivy/lib/eclipsejar' includes='*.jar' />
+	 <pathelement location="${BUBBLES}/lib/junit.jar" />
+      </path>
+      <path id='test.classpath'>
+	 <pathelement location='${PRO}/rose/java' />
+	 <pathelement location='${BUBBLES}/java' />
+	 <pathelement location='${IVYBIN}' />
+	 <fileset dir='${PRO}/ivy/lib/eclipsejar' includes='*.jar' />
+	 <pathelement location="${BUBBLES}/lib/junit.jar" />
+      </path>
+   </target>
+
+   <target name='compile' depends='init'>
+      <javac srcdir='.' destdir='${ROSE}/java' debug='on' deprecation='on'
+		includeantruntime='false' excludes='scan/**' >
+	 <classpath refid='rose.classpath' />
+	 <compilerarg value='-Xlint:all' />
+      </javac>
+   </target>
+
+   <target name='clean'>
+      <delete dir='${PRO}/rose/java/edu/brown/cs/rose/stem' />
+   </target>
+
+   <target name='test' depends='compile'>
+      <java classname='edu.brown.cs.rose.stem.StenTest' fork='true'>
+	 <classpath refid='test.classpath' />
+	 <assertions><enable/></assertions>
+      </java>
+   </target>
+
+</project>
