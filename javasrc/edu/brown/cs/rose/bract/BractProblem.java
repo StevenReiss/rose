@@ -39,7 +39,7 @@ import org.w3c.dom.Element;
 
 import edu.brown.cs.rose.root.RootProblem;
 
-public class BractProblem extends RootProblem implements BractConstants
+class BractProblem extends RootProblem implements BractConstants
 {
 
 

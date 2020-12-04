@@ -1,8 +1,8 @@
 /********************************************************************************/
 /*                                                                              */
-/*              BushProblem.java                                                */
+/*              BractLocation.java                                              */
 /*                                                                              */
-/*      description of class                                                    */
+/*      Location implementation for Bract supervisor                            */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
@@ -33,25 +33,14 @@
 
 
 
-package edu.brown.cs.rose.bush;
+package edu.brown.cs.rose.bract;
 
-import edu.brown.cs.bubbles.bump.BumpConstants.BumpStackFrame;
-import edu.brown.cs.bubbles.bump.BumpConstants.BumpThread;
+import org.w3c.dom.Element;
+
 import edu.brown.cs.rose.root.RootLocation;
-import edu.brown.cs.rose.root.RootNodeContext;
-import edu.brown.cs.rose.root.RootProblem;
 
-class BushProblem extends RootProblem implements BushConstants
+class BractLocation extends RootLocation implements BractConstants
 {
-
-
-/********************************************************************************/
-/*                                                                              */
-/*      Private Storage                                                         */
-/*                                                                              */
-/********************************************************************************/
-
-private BumpStackFrame  stack_frame;
 
 
 /********************************************************************************/
@@ -60,39 +49,18 @@ private BumpStackFrame  stack_frame;
 /*                                                                              */
 /********************************************************************************/
 
-BushProblem(BumpStackFrame frame,RoseProblemType typ,String item,String orig,String tgt,RootNodeContext ctx)
+BractLocation(Element xml)
 {
-   super(typ,item,orig,tgt,ctx);
-   setBugFrame(frame.getThread().getId(),frame.getId());  
-   stack_frame = frame;
-   RootLocation floc = new BushLocation(frame);
-   setBugLocation(floc);
+   super(xml);
 }
 
 
 
-/********************************************************************************/
-/*                                                                              */
-/*      Access methods                                                          */
-/*                                                                              */
-/********************************************************************************/
 
-BumpStackFrame getFrame()
-{
-   return stack_frame;
-}
-
-
-BumpThread getThread()
-{
-   return stack_frame.getThread();
-}
-
-
-}       // end of class BushProblem
+}       // end of class BractLocation
 
 
 
 
-/* end of BushProblem.java */
+/* end of BractLocation.java */
 

@@ -1,8 +1,8 @@
 /********************************************************************************/
 /*                                                                              */
-/*              BractRepairFinderDefault.java                                   */
+/*              RootRepairFinderDefault.java                                    */
 /*                                                                              */
-/*      Default (generic) implementation of a repair finder                     */
+/*      Default (generic) impolementation of a repiar finder                    */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
@@ -33,11 +33,11 @@
 
 
 
-package edu.brown.cs.rose.bract;
+package edu.brown.cs.rose.root;
 
-import edu.brown.cs.rose.bract.BractConstants.BractRepairFinder;
 
-public class BractRepairFinderDefault implements BractRepairFinder, BractConstants
+
+public abstract class RootRepairFinderDefault implements RootRepairFinder
 {
 
 
@@ -47,8 +47,9 @@ public class BractRepairFinderDefault implements BractRepairFinder, BractConstan
 /*                                                                              */
 /********************************************************************************/
 
-private BractControl  bract_control;
-private BractProblem  for_problem;
+private RootProcessor  bract_control;
+private RootProblem   for_problem;
+private RootLocation  at_location;
 
 
 
@@ -58,10 +59,25 @@ private BractProblem  for_problem;
 /*                                                                              */
 /********************************************************************************/
 
-protected BractRepairFinderDefault(BractControl ctrl,BractProblem prob)
+protected RootRepairFinderDefault()
+{
+   bract_control = null;
+   for_problem = null;
+   at_location = null;
+}
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Setup methods                                                           */
+/*                                                                              */
+/********************************************************************************/
+
+@Override public void setup(RootProcessor ctrl,RootProblem prob,RootLocation at)
 {
    bract_control = ctrl;
    for_problem = prob;
+   at_location = at;
 }
 
 
@@ -72,9 +88,13 @@ protected BractRepairFinderDefault(BractControl ctrl,BractProblem prob)
 /*                                                                              */
 /********************************************************************************/
 
-protected BractControl getControl()             { return bract_control; }
+@Override public boolean requiresLocation()             { return true; }
 
-protected BractProblem getProblem()             { return for_problem; }
+protected RootProcessor getProcessor()          { return bract_control; }
+
+protected RootProblem getProblem()              { return for_problem; }
+
+protected RootLocation getLocation()            { return at_location; }
 
 
 
@@ -85,18 +105,17 @@ protected BractProblem getProblem()             { return for_problem; }
 /*                                                                              */
 /********************************************************************************/
 
-@Override public void process()
-{
-   // method body goes here
-}
+@Override public abstract void process();
 
 
 
 
-}       // end of class BractRepairFinderDefault
+
+
+}       // end of class RootRepairFinderDefault
 
 
 
 
-/* end of BractRepairFinderDefault.java */
+/* end of RootRepairFinderDefault.java */
 

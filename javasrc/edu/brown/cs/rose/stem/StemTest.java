@@ -126,8 +126,17 @@ public void testRoseNullPointer()
       Element xml = sendStemReply(mc,"START",null,null);
       Assert.assertTrue(IvyXml.isElement(xml,"RESULT"));
       
+      IvyXmlWriter xw = new IvyXmlWriter();
+      xw.begin("PROBLEM");
+      xw.field("FRAME",fd.getId());
+      xw.field("THREAD",ld.getThreadId());
+      xw.field("TYPE","EXCEPTION");
+      xw.textElement("ITEM","java.lang.NullPointerException");
+      fd.outputLocation(xw,project,5,mc);
+      xw.end("PROBLEM");
+      String cnts = xw.toString();
+      
       CommandArgs args = new CommandArgs("TYPE","EXCEPTION",
-            "EXCEPTION","java.lang.NullPointerException",
             "METHOD",fd.getMethod(),
             "LINE",fd.getLine(),
             "CLASS",fd.getClassName(),
@@ -135,7 +144,7 @@ public void testRoseNullPointer()
             "PROJECT",fd.getProject(mc),
             "FRAME",fd.getId(),
             "THREAD",ld.getThreadId() );
-      xml = sendStemReply(mc,"HISTORY",args,null);
+      xml = sendStemReply(mc,"HISTORY",args,cnts);
       Assert.assertTrue(IvyXml.isElement(xml,"RESULT"));
     }
    catch (Throwable t) {
@@ -166,8 +175,17 @@ public void testRoseArrayIndex()
       Element xml = sendStemReply(mc,"START",null,null);
       Assert.assertTrue(IvyXml.isElement(xml,"RESULT"));
       
+      IvyXmlWriter xw = new IvyXmlWriter();
+      xw.begin("PROBLEM");
+      xw.field("FRAME",fd.getId());
+      xw.field("THREAD",ld.getThreadId());
+      xw.field("TYPE","EXCEPTION");
+      xw.textElement("ITEM","java.lang.ArrayIndexOutOfBoundsException");
+      fd.outputLocation(xw,project,5,mc);
+      xw.end("PROBLEM");
+      String cnts = xw.toString();  
+      
       CommandArgs args = new CommandArgs("TYPE","EXCEPTION",
-            "EXCEPTION","java.lang.ArrayIndexOutOfBoundsException",
             "METHOD",fd.getMethod(),
             "LINE",fd.getLine(),
             "CLASS",fd.getClassName(),
@@ -175,7 +193,7 @@ public void testRoseArrayIndex()
             "PROJECT",fd.getProject(mc),
             "FRAME",fd.getId(),
             "THREAD",ld.getThreadId() );
-      xml = sendStemReply(mc,"HISTORY",args,null);
+      xml = sendStemReply(mc,"HISTORY",args,cnts);
       Assert.assertTrue(IvyXml.isElement(xml,"RESULT"));
     }
    catch (Throwable t) {
@@ -204,10 +222,19 @@ public void testRoseWrongVariable()
       Element xml = sendStemReply(mc,"START",null,null);
       Assert.assertTrue(IvyXml.isElement(xml,"RESULT"));
       
-      CommandArgs args = new CommandArgs("TYPE","VARIABLE",
-            "VARIABLE","rslt",
-            "CURRENT","java.lang.String \"The cow jumped oer the moon.\"",
-            "SHOULDBE","\"The calf jumped over the moon.\"",
+      IvyXmlWriter xw = new IvyXmlWriter();
+      xw.begin("PROBLEM");
+      xw.field("FRAME",fd.getId());
+      xw.field("THREAD",ld.getThreadId());
+      xw.field("TYPE","VARIABLE");
+      xw.textElement("ITEM","rslt");
+      xw.textElement("ORIGINAL","java.lang.String \"The cow jumped over the moon.\"");
+      xw.textElement("TARGET","\"The cow jumped over the moon.\"");
+      fd.outputLocation(xw,project,5,mc);
+      xw.end("PROBLEM");
+      String cnts = xw.toString();
+      
+      CommandArgs args = new CommandArgs(
             "METHOD",fd.getMethod(),
             "LINE",fd.getLine(),
             "CLASS",fd.getClassName(),
@@ -215,7 +242,7 @@ public void testRoseWrongVariable()
             "PROJECT",fd.getProject(mc),
             "FRAME",fd.getId(),
             "THREAD",ld.getThreadId() );
-      xml = sendStemReply(mc,"HISTORY",args,null);
+      xml = sendStemReply(mc,"HISTORY",args,cnts);
       Assert.assertTrue(IvyXml.isElement(xml,"RESULT"));
     }
    catch (Throwable t) {
@@ -245,18 +272,26 @@ public void testRoseNotNull()
       Element xml = sendStemReply(mc,"START",null,null);
       Assert.assertTrue(IvyXml.isElement(xml,"RESULT"));
       
+      IvyXmlWriter xw = new IvyXmlWriter();
+      xw.begin("PROBLEM");
+      xw.field("FRAME",fd.getId());
+      xw.field("THREAD",ld.getThreadId());
+      xw.field("TYPE","VARIABLE");
+      xw.textElement("ITEM","baby");
+      xw.textElement("ORIGINAL","null");
+      xw.textElement("TARGET","Non-null");
+      fd.outputLocation(xw,project,5,mc);
+      xw.end("PROBLEM");
+      String cnts = xw.toString();
+      
       CommandArgs args = new CommandArgs("TYPE","VARIABLE",
-            "VARIABLE","baby",
-            "CURRENT","null",
-            "SHOULDBE","Non-null",
-            "METHOD",fd.getMethod(),
             "LINE",fd.getLine(),
             "CLASS",fd.getClassName(),
             "FILE",fd.getSourceFile(mc),
             "PROJECT",fd.getProject(mc),
             "FRAME",fd.getId(),
             "THREAD",ld.getThreadId() );
-      xml = sendStemReply(mc,"HISTORY",args,null);
+      xml = sendStemReply(mc,"HISTORY",args,cnts);
       Assert.assertTrue(IvyXml.isElement(xml,"RESULT"));
     }
    catch (Throwable t) {
@@ -284,10 +319,19 @@ public void testRoseOffByOne()
       Element xml = sendStemReply(mc,"START",null,null);
       Assert.assertTrue(IvyXml.isElement(xml,"RESULT"));
       
-      CommandArgs args = new CommandArgs("TYPE","VARIABLE",
-            "VARIABLE","a",
-            "CURRENT","pup",
-            "SHOULDBE","seal",
+      IvyXmlWriter xw = new IvyXmlWriter();
+      xw.begin("PROBLEM");
+      xw.field("FRAME",fd.getId());
+      xw.field("THREAD",ld.getThreadId());
+      xw.field("TYPE","VARIABLE");
+      xw.textElement("ITEM","a");
+      xw.textElement("ORIGINAL","java.lang.String pup");
+      xw.textElement("TARGET","null");
+      fd.outputLocation(xw,project,5,mc);
+      xw.end("PROBLEM");
+      String cnts = xw.toString();
+      
+      CommandArgs args = new CommandArgs(
             "METHOD",fd.getMethod(),
             "LINE",fd.getLine(),
             "CLASS",fd.getClassName(),
@@ -295,7 +339,7 @@ public void testRoseOffByOne()
             "PROJECT",fd.getProject(mc),
             "FRAME",fd.getId(),
             "THREAD",ld.getThreadId() );
-      xml = sendStemReply(mc,"HISTORY",args,null);
+      xml = sendStemReply(mc,"HISTORY",args,cnts);
       Assert.assertTrue(IvyXml.isElement(xml,"RESULT"));
     }
    catch (Throwable t) {
@@ -324,7 +368,16 @@ public void testRoseLocation()
       Element xml = sendStemReply(mc,"START",null,null);
       Assert.assertTrue(IvyXml.isElement(xml,"RESULT"));
       
-      CommandArgs args = new CommandArgs("TYPE","LOCATION",
+      IvyXmlWriter xw = new IvyXmlWriter();
+      xw.begin("PROBLEM");
+      xw.field("FRAME",fd.getId());
+      xw.field("THREAD",ld.getThreadId());
+      xw.field("TYPE","LOCATION");
+      fd.outputLocation(xw,project,5,mc);
+      xw.end("PROBLEM");
+      String cnts = xw.toString();
+      
+      CommandArgs args = new CommandArgs(
             "METHOD",fd.getMethod(),
             "LINE",fd.getLine(),
             "CLASS",fd.getClassName(),
@@ -332,7 +385,7 @@ public void testRoseLocation()
             "PROJECT",fd.getProject(mc),
             "FRAME",fd.getId(),
             "THREAD",ld.getThreadId() );
-      xml = sendStemReply(mc,"HISTORY",args,null);
+      xml = sendStemReply(mc,"HISTORY",args,cnts);
       Assert.assertTrue(IvyXml.isElement(xml,"RESULT"));
     }
    catch (Throwable t) {
@@ -619,7 +672,9 @@ private static class FrameData {
       method_name = IvyXml.getAttrString(xml,"METHOD");
       line_number = IvyXml.getAttrInt(xml,"LINENO");
       class_name = IvyXml.getAttrString(xml,"CLASS");
-      file_name = null;
+      file_name = IvyXml.getAttrString(xml,"FILE");
+      String sgn = IvyXml.getAttrString(xml,"SIGNATURE");
+      if (sgn != null) method_name += sgn;
       project_name = null;
     }
    
@@ -652,6 +707,16 @@ private static class FrameData {
        }
     }
    
+   void outputLocation(IvyXmlWriter xw,String proj,int p,MintControl mc) {
+      xw.begin("LOCATION");
+      xw.field("FILE",getSourceFile(mc));
+      xw.field("LINE",getLine());
+      xw.field("METHOD",getMethod());
+      xw.field("PROJECT",proj);
+      // want signature appended to method?
+      xw.field("PRIORIT",p);
+      xw.end("LOCATION");
+    }
    
    
 }       // end of inner class FrameData

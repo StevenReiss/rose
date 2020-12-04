@@ -36,15 +36,21 @@
 package edu.brown.cs.rose.bract;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 
 import edu.brown.cs.ivy.mint.MintConstants.CommandArgs;
 import edu.brown.cs.rose.root.RootControl;
+import edu.brown.cs.rose.root.RootLocation;
+import edu.brown.cs.rose.root.RootProblem;
+import edu.brown.cs.rose.root.RootProcessor;
+import edu.brown.cs.rose.root.RootRepair;
 import edu.brown.cs.rose.root.RootThreadPool;
 import edu.brown.cs.rose.root.RoseLog;
+import edu.brown.cs.rose.root.RootRepairFinder;
 
-public class BractControl extends Thread implements BractConstants
+public class BractControl extends Thread implements RootProcessor, BractConstants
 {
 
 
@@ -56,8 +62,11 @@ public class BractControl extends Thread implements BractConstants
 
 private RootControl rose_control;
 private String reply_id;
-private BractProblem for_problem;
+private RootProblem for_problem;
+private RootLocation at_location;
 private List<Class<?>> processor_classes;
+private List<Class<?>> location_classes;
+
 
 
 /********************************************************************************/
@@ -66,12 +75,14 @@ private List<Class<?>> processor_classes;
 /*                                                                              */
 /********************************************************************************/
 
-BractControl(RootControl ctrl,String id,BractProblem prob)
+BractControl(RootControl ctrl,String id,RootProblem prob,RootLocation at)
 { 
    rose_control = ctrl;
    reply_id = id;
    for_problem = prob;
+   at_location = at;
    processor_classes = new ArrayList<>();
+   location_classes = new ArrayList<>();
 }
 
 
@@ -85,15 +96,33 @@ public boolean registerProcessor(String clsnm)
 {
    try {
       Class<?> cls = (Class<?>) Class.forName(clsnm);
-      if (BractRepairFinder.class.isAssignableFrom(cls)) {
-         processor_classes.add(cls);
-         return true;
+      if (!RootRepairFinder.class.isAssignableFrom(cls)) {
+         return false;
        }
+      Constructor<?> cnst = cls.getConstructor();
+      RootRepairFinder rrf = (RootRepairFinder) cnst.newInstance();
+      boolean loc = rrf.requiresLocation();
+      if (loc) location_classes.add(cls);
+      else processor_classes.add(cls);
+      return true;
     }
    catch (ClassNotFoundException e) { }
+   catch (NoSuchMethodException e) { }
+   catch (InvocationTargetException e) { }
+   catch (IllegalAccessException e) { }
+   catch (InstantiationException e) { }
    
    return false;
 }
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Access methods                                                          */
+/*                                                                              */
+/********************************************************************************/
+
+public RootControl getController()              { return rose_control; }
 
 
 
@@ -107,22 +136,21 @@ public boolean registerProcessor(String clsnm)
 {
    List<ProcessorTask> tasks = new ArrayList<>();
    
+   List<RootLocation> uselocs = null;
+   if (at_location == null && location_classes.size() > 0) {
+     uselocs = getLocations(); 
+    }
+   
    if (for_problem != null) {
       for (Class<?> cls : processor_classes) {
-         Constructor<?> cnst = null;
-         try {
-            cnst = cls.getConstructor(BractControl.class,BractProblem.class);
+         ProcessorTask pt = startTask(cls,for_problem,null);
+         if (pt != null) tasks.add(pt);
+       }
+      for (Class<?> cls : location_classes) {
+         for (RootLocation loc : uselocs) {
+            ProcessorTask pt = startTask(cls,for_problem,loc);
+            if (pt != null) tasks.add(pt);
           }
-         catch (NoSuchMethodException e) { }
-         if (cnst == null) continue;
-         BractRepairFinder brf = null;
-         try {
-            brf = (BractRepairFinder) cnst.newInstance(this,for_problem);
-          }
-         catch (Throwable t) { }
-         if (brf == null) continue;
-         ProcessorTask pt = new ProcessorTask(brf);
-         RootThreadPool.start(pt);
        }
     }
    
@@ -135,6 +163,36 @@ public boolean registerProcessor(String clsnm)
 }
 
 
+private ProcessorTask startTask(Class<?> cls,RootProblem p,RootLocation l)
+{
+   Constructor<?> cnst = null;
+   try {
+      cnst = cls.getConstructor();
+    }
+   catch (NoSuchMethodException e) { }
+   if (cnst == null) return null;
+   RootRepairFinder rrf = null;
+   try {
+      rrf = (RootRepairFinder) cnst.newInstance();
+      
+      rrf.setup(this,for_problem,at_location);
+    }
+   catch (Throwable t) { }
+   if (rrf == null) return null;
+   ProcessorTask pt = new ProcessorTask(rrf);
+   RootThreadPool.start(pt);
+   return pt;
+}
+
+
+private List<RootLocation> getLocations()
+{
+   // compute the set of all locations -- use stem processing?
+   
+   return new ArrayList<>();
+}
+
+
 
 /********************************************************************************/
 /*                                                                              */
@@ -142,7 +200,7 @@ public boolean registerProcessor(String clsnm)
 /*                                                                              */
 /********************************************************************************/
 
-public void addRepair(BractRepair br)
+public void addRepair(RootRepair br)
 {
    CommandArgs args = new CommandArgs("NAME",reply_id);
    String body = null; // build from repair
@@ -160,10 +218,10 @@ public void addRepair(BractRepair br)
 
 private static class ProcessorTask implements Runnable {
    
-   private BractRepairFinder repair_finder;
+   private RootRepairFinder repair_finder;
    private boolean is_done;
    
-   ProcessorTask(BractRepairFinder brf) {
+   ProcessorTask(RootRepairFinder brf) {
       repair_finder = brf;
       is_done = false;
     }
@@ -195,10 +253,10 @@ private static class ProcessorTask implements Runnable {
 }       // end of inner class ProcessorTask
 
 
-}       // end of class BractProcessor
+}       // end of class BractControl
 
 
 
 
-/* end of BractProcessor.java */
+/* end of BractControl.java */
 

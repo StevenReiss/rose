@@ -1,8 +1,8 @@
 /********************************************************************************/
 /*                                                                              */
-/*              BushProblem.java                                                */
+/*              RootLocation.java                                               */
 /*                                                                              */
-/*      description of class                                                    */
+/*      Representation of a location passed from front to back end              */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
@@ -33,15 +33,20 @@
 
 
 
-package edu.brown.cs.rose.bush;
+package edu.brown.cs.rose.root;
 
-import edu.brown.cs.bubbles.bump.BumpConstants.BumpStackFrame;
-import edu.brown.cs.bubbles.bump.BumpConstants.BumpThread;
-import edu.brown.cs.rose.root.RootLocation;
-import edu.brown.cs.rose.root.RootNodeContext;
-import edu.brown.cs.rose.root.RootProblem;
+import java.io.File;
+import java.io.IOException;
 
-class BushProblem extends RootProblem implements BushConstants
+import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.w3c.dom.Element;
+
+import edu.brown.cs.ivy.file.IvyFile;
+import edu.brown.cs.ivy.jcomp.JcompAst;
+import edu.brown.cs.ivy.xml.IvyXml;
+import edu.brown.cs.ivy.xml.IvyXmlWriter;
+
+public class RootLocation implements RootConstants
 {
 
 
@@ -51,7 +56,14 @@ class BushProblem extends RootProblem implements BushConstants
 /*                                                                              */
 /********************************************************************************/
 
-private BumpStackFrame  stack_frame;
+private File            for_file;
+private String          project_name;
+private int             start_offset;
+private int             end_offset;
+private int             line_number;
+private int             location_priority;
+private String          in_method;
+
 
 
 /********************************************************************************/
@@ -60,13 +72,29 @@ private BumpStackFrame  stack_frame;
 /*                                                                              */
 /********************************************************************************/
 
-BushProblem(BumpStackFrame frame,RoseProblemType typ,String item,String orig,String tgt,RootNodeContext ctx)
+protected RootLocation(Element xml)
 {
-   super(typ,item,orig,tgt,ctx);
-   setBugFrame(frame.getThread().getId(),frame.getId());  
-   stack_frame = frame;
-   RootLocation floc = new BushLocation(frame);
-   setBugLocation(floc);
+   String fnm = IvyXml.getAttrString(xml,"FILE");
+   for_file = new File(fnm);
+   start_offset = IvyXml.getAttrInt(xml,"OFFSET");
+   end_offset = IvyXml.getAttrInt(xml,"ENDOFFSET");
+   project_name = IvyXml.getAttrString(xml,"PROJECT");
+   line_number = IvyXml.getAttrInt(xml,"LINE");
+   location_priority = IvyXml.getAttrInt(xml,"PRIORITY",DEFAULT_PRIORITY);
+   in_method = IvyXml.getAttrString(xml,"METHOD");
+}
+
+
+protected RootLocation(File f,int start,int end,int line,String proj,String method,int pri)
+{
+   for_file = f;
+   start_offset = start;
+   end_offset = end;
+   line_number = line;
+   project_name = proj;
+   if (pri <= 0) pri = DEFAULT_PRIORITY;
+   location_priority = pri;
+   in_method = method;
 }
 
 
@@ -77,22 +105,61 @@ BushProblem(BumpStackFrame frame,RoseProblemType typ,String item,String orig,Str
 /*                                                                              */
 /********************************************************************************/
 
-BumpStackFrame getFrame()
+public File getFile()                           { return for_file; }
+public int getStartOffset()                     { return start_offset; }
+public int getEndOffseet()                      { return end_offset; }
+public String getProject()                      { return project_name; }
+public int getPriority()                        { return location_priority; }
+
+public String getMethod()                       { return in_method; }
+
+public int getLineNumber()
 {
-   return stack_frame;
+   if (line_number <= 0) {
+      try {
+         CompilationUnit cu = JcompAst.parseSourceFile(IvyFile.loadFile(for_file));
+         if (cu != null) {
+            line_number = cu.getLineNumber(start_offset);
+          }
+       }
+      catch (IOException e) { }
+    }
+   return line_number;
 }
 
 
-BumpThread getThread()
+
+/********************************************************************************/
+/*                                                                              */
+/*      Output methods                                                          */
+/*                                                                              */
+/********************************************************************************/
+
+public void outputXml(IvyXmlWriter xw) 
 {
-   return stack_frame.getThread();
+   xw.begin("LOCATION");
+   xw.field("FILE",for_file);
+   if (start_offset > 0) xw.field("OFFSET",start_offset);
+   if (end_offset > 0) xw.field("ENDOFFSET",end_offset);
+   if (line_number > 0) xw.field("LINE",line_number);
+   if (project_name != null) xw.field("PROJECT",project_name);
+   if (in_method != null) xw.field("METHOD",in_method);
+   xw.field("PRIORITY",location_priority);
+   xw.end("LOCATION");
 }
 
 
-}       // end of class BushProblem
+@Override public String toString() 
+{
+   return "[" + for_file + "@" + line_number + "(" + start_offset + "-" + end_offset + ")]";
+}
+
+
+
+}       // end of class RootLocation
 
 
 
 
-/* end of BushProblem.java */
+/* end of RootLocation.java */
 

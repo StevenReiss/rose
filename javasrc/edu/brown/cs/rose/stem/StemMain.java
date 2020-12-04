@@ -63,9 +63,10 @@ import edu.brown.cs.ivy.mint.MintMessage;
 import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
 import edu.brown.cs.rose.bract.BractFactory;
-import edu.brown.cs.rose.bract.BractProblem;
 import edu.brown.cs.rose.root.RootMetrics;
+import edu.brown.cs.rose.root.RootProblem;
 import edu.brown.cs.rose.root.RootControl;
+import edu.brown.cs.rose.root.RootLocation;
 import edu.brown.cs.rose.root.RoseException;
 import edu.brown.cs.rose.root.RoseLog;
 
@@ -434,7 +435,9 @@ private void handleHistoryCommand(MintMessage msg) throws RoseException
    if (tid != null) loadFilesIntoFait(tid);
    waitForAnalysis();
    long start = System.currentTimeMillis();
-   StemQueryHistory histq = StemQueryHistory.createHistoryQuery(this,msgxml);
+   Element probxml = IvyXml.getChild(msgxml,"PROBLEM");
+   RootProblem prob = BractFactory.getFactory().createProblemDescription(probxml);
+   StemQueryHistory histq = StemQueryHistory.createHistoryQuery(this,prob);
    if (histq != null) {
       IvyXmlWriter xw = new IvyXmlWriter();
       histq.process(this,xw);
@@ -460,16 +463,14 @@ private void handleSuggestCommand(MintMessage msg) throws RoseException
    Element msgxml = msg.getXml();
    BractFactory bract = BractFactory.getFactory();
    Element probxml = IvyXml.getChild(msgxml,"PROBLEM");
-   BractProblem problem = bract.createProblemDescription(probxml);
+   RootProblem problem = bract.createProblemDescription(probxml);
    String id = IvyXml.getAttrString(msgxml,"NAME");
    if (id == null) {
       id = "ROSESUGGEST_" + IvyExecQuery.getProcessId() + "_" + 
          id_counter.incrementAndGet();
     }
    Element locxml = IvyXml.getChild(msgxml,"LOCATION");
-   if (locxml != null) {
-      // set up a location
-    }
+   RootLocation loc = bract.createLocation(locxml);
    
    IvyXmlWriter xw = new IvyXmlWriter();
    xw.begin("RESULT");
@@ -478,7 +479,7 @@ private void handleSuggestCommand(MintMessage msg) throws RoseException
    msg.replyTo(xw.toString());
    xw.close();
    
-   bract.startSuggestions(this,id,problem);
+   bract.startSuggestions(this,id,problem,loc);
 }
 
 

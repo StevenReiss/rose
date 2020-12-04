@@ -40,8 +40,8 @@ import org.w3c.dom.Element;
 import edu.brown.cs.ivy.mint.MintConstants.CommandArgs;
 import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
-import edu.brown.cs.rose.bract.BractProblem;
 import edu.brown.cs.rose.root.RootMetrics;
+import edu.brown.cs.rose.root.RootProblem;
 import edu.brown.cs.rose.root.RoseException;
 import edu.brown.cs.rose.root.RoseLog;
 
@@ -68,9 +68,9 @@ private String shouldbe_value;
 /*                                                                              */
 /********************************************************************************/
 
-StemQueryVariableHistory(StemMain ctrl,BractProblem prob,Element xml)
+StemQueryVariableHistory(StemMain ctrl,RootProblem prob)
 {
-   super(ctrl,prob,xml);
+   super(ctrl,prob);
    variable_name = prob.getProblemDetail();
    current_value = prob.getOriginalValue();
    shouldbe_value = prob.getTargetValue();

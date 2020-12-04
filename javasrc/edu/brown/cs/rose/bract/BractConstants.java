@@ -40,29 +40,7 @@ public interface BractConstants
 
 
 
-/********************************************************************************/
-/*                                                                              */
-/*      Repair interface -- represent a potential repair                        */
-/*                                                                              */
-/********************************************************************************/
 
-interface BractRepair {
-   
-}       // end of inner interface BrackRepair
-
-
-
-/********************************************************************************/
-/*                                                                              */
-/*      Repair finder interface -- processor to suggest repairs                 */
-/*                                                                              */
-/********************************************************************************/
-
-interface BractRepairFinder {
-   
-   void process();
-   
-}       // end of inner interface BractRepairFinder
 
 
 }       // end of interface BractConstants

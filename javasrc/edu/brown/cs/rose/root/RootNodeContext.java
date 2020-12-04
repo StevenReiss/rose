@@ -1,8 +1,8 @@
 /********************************************************************************/
 /*                                                                              */
-/*              BractRepairDefault.java                                         */
+/*              RootNodeContext.java                                            */
 /*                                                                              */
-/*      Default implementation of a potential repair                            */
+/*      Node context showing the execution location of an expression            */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
@@ -33,11 +33,14 @@
 
 
 
-package edu.brown.cs.rose.bract;
+package edu.brown.cs.rose.root;
 
-import edu.brown.cs.rose.bract.BractConstants.BractRepair;
+import org.w3c.dom.Element;
 
-public class BractRepairDefault implements BractConstants, BractRepair
+import edu.brown.cs.ivy.xml.IvyXml;
+import edu.brown.cs.ivy.xml.IvyXmlWriter;
+
+public class RootNodeContext implements RootConstants
 {
 
 
@@ -47,6 +50,17 @@ public class BractRepairDefault implements BractConstants, BractRepair
 /*                                                                              */
 /********************************************************************************/
 
+private int     start_offset;
+private int     end_offset;
+private String  node_type;
+private int     node_typeid;
+private String  after_location;
+private int     after_start;
+private int     after_end;
+private String  after_type;
+private int     after_typeid;
+
+
 
 
 /********************************************************************************/
@@ -55,15 +69,64 @@ public class BractRepairDefault implements BractConstants, BractRepair
 /*                                                                              */
 /********************************************************************************/
 
-public BractRepairDefault()
-{ }
+public RootNodeContext(Element xml)
+{
+   start_offset = IvyXml.getAttrInt(xml,"START");
+   end_offset = IvyXml.getAttrInt(xml,"END");
+   node_type = IvyXml.getAttrString(xml,"NODETYPE");
+   node_typeid = IvyXml.getAttrInt(xml,"NODETYPEID");
+   after_location = IvyXml.getAttrString(xml,"AFTER");
+   after_start = IvyXml.getAttrInt(xml,"AFTERSTART");
+   after_end = IvyXml.getAttrInt(xml,"AFTEREND");
+   after_type = IvyXml.getAttrString(xml,"AFTERTYPE");
+   after_typeid = IvyXml.getAttrInt(xml,"AFTERTYPEID");
+}
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Output methods                                                          */
+/*                                                                              */
+/********************************************************************************/
+
+public void outputXml(IvyXmlWriter xw)
+{
+   outputXml("CONTEXT",xw);
+}
 
 
 
-}       // end of class BractRepairDefault
+public void outputXml(String elt,IvyXmlWriter xw)
+{
+   if (elt != null) xw.begin(elt);
+   outputXmlFields(xw);
+   if (elt != null) xw.end(elt);
+}
 
 
 
 
-/* end of BractRepairDefault.java */
+public void outputXmlFields(IvyXmlWriter xw)
+{
+   xw.field("START",start_offset);
+   xw.field("END",end_offset);
+   xw.field("NODETYPE",node_type);
+   xw.field("NODETYPEID",node_typeid);
+   if (after_location != null) {
+      xw.field("AFTER",after_location);
+      xw.field("AFTERSTART",after_start);
+      xw.field("AFTEREND",after_end);
+      xw.field("AFTERTYPE",after_type);
+      xw.field("AFTERTYPEID",after_typeid);
+    }
+}
+
+
+
+}       // end of class RootNodeContext
+
+
+
+
+/* end of RootNodeContext.java */
 

@@ -1,8 +1,8 @@
 /********************************************************************************/
 /*                                                                              */
-/*              BushProblem.java                                                */
+/*              BushLocation.java                                               */
 /*                                                                              */
-/*      description of class                                                    */
+/*      Location for use inside BUSH interface                                  */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
@@ -35,13 +35,11 @@
 
 package edu.brown.cs.rose.bush;
 
+import edu.brown.cs.bubbles.bump.BumpLocation;
 import edu.brown.cs.bubbles.bump.BumpConstants.BumpStackFrame;
-import edu.brown.cs.bubbles.bump.BumpConstants.BumpThread;
 import edu.brown.cs.rose.root.RootLocation;
-import edu.brown.cs.rose.root.RootNodeContext;
-import edu.brown.cs.rose.root.RootProblem;
 
-class BushProblem extends RootProblem implements BushConstants
+class BushLocation extends RootLocation implements BushConstants
 {
 
 
@@ -51,7 +49,8 @@ class BushProblem extends RootProblem implements BushConstants
 /*                                                                              */
 /********************************************************************************/
 
-private BumpStackFrame  stack_frame;
+private BumpLocation    bump_location;
+
 
 
 /********************************************************************************/
@@ -60,13 +59,18 @@ private BumpStackFrame  stack_frame;
 /*                                                                              */
 /********************************************************************************/
 
-BushProblem(BumpStackFrame frame,RoseProblemType typ,String item,String orig,String tgt,RootNodeContext ctx)
+BushLocation(BumpLocation loc,int pri) 
 {
-   super(typ,item,orig,tgt,ctx);
-   setBugFrame(frame.getThread().getId(),frame.getId());  
-   stack_frame = frame;
-   RootLocation floc = new BushLocation(frame);
-   setBugLocation(floc);
+   super(loc.getFile(),loc.getOffset(),loc.getEndOffset(),-1,loc.getProject(),null,pri);
+}
+
+
+BushLocation(BumpStackFrame frm)
+{
+   super(frm.getFile(),-1,-1,frm.getLineNumber(),
+         frm.getThread().getLaunch().getConfiguration().getProject(),
+         frm.getMethod() + frm.getRawSignature(),
+         0);
 }
 
 
@@ -77,22 +81,16 @@ BushProblem(BumpStackFrame frame,RoseProblemType typ,String item,String orig,Str
 /*                                                                              */
 /********************************************************************************/
 
-BumpStackFrame getFrame()
+BumpLocation getBumpLocation()
 {
-   return stack_frame;
+   return bump_location;
 }
 
 
-BumpThread getThread()
-{
-   return stack_frame.getThread();
-}
-
-
-}       // end of class BushProblem
+}       // end of class BushLocation
 
 
 
 
-/* end of BushProblem.java */
+/* end of BushLocation.java */
 

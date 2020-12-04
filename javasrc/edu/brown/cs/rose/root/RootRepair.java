@@ -58,8 +58,13 @@ public class RootRepair implements RootConstants
 /********************************************************************************/
 
 
+protected RootRepair()
+{ }
+
+
 protected RootRepair(Element xml)
 { }
+
 
 
 
@@ -81,6 +86,11 @@ protected RootRepair(Element xml)
 public String getDescription()
 {
    return "Repair";
+}
+
+public int getPriority()
+{
+   return DEFAULT_PRIORITY;
 }
 
 

@@ -54,7 +54,10 @@ private RoseProblemType problem_type;
 private String          problem_item;
 private String          original_value;
 private String          target_value;
-
+private String          thread_id;
+private String          frame_id;
+private RootLocation    bug_location;
+private RootNodeContext node_context;
 
 
 
@@ -64,12 +67,17 @@ private String          target_value;
 /*                                                                              */
 /********************************************************************************/
 
-protected RootProblem(RoseProblemType typ,String item,String orig,String tgt)
+protected RootProblem(RoseProblemType typ,String item,String orig,String tgt,
+      RootNodeContext ctx)
 {
    problem_type = typ;
    problem_item = item;
    original_value = orig;
    target_value = tgt;
+   thread_id = null;
+   frame_id = null;
+   bug_location = null;
+   node_context = ctx;
 }
 
 
@@ -79,6 +87,30 @@ protected RootProblem(Element xml)
    problem_item = IvyXml.getTextElement(xml,"ITEM");
    original_value = IvyXml.getTextElement(xml,"ORIGINAL");
    target_value = IvyXml.getTextElement(xml,"TARGET");
+   thread_id = IvyXml.getAttrString(xml,"THREAD");
+   frame_id = IvyXml.getAttrString(xml,"FRAME");
+   
+   Element loc = IvyXml.getChild(xml,"LOCATION");
+   if (loc != null) bug_location = new RootLocation(loc);
+   
+   Element ctx = IvyXml.getChild(xml,"CONTEXT");
+   if (ctx == null) ctx = IvyXml.getChild(xml,"EXPRESSION");
+   if (ctx != null) node_context = new RootNodeContext(ctx);
+}
+
+
+
+protected void setBugFrame(String tid,String fid)
+{
+   thread_id = tid;
+   frame_id = fid;
+}
+
+
+
+protected void setBugLocation(RootLocation loc)
+{
+   bug_location = loc;
 }
 
 
@@ -115,6 +147,17 @@ public String getTargetValue()
 }
 
 
+public String getThreadId()                     { return thread_id; }
+
+public String getFrameId()                      { return frame_id; }
+
+public RootLocation getBugLocation()            { return bug_location; }
+
+public RootNodeContext getNodeContext()         { return node_context; }
+
+
+
+
 /********************************************************************************/
 /*                                                                              */
 /*      Output methods                                                          */
@@ -125,7 +168,7 @@ public String getDescription()
 {
    switch (problem_type) {
       case EXCEPTION :
-         return problem_item + "shouldn't be thrown";
+         return problem_item + " shouldn't be thrown";
       case EXPRESSION :
          return "Expression " + problem_item + " has the wrong value";
       case VARIABLE :
@@ -145,17 +188,15 @@ public void outputXml(IvyXmlWriter xw)
 {
    xw.begin("PROBLEM");
    xw.field("TYPE",problem_type);
-   localOutputXml(xw);
+   if (frame_id != null) xw.field("FRAME",frame_id);
+   if (thread_id != null) xw.field("THREAD",thread_id);
    if (problem_item != null) xw.textElement("ITEM",problem_item);
    if (original_value != null) xw.textElement("ORIGINAL",original_value);
    if (target_value != null) xw.textElement("TARGET",target_value);
-   xw.end("END");
+   if (bug_location != null) bug_location.outputXml(xw);
+   if (node_context != null) node_context.outputXml(xw);
+   xw.end("PROBLEM");
 }
-
-
-protected void localOutputXml(IvyXmlWriter xw)                  { }
-
-
 
 
 

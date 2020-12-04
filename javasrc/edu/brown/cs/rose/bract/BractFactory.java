@@ -38,6 +38,8 @@ package edu.brown.cs.rose.bract;
 import org.w3c.dom.Element;
 
 import edu.brown.cs.rose.root.RootControl;
+import edu.brown.cs.rose.root.RootLocation;
+import edu.brown.cs.rose.root.RootProblem;
 
 public class BractFactory implements BractConstants
 {
@@ -78,10 +80,27 @@ private BractFactory()
 /*                                                                              */
 /********************************************************************************/
 
-public BractProblem createProblemDescription(Element xml)
+public RootProblem createProblemDescription(Element xml)
 {
    return new BractProblem(xml);
 }
+
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Create a location                                                       */
+/*                                                                              */
+/********************************************************************************/
+
+public RootLocation createLocation(Element xml)
+{
+   if (xml == null) return null;
+   
+   return new BractLocation(xml);
+}
+
 
 
 
@@ -91,9 +110,9 @@ public BractProblem createProblemDescription(Element xml)
 /*                                                                              */
 /********************************************************************************/
 
-public void startSuggestions(RootControl ctrl,String rid,BractProblem prob)
+public void startSuggestions(RootControl ctrl,String rid,RootProblem prob,RootLocation at)
 {
-   BractControl proc = new BractControl(ctrl,rid,prob);
+   BractControl proc = new BractControl(ctrl,rid,prob,at);
    proc.start();
 }
 

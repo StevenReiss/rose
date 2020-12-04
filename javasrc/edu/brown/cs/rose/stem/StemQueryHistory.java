@@ -39,9 +39,8 @@ import org.w3c.dom.Element;
 
 import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
-import edu.brown.cs.rose.bract.BractFactory;
-import edu.brown.cs.rose.bract.BractProblem;
 import edu.brown.cs.rose.root.RootMetrics;
+import edu.brown.cs.rose.root.RootProblem;
 import edu.brown.cs.rose.root.RoseException;
 
 abstract class StemQueryHistory extends StemQueryBase implements StemConstants
@@ -54,20 +53,22 @@ abstract class StemQueryHistory extends StemQueryBase implements StemConstants
 /*										*/
 /********************************************************************************/
 
-static StemQueryHistory createHistoryQuery(StemMain ctrl,Element xml)
+static StemQueryHistory createHistoryQuery(StemMain ctrl,RootProblem prob)
 {
-   Element probxml = IvyXml.getChild(xml,"PROBLEM");
-   BractProblem prob = BractFactory.getFactory().createProblemDescription(probxml);
+   // Rather than passing xml, the RootProblem should include an optional expession
+   //   context (START/END/NODETYPE/NODETYPEID/AFTER/AFTERSTART/AFTEREND/AFTERTYPE/
+   //   AFTERTYPEID).
+   
    switch (prob.getProblemType()) {
       case VARIABLE :
-	 return new StemQueryVariableHistory(ctrl,prob,xml);
+	 return new StemQueryVariableHistory(ctrl,prob);
       case EXPRESSION :
-         return new StemQueryExpressionHistory(ctrl,prob,xml);
+         return new StemQueryExpressionHistory(ctrl,prob);
       case EXCEPTION :
-         return new StemQueryExceptionHistory(ctrl,prob,xml);
+         return new StemQueryExceptionHistory(ctrl,prob);
       case OTHER :
       case LOCATION :
-         return new StemQueryLocationHistory(ctrl,prob,xml);
+         return new StemQueryLocationHistory(ctrl,prob);
     }
 
    return null;
@@ -77,22 +78,13 @@ static StemQueryHistory createHistoryQuery(StemMain ctrl,Element xml)
 
 /********************************************************************************/
 /*										*/
-/*	Private Storage 							*/
-/*										*/
-/********************************************************************************/
-
-
-
-
-/********************************************************************************/
-/*										*/
 /*	Constructors								*/
 /*										*/
 /********************************************************************************/
 
-protected StemQueryHistory(StemMain ctrl,BractProblem prob,Element xml)
+protected StemQueryHistory(StemMain ctrl,RootProblem prob)
 {
-   super(ctrl,xml);
+   super(ctrl,prob);
 }
 
 

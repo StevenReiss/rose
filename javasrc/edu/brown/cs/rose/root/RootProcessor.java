@@ -1,8 +1,8 @@
 /********************************************************************************/
 /*                                                                              */
-/*              BractProcessor.java                                             */
+/*              RootProcessor.java                                              */
 /*                                                                              */
-/*      Semantic quick fix (quickrepair) processor                              */
+/*      Processor interface passed to repair finders                            */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
@@ -33,64 +33,31 @@
 
 
 
-package edu.brown.cs.rose.bract;
+package edu.brown.cs.rose.root;
 
-import edu.brown.cs.ivy.mint.MintConstants.CommandArgs;
-import edu.brown.cs.rose.root.RootControl;
 
-public class BractProcessor extends Thread implements BractConstants
+
+public interface RootProcessor extends RootConstants
 {
 
+/**
+ *      Return controller to send messages and handle evaluations
+ **/
 
-/********************************************************************************/
-/*                                                                              */
-/*      Private Storage                                                         */
-/*                                                                              */
-/********************************************************************************/
+RootControl getController();
 
-private RootControl rose_control;
-private String reply_id;
-private BractProblem for_problem;
+/**
+ *      Add a suggested repair
+ **/
 
-
-
-/********************************************************************************/
-/*                                                                              */
-/*      Constructors                                                            */
-/*                                                                              */
-/********************************************************************************/
-
-BractProcessor(RootControl ctrl,String id,BractProblem prob)
-{ 
-   rose_control = ctrl;
-   reply_id = id;
-   for_problem = prob;
-}
+void addRepair(RootRepair repair);
 
 
 
-/********************************************************************************/
-/*                                                                              */
-/*      Main processing method                                                  */
-/*                                                                              */
-/********************************************************************************/
-
-@Override public void run()
-{
-   if (for_problem != null) {
-      // process the problem here
-    }
-   
-   CommandArgs args = new CommandArgs("NAME",reply_id);
-   rose_control.sendRoseMessage("ENDSUGGEST",args,null,-1);
-}
-
-
-
-}       // end of class BractProcessor
+}       // end of interface RootProcessor
 
 
 
 
-/* end of BractProcessor.java */
+/* end of RootProcessor.java */
 

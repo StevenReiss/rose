@@ -38,9 +38,8 @@ package edu.brown.cs.rose.stem;
 import org.w3c.dom.Element;
 
 import edu.brown.cs.ivy.mint.MintConstants.CommandArgs;
-import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
-import edu.brown.cs.rose.bract.BractProblem;
+import edu.brown.cs.rose.root.RootProblem;
 import edu.brown.cs.rose.root.RoseException;
 
 class StemQueryExpressionHistory extends StemQueryHistory
@@ -55,7 +54,7 @@ class StemQueryExpressionHistory extends StemQueryHistory
 
 private String expression_name;
 private String current_value;
-private Element where_data;
+
 
 
 /********************************************************************************/
@@ -64,13 +63,12 @@ private Element where_data;
 /*                                                                              */
 /********************************************************************************/
 
-StemQueryExpressionHistory(StemMain ctrl,BractProblem prob,Element xml)
+StemQueryExpressionHistory(StemMain ctrl,RootProblem prob)
 { 
-   super(ctrl,prob,xml);
+   super(ctrl,prob);
    expression_name = prob.getProblemDetail();
    current_value = prob.getOriginalValue();
 //    shouldbe_value = prob.getTargetValue();
-   where_data = xml;
 }
    
 
@@ -105,21 +103,18 @@ private Element getHistoryData(StemMain stem)
          "TOKEN",expression_name,
          "METHOD",method_name);
    
-   IvyXmlWriter xw = new IvyXmlWriter();
-   xw.begin("EXPRESSION");
-   String [] flds = new String [] { "START", "END", "NODETYPE", "NODETYPEID",
-         "AFTER", "AFTERSTART", "AFTEREND", "AFTERTYPE", "AFTERTYPEID" };
-   for (String fld : flds) {
-      String fval = IvyXml.getAttrString(where_data,fld);
-      if (fval != null) args.put(fld,fval);
+   String qxml = null;
+   if (node_context != null) {
+      IvyXmlWriter xw = new IvyXmlWriter();
+      node_context.outputXml("EXPRESSION",xw);
+      qxml = xw.toString();
+      xw.close();
     }
-   xw.end("EXPRESSION");
-   String qxml = xw.toString();
    String sxml = getXmlForStack();
-   if (sxml != null) qxml += sxml; 
-   Element rslt = stem.sendFaitMessage("FLOWQUERY",args,qxml);
+   if (qxml == null) qxml = sxml;
+   else if (sxml != null) qxml += sxml; 
    
-   xw.close();
+   Element rslt = stem.sendFaitMessage("FLOWQUERY",args,qxml);
    
    return rslt;
 }

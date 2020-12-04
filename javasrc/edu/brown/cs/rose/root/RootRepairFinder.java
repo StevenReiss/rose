@@ -1,8 +1,8 @@
 /********************************************************************************/
 /*                                                                              */
-/*              BractAgent.java                                                 */
+/*              RoseRepairFinder.java                                           */
 /*                                                                              */
-/*      Generic repair suggestion agent                                         */
+/*      description of class                                                    */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
@@ -33,37 +33,37 @@
 
 
 
-package edu.brown.cs.rose.bract;
+package edu.brown.cs.rose.root;
 
 
 
-public abstract class BractAgent implements BractConstants
+public interface RootRepairFinder
 {
 
+/** 
+ *      Setup finder for a particular problem and location
+ **/
 
-/********************************************************************************/
-/*                                                                              */
-/*      Private Storage                                                         */
-/*                                                                              */
-/********************************************************************************/
-
+   void setup(RootProcessor ctrl,RootProblem problem,RootLocation location);
 
 
-/********************************************************************************/
-/*                                                                              */
-/*      Constructors                                                            */
-/*                                                                              */
-/********************************************************************************/
+/**
+ *      Indicate that a location is required
+ **/
 
-protected BractAgent()
-{ }
+   default boolean requiresLocation()            { return true; }
+   
+   
+/**
+ *      Process to find repair suggestions.
+ **/
 
+    void process();
 
-
-
-}       // end of class BractAgent
-
+}       // end of interface RoseRepairFinder
 
 
 
-/* end of BractAgent.java */
+
+/* end of RoseRepairFinder.java */
+

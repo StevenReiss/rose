@@ -53,8 +53,8 @@ import org.w3c.dom.Element;
 
 import edu.brown.cs.ivy.mint.MintConstants.CommandArgs;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
-import edu.brown.cs.rose.bract.BractProblem;
 import edu.brown.cs.rose.bud.BudValue;
+import edu.brown.cs.rose.root.RootProblem;
 import edu.brown.cs.rose.root.RoseException;
 
 
@@ -77,12 +77,13 @@ private String  exception_type;
 /*                                                                              */
 /********************************************************************************/
 
-StemQueryExceptionHistory(StemMain ctrl,BractProblem prob,Element xml)
+StemQueryExceptionHistory(StemMain ctrl,RootProblem prob)
 {
-   super(ctrl,prob,xml);
+   super(ctrl,prob);
    
    exception_type = prob.getProblemDetail();
 }
+
 
 
 /********************************************************************************/

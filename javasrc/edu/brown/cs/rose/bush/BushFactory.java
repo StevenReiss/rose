@@ -66,7 +66,6 @@ import edu.brown.cs.bubbles.buda.BudaBubble;
 import edu.brown.cs.bubbles.buda.BudaRoot;
 import edu.brown.cs.bubbles.bump.BumpClient;
 import edu.brown.cs.bubbles.bump.BumpConstants;
-import edu.brown.cs.bubbles.bump.BumpLocation;
 import edu.brown.cs.ivy.exec.IvyExec;
 import edu.brown.cs.ivy.exec.IvyExecQuery;
 import edu.brown.cs.ivy.file.IvyFile;
@@ -182,7 +181,7 @@ static void metrics(String cmd,Object ... args)
 /*                                                                              */
 /********************************************************************************/
 
-void addFixAnnotations(BushProblem prob,List<BumpLocation> locs)
+void addFixAnnotations(BushProblem prob,List<BushLocation> locs)
 {
    BumpThread bt = prob.getThread();
    if (bt == null) return;
@@ -193,15 +192,13 @@ void addFixAnnotations(BushProblem prob,List<BumpLocation> locs)
    ThreadData td = pd.findThread(bt);
    if (td == null) return;
    
-   List<BumpLocation> uselocs = new ArrayList<>();
-   for (BumpLocation bl : locs) {
-      BaleFileOverview bfo = BaleFactory.getFactory().getFileOverview(bl.getProject(),bl.getFile());
-      if (bfo == null) continue;
-      int ln = bfo.findLineNumber(bl.getOffset());
+   List<BushLocation> uselocs = new ArrayList<>();
+   for (BushLocation bl : locs) {
+      int ln = bl.getLineNumber();
       boolean fnd = false;
-      for (BumpLocation ubl : uselocs) {
+      for (BushLocation ubl : uselocs) {
          if (!ubl.getFile().equals(bl.getFile())) continue;
-         int uln = bfo.findLineNumber(ubl.getOffset());
+         int uln = ubl.getLineNumber();
          if (uln != ln) continue;
          fnd = true;
          break;
@@ -210,8 +207,9 @@ void addFixAnnotations(BushProblem prob,List<BumpLocation> locs)
     }
    if (uselocs.isEmpty()) return;
    
-   for (BumpLocation bl : uselocs) {
-     td.addFixAnnotation(prob,bl); 
+   for (BushLocation bl : uselocs) {
+      BoardLog.logD("BUSH","Add fix annotation for " + bl);
+      td.addFixAnnotation(prob,bl); 
     }
 }
 
@@ -223,7 +221,7 @@ void addFixAnnotations(BushProblem prob,List<BumpLocation> locs)
 /*                                                                              */
 /********************************************************************************/
 
-void startRepairSuggestor(BushProblem prob,BumpLocation loc,BushRepairAdder adder)
+void startRepairSuggestor(BushProblem prob,BushLocation loc,BushRepairAdder adder)
 {
    String id = "ROSESUGGEST_" + IvyExecQuery.getProcessId() + "_" + id_counter.incrementAndGet();
    CommandArgs args = new CommandArgs("NAME",id);
@@ -232,12 +230,7 @@ void startRepairSuggestor(BushProblem prob,BumpLocation loc,BushRepairAdder adde
    IvyXmlWriter xw = new IvyXmlWriter();
    prob.outputXml(xw);
    if (loc != null) {
-      xw.begin("LOCATION");
-      xw.field("FILE",loc.getFile());
-      xw.field("OFFSET",loc.getOffset());
-      xw.field("ENDOFFSET",loc.getEndOffset());
-      xw.field("PROJECT",loc.getProject());
-      xw.end("LOCATION");
+      loc.outputXml(xw);
     }
    String body = xw.toString();
    xw.close();
@@ -255,7 +248,7 @@ void startRepairSuggestor(BushProblem prob,BumpLocation loc,BushRepairAdder adde
 }
 
 
-AbstractAction getSuggestAction(BushProblem p,BumpLocation l,Component c) 
+AbstractAction getSuggestAction(BushProblem p,BushLocation l,Component c) 
 {
    return new RoseSuggestAction(p,l,c);
 }
@@ -709,7 +702,7 @@ private class ThreadData {
       fix_annots = new ArrayList<>();
     }
 
-   synchronized void addFixAnnotation(BushProblem bp,BumpLocation loc) {
+   synchronized void addFixAnnotation(BushProblem bp,BushLocation loc) {
       RoseFixAnnotation rfa = new RoseFixAnnotation(bp,loc);
       fix_annots.add(rfa);
       BaleFactory.getFactory().addAnnotation(rfa);
@@ -814,9 +807,9 @@ private class RoseAnnotation implements BaleAnnotation {
 private class RoseFixAnnotation implements BaleAnnotation {
   
    private BushProblem for_problem;
-   private BumpLocation for_location;
+   private BushLocation for_location;
    
-   RoseFixAnnotation(BushProblem bp,BumpLocation loc) {
+   RoseFixAnnotation(BushProblem bp,BushLocation loc) {
       for_problem = bp;
       for_location = loc;
     }
@@ -826,7 +819,7 @@ private class RoseFixAnnotation implements BaleAnnotation {
     }
    
    @Override public int getDocumentOffset() {
-      return for_location.getOffset();
+      return for_location.getStartOffset();
     }
    
    @Override public Icon getIcon(BudaBubble bb) {
@@ -902,12 +895,12 @@ private class AskRoseAction extends AbstractAction implements Runnable {
 private static class RoseSuggestAction extends AbstractAction implements Runnable {
    
    private BushProblem for_problem;
-   private BumpLocation for_location;
+   private BushLocation for_location;
    private Component from_component;
    
    private static final long serialVersionUID = 1;
    
-   RoseSuggestAction(BushProblem p,BumpLocation l,Component c) {
+   RoseSuggestAction(BushProblem p,BushLocation l,Component c) {
       super("Suggest Repairs for " + p.getDescription());
       for_problem = p;
       for_location = l;

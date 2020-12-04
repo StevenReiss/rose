@@ -16,11 +16,13 @@
 	 <pathelement location='${PRO}/rose/java' />
 	 <pathelement location='${IVYBIN}' />
 	 <pathelement location='${BUBBLES}/java' />
+	 <fileset dir='${PRO}/ivy/lib/eclipsejar' includes='*.jar' />
       </path>
       <path id='test.classpath'>
 	 <pathelement location='${PRO}/rose/java' />
 	 <pathelement location='${IVYBIN}' />
 	 <pathelement location='${BUBBLES}/java' />
+	 <fileset dir='${PRO}/ivy/lib/eclipsejar' includes='*.jar' />
       </path>
    </target>
 

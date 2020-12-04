@@ -47,7 +47,6 @@ import edu.brown.cs.bubbles.buda.BudaBubble;
 import edu.brown.cs.bubbles.buda.BudaBubbleArea;
 import edu.brown.cs.bubbles.buda.BudaConstants;
 import edu.brown.cs.bubbles.buda.BudaRoot;
-import edu.brown.cs.bubbles.bump.BumpLocation;
 import edu.brown.cs.ivy.swing.SwingGridPanel;
 import edu.brown.cs.rose.bush.BushConstants.BushRepairAdder;
 
@@ -62,7 +61,7 @@ class BushSuggestPanel implements BushConstants, BushRepairAdder
 /********************************************************************************/
 
 private BushProblem     for_problem;
-private BumpLocation    for_location;
+private BushLocation    for_location;
 private Component       from_panel;
 private JPanel          content_pane;
 private JList<BushRepair> suggestion_list;
@@ -79,7 +78,7 @@ private static final String PENDING = "Finding suggestions ...";
 /*                                                                              */
 /********************************************************************************/
 
-BushSuggestPanel(Component src,BushProblem prob,BumpLocation loc)
+BushSuggestPanel(Component src,BushProblem prob,BushLocation loc)
 {
    from_panel = src;
    for_problem = prob;
@@ -115,7 +114,8 @@ private JPanel createDisplay()
    pnl.beginLayout();
    pnl.addBannerLabel("Suggest Repairs for " + for_problem.getDescription());
    if (for_location != null) {
-      pnl.addSectionLabel("At location " + for_location.toString());
+      pnl.addSectionLabel("At " + for_location.getLineNumber() + " in " +
+            for_location.getMethod());
     }
    pnl.addSeparator();
    

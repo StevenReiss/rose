@@ -52,6 +52,9 @@ import edu.brown.cs.ivy.xml.IvyXmlWriter;
 import edu.brown.cs.rose.bud.BudLaunch;
 import edu.brown.cs.rose.bud.BudStack;
 import edu.brown.cs.rose.bud.BudStackFrame;
+import edu.brown.cs.rose.root.RootLocation;
+import edu.brown.cs.rose.root.RootNodeContext;
+import edu.brown.cs.rose.root.RootProblem;
 import edu.brown.cs.rose.root.RoseException;
 
 abstract class StemQueryBase implements StemConstants
@@ -71,9 +74,9 @@ protected File          for_file;
 protected String        project_name;
 protected int           line_number;
 protected int           line_offset;
-protected String        class_name;
 protected String        method_name;
 protected BudLaunch     bud_launch;
+protected RootNodeContext node_context;
 
 
 
@@ -92,8 +95,23 @@ protected StemQueryBase(StemMain ctrl,Element xml)
    project_name = IvyXml.getAttrString(xml,"PROJECT");
    line_number = IvyXml.getAttrInt(xml,"LINE");
    line_offset = IvyXml.getAttrInt(xml,"OFFSET");
-   class_name = IvyXml.getAttrString(xml,"CLASS");
    method_name = IvyXml.getAttrString(xml,"METHOD");
+   
+   bud_launch = new BudLaunch(ctrl,thread_id,frame_id,project_name);
+}
+
+
+protected StemQueryBase(StemMain ctrl,RootProblem prob)
+{
+   thread_id = prob.getThreadId();
+   frame_id = prob.getFrameId();
+   RootLocation loc = prob.getBugLocation();
+   for_file = loc.getFile();
+   project_name = loc.getProject();
+   line_number = loc.getLineNumber();
+   line_offset = loc.getStartOffset();
+   method_name = loc.getMethod();
+   node_context = prob.getNodeContext();
    
    bud_launch = new BudLaunch(ctrl,thread_id,frame_id,project_name);
 }

@@ -80,6 +80,7 @@ import edu.brown.cs.ivy.swing.SwingComboBox;
 import edu.brown.cs.ivy.swing.SwingGridPanel;
 import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
+import edu.brown.cs.rose.root.RootNodeContext;
 
 class BushPanelSimple implements BushConstants
 {
@@ -188,6 +189,8 @@ private JPanel createDisplay()
 	 for_frame.getMethod());
    pnl.addSeparator();
    List<String> choices = new ArrayList<>();
+   BoardLog.logD("BUSH","Choices " + for_thread.getExceptionType() + " " +
+         for_frame.getLevel());
    if (for_thread.getExceptionType() != null &&
 	 for_thread.getStack().getFrame(0) == for_frame) {
       choices.add("Exception should not be thrown");
@@ -235,15 +238,8 @@ private void updateShow()
    BoardLog.logD("BUSH","Update show " + rose_ready + " " + active_panel);
    if (active_panel != null && rose_ready) {
       active_panel.setVisible(true);
-      if (active_panel instanceof DataPanel) {
-         DataPanel dp = (DataPanel) active_panel;
-         show_button.setEnabled(dp.isReady());
-         suggest_button.setEnabled(dp.isReady());
-       }
-      else {
-         show_button.setEnabled(false);
-         suggest_button.setEnabled(false);
-       }
+      show_button.setEnabled(active_panel.isReady());
+      suggest_button.setEnabled(active_panel.isReady());
     }
    else {
       show_button.setEnabled(false);
@@ -278,8 +274,6 @@ private class PanelSelector implements ActionListener {
             break;
          case "Other ..." :
             active_panel = other_panel;
-            break;
-         case ""  :
             break;
          default :
             BoardLog.logE("BUSH","Unknown panel action " + v);
@@ -317,11 +311,12 @@ private class ShowHandler implements ActionListener, Runnable {
       if (show_result == null) {
          BoardLog.logD("BUSH","Start processing request");
          int off = bale_file.findLineOffset(for_frame.getLineNumber());
+         String mthd = for_frame.getMethod() + for_frame.getSignature();
          CommandArgs args = new CommandArgs("THREAD",for_thread.getId(),
                "FRAME",for_frame.getId(),
                "FILE",for_frame.getFile(),
                "CLASS",for_frame.getFrameClass(),
-               "METHOD",for_frame.getMethod(),
+               "METHOD",mthd,
                "OFFSET",off,
                "PROJECT",for_thread.getLaunch().getConfiguration().getProject(),
                "LINE",for_frame.getLineNumber());
@@ -345,30 +340,31 @@ private class ShowHandler implements ActionListener, Runnable {
    private void setupBubbleStack() {
       Map<BumpLocation,String> locs = new HashMap<>();
       List<BumpLocation> loclist = new ArrayList<>();
+      List<BushLocation> bloclist = new ArrayList<>();
       Element gelt = IvyXml.getChild(show_result,"GRAPH");
-      BoardLog.logD("BUSH","SHOW: " + IvyXml.convertXmlToString(show_result));
-      BoardLog.logD("BUSH","GRAPH: " + IvyXml.convertXmlToString(gelt));   
       for (Element nelt : IvyXml.children(gelt,"NODE")) {
          Element locelt = IvyXml.getChild(nelt,"LOCATION");
+         if (locelt == null) continue;
          BumpLocation loc = BumpLocation.getLocationFromXml(locelt);
          String reason = IvyXml.getAttrString(nelt,"REASON");
          BoardLog.logD("BUSH","LOC " + IvyXml.convertXmlToString(nelt));
          if (loc != null) {
             if (reason != null) locs.put(loc,reason);
             loclist.add(loc);
+            int pri = IvyXml.getAttrInt(nelt,"PRIORITY");
+            BushLocation bloc = new BushLocation(loc,pri);
+            bloclist.add(bloc);
+            BoardLog.logD("BUSH","Line " + bloc.getLineNumber());
           }       
          if (locs.size() > 256) break;
        }
-      BoardLog.logD("BUSH","Bubble stack with " + locs.size());
+      BoardLog.logD("BUSH","Bubble stack with " + locs.size() + " for " + active_panel.getProblem());
       if (locs.size() == 0) return;
       // if all the locs are in the same method, then create a different display
       
-      if (active_panel instanceof DataPanel) {
-         DataPanel dp = (DataPanel) active_panel;
-         BushProblem bp = dp.getProblem();
-         if (bp != null) {
-            BushFactory.getFactory().addFixAnnotations(bp,loclist);
-          }
+      BushProblem bp = active_panel.getProblem();
+      if (bp != null) {
+         BushFactory.getFactory().addFixAnnotations(bp,bloclist);
        }
       
       Rectangle ploc = content_panel.getBounds();
@@ -388,15 +384,12 @@ private class SuggestHandler implements ActionListener {
    SuggestHandler() { }
    
    @Override public void actionPerformed(ActionEvent evt) {
-       if (active_panel instanceof DataPanel) {
-          DataPanel dp = (DataPanel) active_panel;
-          BushProblem problem = dp.getProblem();
-          if (problem != null) {
-             BushFactory bf = BushFactory.getFactory();
-             AbstractAction rsa =  bf.getSuggestAction(problem,null,content_panel);
-             rsa.actionPerformed(evt);
-           }
-        }
+      BushProblem problem = active_panel.getProblem();
+      if (problem != null) {
+         BushFactory bf = BushFactory.getFactory();
+         AbstractAction rsa =  bf.getSuggestAction(problem,null,content_panel);
+         rsa.actionPerformed(evt);
+       }
     }
    
 }       // end of inner class SuggestHandler
@@ -443,17 +436,12 @@ private abstract static class DataPanel extends SwingGridPanel {
       String body = xw.toString();
       xw.close();
       
-      localAddShowData(args);
-      
       BushFactory.metrics("SHOW",bp.getProblemType(),bp.getProblemDetail(),
             bp.getOriginalValue(),bp.getTargetValue());
       localMetrics();
     
       return body;
    }
-   
-   
-   protected void localAddShowData(CommandArgs args)               { }
    
    protected void localMetrics()                                   { }
    
@@ -490,7 +478,7 @@ private class LocationPanel extends DataPanel {
    
    
    @Override public BushProblem getProblem() {
-      return new BushProblem(for_frame,RoseProblemType.LOCATION,null,null,null);
+      return new BushProblem(for_frame,RoseProblemType.LOCATION,null,null,null,null);
     }
    
 }       // end of inner class LocationPanel
@@ -504,7 +492,7 @@ private class ExceptionPanel extends DataPanel {
    @Override public boolean isReady()                           { return true; }
    
    @Override public BushProblem getProblem() {
-      return new BushProblem(for_frame,RoseProblemType.EXCEPTION,for_thread.getExceptionType(),null,null);
+      return new BushProblem(for_frame,RoseProblemType.EXCEPTION,for_thread.getExceptionType(),null,null,null);
     }
 
 }       // end of inner class ExceptionPanel
@@ -536,7 +524,7 @@ private abstract class VarExprPanel extends DataPanel implements ActionListener,
       List<String> vars = new ArrayList<>();
       String what = getHeading();
       vars.add(0,"Select a " + what + " ...");
-      variable_selector = addChoice(what,vars,0,true,this);
+      variable_selector = addChoice(what,vars,0,false,this);
       ElementsFinder finder = new ElementsFinder(this);
       BoardThreadPool.start(finder);
       current_value = addDescription("Current Value",null);
@@ -566,13 +554,15 @@ private abstract class VarExprPanel extends DataPanel implements ActionListener,
    
    @Override public void actionPerformed(ActionEvent evt) {
       String what = getHeading();
-      BoardLog.logD("BUSH",what + " action " + evt.getActionCommand());
+      BoardLog.logD("BUSH",what + " action " + evt.getActionCommand() + " " + evt);
       
       switch (evt.getActionCommand()) {
          case "Expression" :
          case "Variable" :
             setReady(false);
             String var = (String) variable_selector.getSelectedItem();
+            BoardLog.logD("BUSH","Check variable " + var + " @ " + variable_selector.getSelectedIndex());
+            BoardLog.logD("BUSH","Selections: " + variable_selector.getModel().getSize());
             BoardLog.logD("BUSH",what + " " + var + " selected");
             current_value.setText("");
             if (var != null && !var.startsWith("Select ")) {
@@ -700,7 +690,7 @@ private class VariablePanel extends VarExprPanel {
    
    @Override public BushProblem getProblem() {
       return new BushProblem(for_frame,RoseProblemType.VARIABLE,
-            getCurrentItem(),getCurrentValue(),getShouldBeValue());
+            getCurrentItem(),getCurrentValue(),getShouldBeValue(),null);
     }
    
    private BumpRunValue getVariableValue(String s,BumpRunValue brv,String pfx) {
@@ -746,22 +736,14 @@ private class ExpressionPanel extends VarExprPanel {
       return findExpressions();
     }
    
-   @Override public void localAddShowData(CommandArgs args) {
-      Element expelt = expression_data.get(getCurrentItem());
-      String [] flds = new String [] { "START", "END", "LINE", "NODETYPE", "NODETYPEID",
-            "AFTER", "AFTERSTART", "AFTEREND", "AFTERTYPE", "AFTERTYPEID" };
-      if (expelt != null) {
-         for (String fld : flds) {
-            String fval = IvyXml.getAttrString(expelt,fld);
-            if (fval != null) args.put(fld,fval);
-          }
-       }
-     
-    }
+   
    
    @Override public BushProblem getProblem() {
+      Element expelt = expression_data.get(getCurrentItem());
+      RootNodeContext ctx = null;
+      if (expelt != null) ctx = new RootNodeContext(expelt);
       return new BushProblem(for_frame,RoseProblemType.EXPRESSION,
-            getCurrentItem(),getCurrentValue(),getShouldBeValue());
+            getCurrentItem(),getCurrentValue(),getShouldBeValue(),ctx);
     }
    
 }       // end of inner class ExpressionPanel
@@ -1031,7 +1013,7 @@ private class OtherPanel extends DataPanel {
    
    @Override public BushProblem getProblem() {
       return new BushProblem(for_frame,RoseProblemType.OTHER,other_description.getText(),
-            null,null);
+            null,null,null);
     }
 }
 
