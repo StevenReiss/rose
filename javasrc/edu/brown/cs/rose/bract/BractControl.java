@@ -36,7 +36,6 @@
 package edu.brown.cs.rose.bract;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -75,45 +74,20 @@ private List<Class<?>> location_classes;
 /*                                                                              */
 /********************************************************************************/
 
-BractControl(RootControl ctrl,String id,RootProblem prob,RootLocation at)
+BractControl(RootControl ctrl,String id,RootProblem prob,RootLocation at,
+        List<Class<?>> pclass,List<Class<?>> lclass)
 { 
+   super("BractControl_" + id);
    rose_control = ctrl;
    reply_id = id;
    for_problem = prob;
    at_location = at;
-   processor_classes = new ArrayList<>();
-   location_classes = new ArrayList<>();
+   processor_classes = pclass;
+   location_classes = lclass;
 }
 
 
-/********************************************************************************/
-/*                                                                              */
-/*      Register a processor                                                    */
-/*                                                                              */
-/********************************************************************************/
 
-public boolean registerProcessor(String clsnm)
-{
-   try {
-      Class<?> cls = (Class<?>) Class.forName(clsnm);
-      if (!RootRepairFinder.class.isAssignableFrom(cls)) {
-         return false;
-       }
-      Constructor<?> cnst = cls.getConstructor();
-      RootRepairFinder rrf = (RootRepairFinder) cnst.newInstance();
-      boolean loc = rrf.requiresLocation();
-      if (loc) location_classes.add(cls);
-      else processor_classes.add(cls);
-      return true;
-    }
-   catch (ClassNotFoundException e) { }
-   catch (NoSuchMethodException e) { }
-   catch (InvocationTargetException e) { }
-   catch (IllegalAccessException e) { }
-   catch (InstantiationException e) { }
-   
-   return false;
-}
 
 
 /********************************************************************************/
@@ -138,7 +112,11 @@ public RootControl getController()              { return rose_control; }
    
    List<RootLocation> uselocs = null;
    if (at_location == null && location_classes.size() > 0) {
-     uselocs = getLocations(); 
+      uselocs = getLocations(); 
+    }
+   else {
+      uselocs = new ArrayList<>();
+      uselocs.add(at_location);
     }
    
    if (for_problem != null) {
@@ -174,7 +152,6 @@ private ProcessorTask startTask(Class<?> cls,RootProblem p,RootLocation l)
    RootRepairFinder rrf = null;
    try {
       rrf = (RootRepairFinder) cnst.newInstance();
-      
       rrf.setup(this,for_problem,at_location);
     }
    catch (Throwable t) { }
@@ -200,7 +177,7 @@ private List<RootLocation> getLocations()
 /*                                                                              */
 /********************************************************************************/
 
-public void addRepair(RootRepair br)
+public void sendRepair(RootRepair br)
 {
    CommandArgs args = new CommandArgs("NAME",reply_id);
    String body = null; // build from repair

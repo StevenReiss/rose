@@ -35,6 +35,9 @@
 
 package edu.brown.cs.rose.root;
 
+import java.io.File;
+
+import org.eclipse.jdt.core.dom.ASTNode;
 import org.w3c.dom.Element;
 
 import edu.brown.cs.ivy.mint.MintConstants.CommandArgs;
@@ -42,9 +45,24 @@ import edu.brown.cs.ivy.mint.MintConstants.CommandArgs;
 public interface RootControl
 {
 
+
+/**
+ *      Send a message to FAIT and wait for reply
+ **/
+
 Element sendFaitMessage(String cmd,CommandArgs args,String xmlcnts);
 
+
+/**
+ *      Send a message to Bubbles back end (BEDROCK) and wait for reply
+ **/
+
 Element sendBubblesMessage(String cmd,CommandArgs args,String xmlcnts);
+
+
+/**
+ *      Wait for an evaluation to return and return the evaluation result
+ **/ 
 
 Element waitForEvaluation(String eid);
 
@@ -55,6 +73,37 @@ Element waitForEvaluation(String eid);
  **/
 
 Element sendRoseMessage(String cmd,CommandArgs args,String xmlcnts,long wait);
+
+
+/**
+ *      Get AST Node for a location
+ **/
+
+ASTNode getSourceNode(String proj,File f,int offset,int line,boolean resolve,boolean stmt);
+
+
+public default ASTNode getSourceNode(RootLocation loc,boolean resolve,boolean stmt)
+{
+   return getSourceNode(loc.getProject(),loc.getFile(),loc.getStartOffset(),-1,resolve,stmt);
+}
+
+
+public default ASTNode getSourceStatement(RootLocation loc,boolean resolve)
+{
+   return getSourceNode(loc,resolve,true);
+}
+
+
+public default ASTNode getSourceStatement(String proj,File f,int offset,int line,boolean resolve)
+{
+   return getSourceNode(proj,f,offset,line,resolve,true);
+}
+
+
+
+
+
+
 
 
 }       // end of interface RoseControl

@@ -82,6 +82,15 @@ protected RootLocation(Element xml)
    line_number = IvyXml.getAttrInt(xml,"LINE");
    location_priority = IvyXml.getAttrInt(xml,"PRIORITY",DEFAULT_PRIORITY);
    in_method = IvyXml.getAttrString(xml,"METHOD");
+   if (in_method == null) {
+      Element itm = IvyXml.getChild(xml,"ITEM");
+      if (itm != null) {
+         String typ = IvyXml.getAttrString(itm,"TYPE");
+         if (typ.equals("Function")) {
+            in_method = IvyXml.getAttrString(itm,"QNAME");
+          }
+       }
+    }
 }
 
 

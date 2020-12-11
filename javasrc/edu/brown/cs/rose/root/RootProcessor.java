@@ -50,7 +50,7 @@ RootControl getController();
  *      Add a suggested repair
  **/
 
-void addRepair(RootRepair repair);
+void sendRepair(RootRepair repair);
 
 
 

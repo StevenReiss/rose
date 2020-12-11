@@ -41,13 +41,13 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.eclipse.jdt.core.dom.ASTNode;
 import org.w3c.dom.Element;
 
 import edu.brown.cs.bubbles.board.BoardProperties;
@@ -55,7 +55,6 @@ import edu.brown.cs.bubbles.board.BoardSetup;
 import edu.brown.cs.ivy.exec.IvyExec;
 import edu.brown.cs.ivy.exec.IvyExecQuery;
 import edu.brown.cs.ivy.file.IvyFile;
-import edu.brown.cs.ivy.jcode.JcodeFactory;
 import edu.brown.cs.ivy.mint.MintArguments;
 import edu.brown.cs.ivy.mint.MintConstants;
 import edu.brown.cs.ivy.mint.MintControl;
@@ -110,7 +109,7 @@ private Set<File>	added_files;
 private AnalysisState	analysis_state;
 private boolean 	local_fait;
 private Map<String,EvalData> eval_handlers;
-private Map<String,JcodeFactory> jcode_map;
+private StemCompiler    stem_compiler;
 
 
 private static boolean	use_all_files = true;
@@ -142,7 +141,7 @@ private StemMain(String [] args)
    added_files = new HashSet<>();
    analysis_state = AnalysisState.NONE;
    eval_handlers = new HashMap<>();
-   jcode_map = new HashMap<>();
+   stem_compiler = null;
    scanArgs(args);
 }
 
@@ -1128,65 +1127,21 @@ private static class EvalData {
 /*                                                                              */
 /********************************************************************************/
 
-JcodeFactory getJcodeFactory(String proj)
+@Override public ASTNode getSourceNode(String proj,File f,int offset,int line,
+      boolean resolve,boolean stmt)
 {
-   JcodeFactory jf = jcode_map.get(proj);
-   if (jf != null) return jf;
-   
-   CommandArgs cargs = new CommandArgs("PATHS",true,"PROJECT",proj);
-   Element pxml = sendBubblesMessage("OPENPROJECT",cargs,null);
-   Element cp = IvyXml.getChild(pxml,"CLASSPATH");
-   List<File> sourcepaths = new ArrayList<>();
-   List<String> classpaths = new ArrayList<>();
-   String ignore = null;
-   for (Element rpe : IvyXml.children(cp,"PATH")) {
-      String bn = null;
-      String ptyp = IvyXml.getAttrString(rpe,"TYPE");
-      if (ptyp != null && ptyp.equals("SOURCE")) {
-	 bn = IvyXml.getTextElement(rpe,"OUTPUT");
-	 String sdir = IvyXml.getTextElement(rpe,"SOURCE");
-	 if (sdir != null) {
-	    File sdirf = new File(sdir);
-	    sourcepaths.add(sdirf);
-	  }
-       }
-      else {
-	 bn = IvyXml.getTextElement(rpe,"BINARY");
-       }
-      if (bn == null) continue;
-      if (bn.endsWith("/lib/rt.jar")) {
-	 int idx = bn.lastIndexOf("rt.jar");
-	 ignore = bn.substring(0,idx);
-       }
-      if (bn.endsWith("/lib/jrt-fs.jar")) {
-	 int idx = bn.lastIndexOf("/lib/jrt-fs.jar");
-	 ignore = bn.substring(0,idx);
-       }
-      if (IvyXml.getAttrBool(rpe,"SYSTEM")) continue;
-      if (!classpaths.contains(bn)) {
-	 classpaths.add(bn);
-       }
+   synchronized (this) {
+      if (stem_compiler == null) stem_compiler = new StemCompiler(this);
     }
-   if (ignore != null) {
-      for (Iterator<String> it = classpaths.iterator(); it.hasNext(); ) {
-	 String nm = it.next();
-	 if (nm.startsWith(ignore)) it.remove();
-       }
-    }  
    
-   int ct = Runtime.getRuntime().availableProcessors();
-   ct = Math.max(1,ct/2);
-   jf = new JcodeFactory(ct);
+   ASTNode n = stem_compiler.getSourceNode(proj,f,offset,line,resolve);
    
-   for (String s : classpaths) {
-      jf.addToClassPath(s);
-    }
-   jf.load();
+   if (stmt) n = stem_compiler.getStatementOfNode(n);
    
-   jcode_map.put(proj,jf);
-   
-   return jf;
+   return n;
 }
+
+
 
 }	// end of class StemMain
 

@@ -16,6 +16,7 @@
 	 <pathelement location='${PRO}/rose/java' />
 	 <pathelement location='${BUBBLES}/java' />
 	 <pathelement location='${IVYBIN}' />
+	 <pathelement location="${PRO}/ivy/lib/asm6.jar" />
 	 <fileset dir='${PRO}/ivy/lib/eclipsejar' includes='*.jar' />
 	 <pathelement location="${BUBBLES}/lib/junit.jar" />
       </path>
@@ -23,6 +24,7 @@
 	 <pathelement location='${PRO}/rose/java' />
 	 <pathelement location='${BUBBLES}/java' />
 	 <pathelement location='${IVYBIN}' />
+	 <pathelement location="${PRO}/ivy/lib/asm6.jar" />
 	 <fileset dir='${PRO}/ivy/lib/eclipsejar' includes='*.jar' />
 	 <pathelement location="${BUBBLES}/lib/junit.jar" />
       </path>

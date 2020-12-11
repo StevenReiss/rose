@@ -36,9 +36,6 @@
 package edu.brown.cs.rose.stem;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
@@ -47,13 +44,7 @@ import org.eclipse.jdt.core.dom.Statement;
 import org.eclipse.jdt.core.dom.StructuralPropertyDescriptor;
 import org.w3c.dom.Element;
 
-import edu.brown.cs.ivy.file.IvyFile;
-import edu.brown.cs.ivy.jcode.JcodeFactory;
 import edu.brown.cs.ivy.jcomp.JcompAst;
-import edu.brown.cs.ivy.jcomp.JcompControl;
-import edu.brown.cs.ivy.jcomp.JcompProject;
-import edu.brown.cs.ivy.jcomp.JcompSemantics;
-import edu.brown.cs.ivy.jcomp.JcompSource;
 import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
 import edu.brown.cs.rose.bud.BudLaunch;
@@ -112,6 +103,7 @@ protected StemQueryBase(StemMain ctrl,Element xml)
 
 protected StemQueryBase(StemMain ctrl,RootProblem prob)
 {
+   stem_control = ctrl;
    thread_id = prob.getThreadId();
    frame_id = prob.getFrameId();
    RootLocation loc = prob.getBugLocation();
@@ -150,33 +142,12 @@ protected static String getNodeTypeName(ASTNode n)
 
 protected ASTNode getSourceStatement() throws RoseException
 {
-   try {
-      String text = IvyFile.loadFile(for_file);
-      CompilationUnit cu = JcompAst.parseSourceFile(text);
-      return findNode(cu,text);
-    }
-   catch (IOException e) {
-      throw new RoseException("Problem reading source",e);
-    }
+   return stem_control.getSourceStatement(project_name,for_file,line_offset,
+         line_number,false);
 }
 
 
-private ASTNode findNode(CompilationUnit cu,String text) throws RoseException
-{
-   if (cu == null) return null;
-   if (line_offset <= 0 && line_number > 0) {
-      line_offset = cu.getPosition(line_number,0);
-      while (line_offset < text.length()) {
-         char c = text.charAt(line_offset);
-         if (!Character.isWhitespace(c)) break;
-         ++line_offset;
-       }
-    }
-   ASTNode node = JcompAst.findNodeAtOffset(cu,line_offset);   
-   node = getStatementOf(node);
-   if (node == null) throw new RoseException("Statement at line not found");
-   return node;
-}
+
 
 
 protected ASTNode findNode(CompilationUnit cu,String text,int line) 
@@ -199,63 +170,10 @@ protected ASTNode findNode(CompilationUnit cu,String text,int line)
 
 protected ASTNode getResolvedSourceStatement() throws RoseException
 {
-   SourceFile sf = new SourceFile(for_file);
-   String text = sf.getFileContents();
-   if (text == null) throw new RoseException("Problem reading source");
-   
-   JcompProject jp = setupJcompProject(sf);
-   jp.resolve();
-   for (JcompSemantics js : jp.getSources()) {
-      if (js.getFile() == sf) {
-         CompilationUnit cu = (CompilationUnit) js.getAstNode();
-         return findNode(cu,text);
-       }
-    }
-   
-   return null;
+   return stem_control.getSourceStatement(project_name,for_file,line_offset,
+         line_number,true);
 }
 
-
-
-private JcompProject setupJcompProject(SourceFile sf)
-{   
-   JcodeFactory jf = stem_control.getJcodeFactory(project_name);
-   
-   JcompControl jc = new JcompControl();
-   Collection<JcompSource> srcs = new ArrayList<>();
-   srcs.add(sf);
-   
-   JcompProject proj = jc.getProject(jf,srcs);
-   
-   return proj;
-}
-
-
-
-
-
-
-private static class SourceFile implements JcompSource {
-   
-   private File for_file;
-   private String file_body;
-   
-   SourceFile(File f) {
-      for_file = f;
-    }
-   
-   @Override public String getFileName()        { return for_file.getPath(); }
-   
-   @Override public String getFileContents() {
-      if (file_body != null) return file_body;
-      try {
-         file_body = IvyFile.loadFile(for_file);
-         return file_body;
-       }
-      catch (IOException e) { }
-      return null;
-    }
-}
 
 
 protected ASTNode getStatementOf(ASTNode node)

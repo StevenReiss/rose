@@ -35,11 +35,18 @@
 
 package edu.brown.cs.rose.bract;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.w3c.dom.Element;
 
+import edu.brown.cs.bubbles.board.BoardProperties;
 import edu.brown.cs.rose.root.RootControl;
 import edu.brown.cs.rose.root.RootLocation;
 import edu.brown.cs.rose.root.RootProblem;
+import edu.brown.cs.rose.root.RootRepairFinder;
 
 public class BractFactory implements BractConstants
 {
@@ -50,6 +57,9 @@ public class BractFactory implements BractConstants
 /*      Private Storage                                                         */
 /*                                                                              */
 /********************************************************************************/
+
+private List<Class<?>> processor_classes;
+private List<Class<?>> location_classes;
 
 private static BractFactory the_factory;
 
@@ -65,13 +75,23 @@ private static BractFactory the_factory;
 public static synchronized BractFactory getFactory()
 {
    if (the_factory == null) {
-      the_factory = new BractFactory();;
+      the_factory = new BractFactory();
     }
    return the_factory;
 }
 
 private BractFactory() 
-{ }
+{ 
+   processor_classes = new ArrayList<>();
+   location_classes = new ArrayList<>();
+   BoardProperties props = BoardProperties.getProperties("Rose");
+   for (String s : props.stringPropertyNames()) {
+      if (s.startsWith("Rose.processor")) {
+         String v = props.getString(s);
+         registerProcessor(v);
+       }
+    }
+}
 
 
 /********************************************************************************/
@@ -103,6 +123,36 @@ public RootLocation createLocation(Element xml)
 
 
 
+/********************************************************************************/
+/*                                                                              */
+/*      Register a suggestion processor                                         */
+/*                                                                              */
+/********************************************************************************/
+
+public boolean registerProcessor(String clsnm)
+{
+   try {
+      Class<?> cls = (Class<?>) Class.forName(clsnm);
+      if (!RootRepairFinder.class.isAssignableFrom(cls)) {
+         return false;
+       }
+      Constructor<?> cnst = cls.getConstructor();
+      RootRepairFinder rrf = (RootRepairFinder) cnst.newInstance();
+      boolean loc = rrf.requiresLocation();
+      if (loc) location_classes.add(cls);
+      else processor_classes.add(cls);
+      return true;
+    }
+   catch (ClassNotFoundException e) { }
+   catch (NoSuchMethodException e) { }
+   catch (InvocationTargetException e) { }
+   catch (IllegalAccessException e) { }
+   catch (InstantiationException e) { }
+   
+   return false;
+}
+
+
 
 /********************************************************************************/
 /*                                                                              */
@@ -112,7 +162,7 @@ public RootLocation createLocation(Element xml)
 
 public void startSuggestions(RootControl ctrl,String rid,RootProblem prob,RootLocation at)
 {
-   BractControl proc = new BractControl(ctrl,rid,prob,at);
+   BractControl proc = new BractControl(ctrl,rid,prob,at,processor_classes,location_classes);
    proc.start();
 }
 

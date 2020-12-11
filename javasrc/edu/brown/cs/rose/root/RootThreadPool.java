@@ -68,7 +68,7 @@ private static AtomicInteger    thread_counter = new AtomicInteger();
 
 private RootThreadPool()
 {
-   thread_pool = new ThreadPoolExecutor(2,12,4000,TimeUnit.MILLISECONDS,
+   thread_pool = new ThreadPoolExecutor(2,12,30000,TimeUnit.MILLISECONDS,
          new LinkedBlockingQueue<>(),new OurThreadFactory());
    
 }
@@ -98,7 +98,7 @@ public static void start(Runnable r)
 private static class OurThreadFactory implements ThreadFactory {
    
    @Override public Thread newThread(Runnable r) {
-      Thread t = new Thread("RootProcessor_" + thread_counter.incrementAndGet());
+      Thread t = new Thread(r,"RootProcessor_" + thread_counter.incrementAndGet());
       return t;
     }
    

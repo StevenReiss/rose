@@ -121,8 +121,18 @@ protected ASTNode getResolvedAstNodeForLocation(RootLocation loc)
    if (loc == null) loc = for_problem.getBugLocation();
    if (loc == null) return null;
    
+   return bract_control.getController().getSourceNode(loc,true,false);
+}
+
+
+
+protected ASTNode getResolvedStatementForLocation(RootLocation loc)
+{
+   if (loc == null) loc = at_location;
+   if (loc == null) loc = for_problem.getBugLocation();
+   if (loc == null) return null;
    
-   return null;
+   return bract_control.getController().getSourceNode(loc,true,true);
 }
 
 

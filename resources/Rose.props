@@ -8,5 +8,6 @@
 <entry key="Rose.fait.debug">true</entry>
 <entry key="Rose.fait.trace">true</entry>
 <entry key="Rose.fait.class.path">fait.jar:asm6.jar:eclipsejar:junit.jar:ivy.jar</entry>
+<entry key="Rose.processor.1">edu.brown.cs.rose.sepal.SepalWrongVariable</entry>
 </properties>
 

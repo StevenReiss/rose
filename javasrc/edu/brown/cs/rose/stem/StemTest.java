@@ -72,6 +72,7 @@ public class StemTest implements StemConstants, MintConstants
 private String                  stopped_thread;
 private String                  bedrock_id;
 private String                  workspace_path;
+private Map<String,SuggestionSet> suggest_set;
 
 private static Map<String,MintControl> mint_map = new HashMap<>();
 private static Map<String,Integer>     mint_count = new HashMap<>();
@@ -97,6 +98,7 @@ public StemTest()
    stopped_thread = null;
    bedrock_id = null;
    workspace_path = null;
+   suggest_set = new HashMap<>();
 }
 
 
@@ -337,11 +339,28 @@ private void runTest(MintControl ctrl,FrameData fd,String prob)
 {
    getChangedVariables(ctrl,fd);
    
-   getHistory(ctrl,fd,prob);
+   Element locs = getHistory(ctrl,fd,prob);
+   
+   int lline = 0;
+   for (Element node : IvyXml.children(locs,"NODE")) {
+      Element loc = IvyXml.getChild(node,"LOCATION");
+      String m = IvyXml.getAttrString(loc,"METHOD");
+      if (m == null) continue;
+      int idx = m.lastIndexOf(".");
+      if (idx > 0) m = m.substring(idx+1);
+      if (m.startsWith("test")) continue;
+      int line = IvyXml.getAttrInt(loc,"LINE");
+      if (line <= 0 || line == lline) continue;
+      lline = line;
+      
+      getSuggestionsFor(ctrl,fd,prob,node);
+    }
 }
+   
 
 
-private void getHistory(MintControl ctrl,FrameData fd,String prob)
+
+private Element getHistory(MintControl ctrl,FrameData fd,String prob)
 {
    CommandArgs args = new CommandArgs("TYPE","EXCEPTION",
          "METHOD",fd.getMethod(),
@@ -353,6 +372,8 @@ private void getHistory(MintControl ctrl,FrameData fd,String prob)
          "THREAD",fd.getThreadId() );
    Element xml = sendStemReply(ctrl,"HISTORY",args,prob);
    Assert.assertTrue(IvyXml.isElement(xml,"RESULT"));
+   
+   return IvyXml.getChild(xml,"NODES");
 }
 
 
@@ -398,6 +419,35 @@ private void getChangedVariables(MintControl ctrl,FrameData fd)
 }
 
 
+private void getSuggestionsFor(MintControl ctrl,FrameData fd,String prob,Element node) 
+{
+   String id = "SUGGEST_" + source_id + "_" + random_gen.nextInt(100000);
+   CommandArgs args = new CommandArgs("NAME",id);
+    
+   String loc = null;
+   if (node != null) {
+      Element locelt = IvyXml.getChild(node,"LOCATION");
+      if (locelt != null) loc = IvyXml.convertXmlToString(locelt);
+    }
+   String cnts = prob;
+   if (loc != null) {
+      if (cnts == null) cnts = loc;
+      else cnts += loc;
+    }
+   
+   SuggestionSet ss = new SuggestionSet();
+   suggest_set.put(id,ss);
+   
+   Element xml = sendStemReply(ctrl,"SUGGEST",args,cnts);
+   Assert.assertTrue(IvyXml.isElement(xml,"RESULT"));
+   List<Element> rslt = ss.getSuggestions();
+   Assert.assertTrue(rslt != null);
+   
+   suggest_set.remove(id);
+}
+
+
+
 /********************************************************************************/
 /*                                                                              */
 /*      Stem setup methods                                                      */
@@ -406,16 +456,18 @@ private void getChangedVariables(MintControl ctrl,FrameData fd)
 
 private void setupStem(MintControl mc,boolean lcl)
 {
-      String [] args = new String [] {
+   String [] args = new String [] {
+         "-m", mc.getMintName(), 
+         "-w", workspace_path, "-D"  };
+   if (lcl) {
+      args = new String [] {
             "-m", mc.getMintName(), 
-            "-w", workspace_path, "-D"  };
-      if (lcl) {
-         args = new String [] {
-               "-m", mc.getMintName(), 
-               "-w", workspace_path, "-D", "-local"  };
-       }
-      
-      StemMain.main(args);
+            "-w", workspace_path, "-D", "-local"  };
+    }
+   
+   StemMain.main(args);
+   
+   mc.register("<ROSEREPLY DO='_VAR_0' />",new SuggestHandler());
 }
 
 
@@ -862,6 +914,7 @@ private class IDEHandler implements MintHandler {
 }	// end of innerclass IDEHandler
 
 
+
 private void handleRunEvent(Element xml,long when)
 {
    String type = IvyXml.getAttrString(xml,"TYPE");
@@ -911,6 +964,67 @@ private String waitForStop()
       return stopped_thread;
     }
 }
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Monitor Suggestiongs                                                    */
+/*                                                                              */
+/********************************************************************************/
+
+private class SuggestHandler implements MintHandler {
+
+   @Override public void receive(MintMessage msg,MintArguments args) {
+      String cmd = args.getArgument(0);
+      Element e = msg.getXml();
+      String name = IvyXml.getAttrString(e,"NAME");
+      SuggestionSet ss = null;
+      if (name != null) ss = suggest_set.get(name);
+      switch (cmd) {
+         case "SUGGEST" :
+            if (ss != null) ss.addSuggestion(e);
+            break;
+         case "ENDSUGGEST" :
+            if (ss != null) ss.endSuggestions();
+            break;
+       }
+    }
+
+}       // end of inner class SuggestHandler
+
+
+
+private static class SuggestionSet {
+   
+   private List<Element> suggest_nodes;
+   private boolean is_done;
+   
+   SuggestionSet() {
+      suggest_nodes = new ArrayList<>();
+      is_done = false;
+    }
+   
+   void addSuggestion(Element xml) {
+      suggest_nodes.add(xml);
+    }
+   
+   synchronized void endSuggestions() {
+      is_done = true;
+      notifyAll();
+    }
+   
+   synchronized List<Element> getSuggestions() {
+      while (!is_done) {
+         try {
+            wait(1000);
+          }
+         catch (InterruptedException e) { }
+       }
+      return suggest_nodes;
+    }
+   
+}       // end of inner class SuggestionSet
+
 
 
 
