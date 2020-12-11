@@ -35,7 +35,7 @@
 
 package edu.brown.cs.rose.root;
 
-
+import org.eclipse.jdt.core.dom.ASTNode;
 
 public abstract class RootRepairFinderDefault implements RootRepairFinder
 {
@@ -88,7 +88,7 @@ protected RootRepairFinderDefault()
 /*                                                                              */
 /********************************************************************************/
 
-@Override public boolean requiresLocation()             { return true; }
+@Override public boolean requiresLocation()     { return true; }
 
 protected RootProcessor getProcessor()          { return bract_control; }
 
@@ -109,7 +109,21 @@ protected RootLocation getLocation()            { return at_location; }
 
 
 
+/********************************************************************************/
+/*                                                                              */
+/*      Helper methods                                                          */
+/*                                                                              */
+/********************************************************************************/
 
+protected ASTNode getResolvedAstNodeForLocation(RootLocation loc)
+{
+   if (loc == null) loc = at_location;
+   if (loc == null) loc = for_problem.getBugLocation();
+   if (loc == null) return null;
+   
+   
+   return null;
+}
 
 
 }       // end of class RootRepairFinderDefault

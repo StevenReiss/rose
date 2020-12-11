@@ -45,7 +45,7 @@ import edu.brown.cs.ivy.mint.MintConstants.CommandArgs;
 import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.rose.root.RootControl;
 
-abstract class BudType
+abstract public class BudType
 {
 
 
@@ -121,7 +121,7 @@ private BudType(String name)
 /*                                                                              */
 /********************************************************************************/
 
-String getName()
+public String getName()
 {
    return type_name;
 }

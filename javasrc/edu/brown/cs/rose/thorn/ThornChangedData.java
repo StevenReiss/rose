@@ -1,8 +1,8 @@
 /********************************************************************************/
 /*                                                                              */
-/*              BudStackFrame.java                                              */
+/*              ThornChangedData.java                                           */
 /*                                                                              */
-/*      description of class                                                    */
+/*      Data to handle finding changes.  Note this is immutable                 */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
@@ -33,17 +33,11 @@
 
 
 
-package edu.brown.cs.rose.bud;
+package edu.brown.cs.rose.thorn;
 
-import java.util.ArrayList;
-import java.util.List;
+import edu.brown.cs.ivy.jcomp.JcompSymbol;
 
-import org.w3c.dom.Element;
-
-import edu.brown.cs.ivy.file.IvyFormat;
-import edu.brown.cs.ivy.xml.IvyXml;
-
-public class BudStackFrame implements BudConstants
+class ThornChangedData implements ThornConstants
 {
 
 
@@ -53,13 +47,10 @@ public class BudStackFrame implements BudConstants
 /*                                                                              */
 /********************************************************************************/
 
-private String frame_id;
-private String class_name;
-private String method_name;
-private String method_signature;
-private String format_signature;
-private List<String> frame_variables;
-private int     line_number;
+private JcompSymbol     ref_value;
+private boolean         is_changed;
+private boolean         is_relevant;
+
 
 
 
@@ -69,31 +60,28 @@ private int     line_number;
 /*                                                                              */
 /********************************************************************************/
 
-BudStackFrame(Element xml)
+ThornChangedData(JcompSymbol js)
 {
-   frame_id = IvyXml.getAttrString(xml,"ID");
-   class_name = IvyXml.getAttrString(xml,"RECEIVER");
-   method_name = IvyXml.getAttrString(xml,"METHOD");
-   int idx = method_name.lastIndexOf(".");
-   if (idx > 0) method_name = method_name.substring(idx+1);
-   
-   String sgn = IvyXml.getAttrString(xml,"SIGNATURE");
-   method_signature = sgn;
-   if (sgn != null) {
-      int sidx = sgn.lastIndexOf(")");
-      if (sidx > 0) sgn = sgn.substring(0,sidx+1);
-      String fsgn = IvyFormat.formatTypeName(sgn);
-      format_signature = fsgn;
-    }
-   else format_signature = null;
-   
-   line_number = IvyXml.getAttrInt(xml,"LINENO");
-   
-   frame_variables = new ArrayList<>();
-   for (Element e : IvyXml.children(xml,"VALUE")) {
-      String varnm = IvyXml.getAttrString(e,"NAME");
-      frame_variables.add(varnm);
-    }
+   ref_value = js;
+   is_changed = false;
+   is_relevant = false;
+}
+
+
+ThornChangedData(JcompSymbol js,ThornChangedData base)
+{
+   ref_value = js;
+   is_relevant = base.is_relevant;
+   is_changed = true;
+}
+
+
+
+private ThornChangedData(ThornChangedData base,JcompSymbol js,boolean ch,boolean rl)
+{
+   ref_value = (js == null ? base.ref_value : js);
+   is_changed = base.is_changed | ch;
+   is_relevant = base.is_relevant | rl;
 }
 
 
@@ -104,19 +92,89 @@ BudStackFrame(Element xml)
 /*                                                                              */
 /********************************************************************************/
 
-public String getFrameId()                      { return frame_id; }
-public String getClassName()                    { return class_name; }
-public String getMethodName()                   { return method_name; }
-public String getMethodSignature()              { return method_signature; }
-public String getFormatSignature()              { return format_signature; }
-public int getLineNumber()                      { return line_number; }
-   
-
-
-}       // end of class BudStackFrame
+JcompSymbol getReference()                      { return ref_value; }
+boolean isChanged()                             { return is_changed; }
+boolean isRelevant()                            { return is_relevant; }
 
 
 
+/********************************************************************************/
+/*                                                                              */
+/*      Update methods                                                          */
+/*                                                                              */
+/********************************************************************************/
 
-/* end of BudStackFrame.java */
+ThornChangedData changeReference(JcompSymbol js)
+{
+   if (js == null || js == ref_value) return this;
+   return new ThornChangedData(this,js,false,false);
+}
+
+
+
+ThornChangedData setChanged()
+{
+   if (is_changed) return this;
+   return new ThornChangedData(this,null,true,false);
+}
+
+
+ThornChangedData setRelevant()
+{
+   if (is_relevant) return this;
+   return new ThornChangedData(this,null,false,true);
+}
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Output methods                                                          */
+/*                                                                              */
+/********************************************************************************/
+
+@Override public String toString()
+{
+   String s = ref_value.toString();
+   if (is_changed) s += "#";
+   if (is_relevant) s += "@";
+   return s;
+}
+
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Equality methods                                                        */
+/*                                                                              */
+/********************************************************************************/
+
+@Override public int hashCode() 
+{
+   int hc = ref_value.hashCode();
+   if (is_changed) hc += 100;
+   if (is_relevant) hc += 200;
+   return hc;
+}
+
+
+
+
+@Override public boolean equals(Object o) {
+   if (o instanceof ThornChangedData) {
+      ThornChangedData vd = (ThornChangedData) o;
+      if (ref_value != vd.ref_value) return false; 
+      if (is_changed != vd.is_changed) return false;
+      if (is_relevant != vd.is_relevant) return false;
+      return true;
+    }
+   return false;
+}
+
+}       // end of class ThornChangedData
+
+
+
+
+/* end of ThornChangedData.java */
 

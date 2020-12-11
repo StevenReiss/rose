@@ -1,8 +1,8 @@
 /********************************************************************************/
 /*                                                                              */
-/*              BudStackFrame.java                                              */
+/*              ThornFactory.java                                               */
 /*                                                                              */
-/*      description of class                                                    */
+/*      Factory for recreating conditions at start of method                    */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
@@ -33,17 +33,15 @@
 
 
 
-package edu.brown.cs.rose.bud;
+package edu.brown.cs.rose.thorn;
 
-import java.util.ArrayList;
 import java.util.List;
 
-import org.w3c.dom.Element;
+import org.eclipse.jdt.core.dom.ASTNode;
 
-import edu.brown.cs.ivy.file.IvyFormat;
-import edu.brown.cs.ivy.xml.IvyXml;
+import edu.brown.cs.rose.root.RootControl;
 
-public class BudStackFrame implements BudConstants
+public class ThornFactory implements ThornConstants
 {
 
 
@@ -53,14 +51,7 @@ public class BudStackFrame implements BudConstants
 /*                                                                              */
 /********************************************************************************/
 
-private String frame_id;
-private String class_name;
-private String method_name;
-private String method_signature;
-private String format_signature;
-private List<String> frame_variables;
-private int     line_number;
-
+private RootControl     rose_control;
 
 
 /********************************************************************************/
@@ -69,54 +60,32 @@ private int     line_number;
 /*                                                                              */
 /********************************************************************************/
 
-BudStackFrame(Element xml)
+public ThornFactory(RootControl rc)
 {
-   frame_id = IvyXml.getAttrString(xml,"ID");
-   class_name = IvyXml.getAttrString(xml,"RECEIVER");
-   method_name = IvyXml.getAttrString(xml,"METHOD");
-   int idx = method_name.lastIndexOf(".");
-   if (idx > 0) method_name = method_name.substring(idx+1);
+   rose_control = rc;
+}
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Find changed variables                                                  */
+/*                                                                              */
+/********************************************************************************/
+
+public List<ThornVariable> getChangedVariables(ASTNode from)
+{
+   ThornChangedFinder tcf = new ThornChangedFinder(rose_control);
+   List<ThornVariable> rslt = tcf.process(from);
    
-   String sgn = IvyXml.getAttrString(xml,"SIGNATURE");
-   method_signature = sgn;
-   if (sgn != null) {
-      int sidx = sgn.lastIndexOf(")");
-      if (sidx > 0) sgn = sgn.substring(0,sidx+1);
-      String fsgn = IvyFormat.formatTypeName(sgn);
-      format_signature = fsgn;
-    }
-   else format_signature = null;
-   
-   line_number = IvyXml.getAttrInt(xml,"LINENO");
-   
-   frame_variables = new ArrayList<>();
-   for (Element e : IvyXml.children(xml,"VALUE")) {
-      String varnm = IvyXml.getAttrString(e,"NAME");
-      frame_variables.add(varnm);
-    }
+   return rslt;
 }
 
 
 
-/********************************************************************************/
-/*                                                                              */
-/*      Access methods                                                          */
-/*                                                                              */
-/********************************************************************************/
-
-public String getFrameId()                      { return frame_id; }
-public String getClassName()                    { return class_name; }
-public String getMethodName()                   { return method_name; }
-public String getMethodSignature()              { return method_signature; }
-public String getFormatSignature()              { return format_signature; }
-public int getLineNumber()                      { return line_number; }
-   
-
-
-}       // end of class BudStackFrame
+}       // end of class ThornFactory
 
 
 
 
-/* end of BudStackFrame.java */
+/* end of ThornFactory.java */
 

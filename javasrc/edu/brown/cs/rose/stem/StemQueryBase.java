@@ -37,6 +37,8 @@ package edu.brown.cs.rose.stem;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
@@ -46,7 +48,12 @@ import org.eclipse.jdt.core.dom.StructuralPropertyDescriptor;
 import org.w3c.dom.Element;
 
 import edu.brown.cs.ivy.file.IvyFile;
+import edu.brown.cs.ivy.jcode.JcodeFactory;
 import edu.brown.cs.ivy.jcomp.JcompAst;
+import edu.brown.cs.ivy.jcomp.JcompControl;
+import edu.brown.cs.ivy.jcomp.JcompProject;
+import edu.brown.cs.ivy.jcomp.JcompSemantics;
+import edu.brown.cs.ivy.jcomp.JcompSource;
 import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
 import edu.brown.cs.rose.bud.BudLaunch;
@@ -77,6 +84,7 @@ protected int           line_offset;
 protected String        method_name;
 protected BudLaunch     bud_launch;
 protected RootNodeContext node_context;
+protected StemMain      stem_control;
 
 
 
@@ -96,6 +104,7 @@ protected StemQueryBase(StemMain ctrl,Element xml)
    line_number = IvyXml.getAttrInt(xml,"LINE");
    line_offset = IvyXml.getAttrInt(xml,"OFFSET");
    method_name = IvyXml.getAttrString(xml,"METHOD");
+   stem_control = ctrl;
    
    bud_launch = new BudLaunch(ctrl,thread_id,frame_id,project_name);
 }
@@ -144,22 +153,107 @@ protected ASTNode getSourceStatement() throws RoseException
    try {
       String text = IvyFile.loadFile(for_file);
       CompilationUnit cu = JcompAst.parseSourceFile(text);
-      if (cu == null) return null;
-      if (line_offset <= 0 && line_number > 0) {
-         line_offset = cu.getPosition(line_number,0);
-         while (line_offset < text.length()) {
-            char c = text.charAt(line_offset);
-            if (!Character.isWhitespace(c)) break;
-            ++line_offset;
-          }
-       }
-      ASTNode node = JcompAst.findNodeAtOffset(cu,line_offset);   
-      node = getStatementOf(node);
-      if (node == null) throw new RoseException("Statement at line not found");
-      return node;
+      return findNode(cu,text);
     }
    catch (IOException e) {
       throw new RoseException("Problem reading source",e);
+    }
+}
+
+
+private ASTNode findNode(CompilationUnit cu,String text) throws RoseException
+{
+   if (cu == null) return null;
+   if (line_offset <= 0 && line_number > 0) {
+      line_offset = cu.getPosition(line_number,0);
+      while (line_offset < text.length()) {
+         char c = text.charAt(line_offset);
+         if (!Character.isWhitespace(c)) break;
+         ++line_offset;
+       }
+    }
+   ASTNode node = JcompAst.findNodeAtOffset(cu,line_offset);   
+   node = getStatementOf(node);
+   if (node == null) throw new RoseException("Statement at line not found");
+   return node;
+}
+
+
+protected ASTNode findNode(CompilationUnit cu,String text,int line) 
+{
+   if (cu == null) return null;
+   int off = -1;
+   if (line > 0) {
+      off = cu.getPosition(line,0);
+      while (off < text.length()) {
+         char c = text.charAt(off);
+         if (!Character.isWhitespace(c)) break;
+         ++off;
+       }
+    }
+   ASTNode node = JcompAst.findNodeAtOffset(cu,off);   
+   return node;
+}
+
+
+
+protected ASTNode getResolvedSourceStatement() throws RoseException
+{
+   SourceFile sf = new SourceFile(for_file);
+   String text = sf.getFileContents();
+   if (text == null) throw new RoseException("Problem reading source");
+   
+   JcompProject jp = setupJcompProject(sf);
+   jp.resolve();
+   for (JcompSemantics js : jp.getSources()) {
+      if (js.getFile() == sf) {
+         CompilationUnit cu = (CompilationUnit) js.getAstNode();
+         return findNode(cu,text);
+       }
+    }
+   
+   return null;
+}
+
+
+
+private JcompProject setupJcompProject(SourceFile sf)
+{   
+   JcodeFactory jf = stem_control.getJcodeFactory(project_name);
+   
+   JcompControl jc = new JcompControl();
+   Collection<JcompSource> srcs = new ArrayList<>();
+   srcs.add(sf);
+   
+   JcompProject proj = jc.getProject(jf,srcs);
+   
+   return proj;
+}
+
+
+
+
+
+
+private static class SourceFile implements JcompSource {
+   
+   private File for_file;
+   private String file_body;
+   
+   SourceFile(File f) {
+      for_file = f;
+    }
+   
+   @Override public String getFileName()        { return for_file.getPath(); }
+   
+   @Override public String getFileContents() {
+      if (file_body != null) return file_body;
+      try {
+         file_body = IvyFile.loadFile(for_file);
+         return file_body;
+       }
+      catch (IOException e) { }
+      return null;
     }
 }
 
@@ -255,6 +349,27 @@ protected static void addXmlForLocation(String elt,ASTNode node,boolean next,Ivy
 }
 
 
+
+protected String getExecLocation() throws RoseException
+{
+   String rslt = null;
+   ASTNode node = getSourceStatement();
+   if (node == null) return null;
+   
+   IvyXmlWriter xw = new IvyXmlWriter();
+   xw.begin("LOCATION");
+   xw.field("FILE",for_file);
+   xw.field("LINE",line_number);
+   xw.field("START",node.getStartPosition());
+   xw.field("END",node.getStartPosition() + node.getLength());
+   xw.field("NODETYPE",getNodeTypeName(node));
+   xw.field("NODETYPEID",node.getNodeType());
+   xw.end("LOCATION");
+   rslt = xw.toString();
+   xw.close();
+   
+   return rslt;
+}
 /********************************************************************************/
 /*                                                                              */
 /*      Get after node for a tree node                                          */

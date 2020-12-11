@@ -101,9 +101,6 @@ public StemTest()
 
 
 
-
-
-
 /********************************************************************************/
 /*                                                                              */
 /*      Test using RoseTest suite                                               */
@@ -119,33 +116,19 @@ public void testRoseNullPointer()
    MintControl mc = setupBedrock(workspace,project);
    
    try {
-      LaunchData ld = startLaunch(mc,project,launch);
-      waitForStop();
-      FrameData fd = getTopFrame(mc,project,ld);
-      setupStem(mc,true);
-      Element xml = sendStemReply(mc,"START",null,null);
-      Assert.assertTrue(IvyXml.isElement(xml,"RESULT"));
+      FrameData fd = setupTest(mc,project,launch);
       
       IvyXmlWriter xw = new IvyXmlWriter();
       xw.begin("PROBLEM");
       xw.field("FRAME",fd.getId());
-      xw.field("THREAD",ld.getThreadId());
+      xw.field("THREAD",fd.getThreadId());
       xw.field("TYPE","EXCEPTION");
       xw.textElement("ITEM","java.lang.NullPointerException");
       fd.outputLocation(xw,project,5,mc);
       xw.end("PROBLEM");
       String cnts = xw.toString();
       
-      CommandArgs args = new CommandArgs("TYPE","EXCEPTION",
-            "METHOD",fd.getMethod(),
-            "LINE",fd.getLine(),
-            "CLASS",fd.getClassName(),
-            "FILE",fd.getSourceFile(mc),
-            "PROJECT",fd.getProject(mc),
-            "FRAME",fd.getId(),
-            "THREAD",ld.getThreadId() );
-      xml = sendStemReply(mc,"HISTORY",args,cnts);
-      Assert.assertTrue(IvyXml.isElement(xml,"RESULT"));
+      runTest(mc,fd,cnts);
     }
    catch (Throwable t) {
       RoseLog.logE("Problem processing test",t);
@@ -168,33 +151,19 @@ public void testRoseArrayIndex()
    MintControl mc = setupBedrock(workspace,project);
    
    try {
-      LaunchData ld = startLaunch(mc,project,launch);
-      waitForStop();
-      FrameData fd = getTopFrame(mc,project,ld);
-      setupStem(mc,true);
-      Element xml = sendStemReply(mc,"START",null,null);
-      Assert.assertTrue(IvyXml.isElement(xml,"RESULT"));
+      FrameData fd = setupTest(mc,project,launch);
       
       IvyXmlWriter xw = new IvyXmlWriter();
       xw.begin("PROBLEM");
       xw.field("FRAME",fd.getId());
-      xw.field("THREAD",ld.getThreadId());
+      xw.field("THREAD",fd.getThreadId());
       xw.field("TYPE","EXCEPTION");
       xw.textElement("ITEM","java.lang.ArrayIndexOutOfBoundsException");
       fd.outputLocation(xw,project,5,mc);
       xw.end("PROBLEM");
       String cnts = xw.toString();  
       
-      CommandArgs args = new CommandArgs("TYPE","EXCEPTION",
-            "METHOD",fd.getMethod(),
-            "LINE",fd.getLine(),
-            "CLASS",fd.getClassName(),
-            "FILE",fd.getSourceFile(mc),
-            "PROJECT",fd.getProject(mc),
-            "FRAME",fd.getId(),
-            "THREAD",ld.getThreadId() );
-      xml = sendStemReply(mc,"HISTORY",args,cnts);
-      Assert.assertTrue(IvyXml.isElement(xml,"RESULT"));
+      runTest(mc,fd,cnts);
     }
    catch (Throwable t) {
       RoseLog.logE("Problem processing test",t);
@@ -215,17 +184,12 @@ public void testRoseWrongVariable()
    MintControl mc = setupBedrock(workspace,project);
    
    try {
-      LaunchData ld = startLaunch(mc,project,launch);
-      waitForStop();
-      FrameData fd = getTopFrame(mc,project,ld);
-      setupStem(mc,true);
-      Element xml = sendStemReply(mc,"START",null,null);
-      Assert.assertTrue(IvyXml.isElement(xml,"RESULT"));
+      FrameData fd = setupTest(mc,project,launch);
       
       IvyXmlWriter xw = new IvyXmlWriter();
       xw.begin("PROBLEM");
       xw.field("FRAME",fd.getId());
-      xw.field("THREAD",ld.getThreadId());
+      xw.field("THREAD",fd.getThreadId());
       xw.field("TYPE","VARIABLE");
       xw.textElement("ITEM","rslt");
       xw.textElement("ORIGINAL","java.lang.String \"The cow jumped over the moon.\"");
@@ -234,16 +198,7 @@ public void testRoseWrongVariable()
       xw.end("PROBLEM");
       String cnts = xw.toString();
       
-      CommandArgs args = new CommandArgs(
-            "METHOD",fd.getMethod(),
-            "LINE",fd.getLine(),
-            "CLASS",fd.getClassName(),
-            "FILE",fd.getSourceFile(mc),
-            "PROJECT",fd.getProject(mc),
-            "FRAME",fd.getId(),
-            "THREAD",ld.getThreadId() );
-      xml = sendStemReply(mc,"HISTORY",args,cnts);
-      Assert.assertTrue(IvyXml.isElement(xml,"RESULT"));
+      runTest(mc,fd,cnts);
     }
    catch (Throwable t) {
       RoseLog.logE("Problem processing test",t);
@@ -265,17 +220,12 @@ public void testRoseNotNull()
    MintControl mc = setupBedrock(workspace,project);
    
    try {
-      LaunchData ld = startLaunch(mc,project,launch);
-      waitForStop();
-      FrameData fd = getTopFrame(mc,project,ld);
-      setupStem(mc,true);
-      Element xml = sendStemReply(mc,"START",null,null);
-      Assert.assertTrue(IvyXml.isElement(xml,"RESULT"));
+      FrameData fd = setupTest(mc,project,launch);
       
       IvyXmlWriter xw = new IvyXmlWriter();
       xw.begin("PROBLEM");
       xw.field("FRAME",fd.getId());
-      xw.field("THREAD",ld.getThreadId());
+      xw.field("THREAD",fd.getThreadId());
       xw.field("TYPE","VARIABLE");
       xw.textElement("ITEM","baby");
       xw.textElement("ORIGINAL","null");
@@ -284,15 +234,7 @@ public void testRoseNotNull()
       xw.end("PROBLEM");
       String cnts = xw.toString();
       
-      CommandArgs args = new CommandArgs("TYPE","VARIABLE",
-            "LINE",fd.getLine(),
-            "CLASS",fd.getClassName(),
-            "FILE",fd.getSourceFile(mc),
-            "PROJECT",fd.getProject(mc),
-            "FRAME",fd.getId(),
-            "THREAD",ld.getThreadId() );
-      xml = sendStemReply(mc,"HISTORY",args,cnts);
-      Assert.assertTrue(IvyXml.isElement(xml,"RESULT"));
+      runTest(mc,fd,cnts);
     }
    catch (Throwable t) {
       RoseLog.logE("Problem processing test",t);
@@ -312,17 +254,12 @@ public void testRoseOffByOne()
    MintControl mc = setupBedrock(workspace,project);
    
    try {
-      LaunchData ld = startLaunch(mc,project,launch);
-      waitForStop();
-      FrameData fd = getTopFrame(mc,project,ld);
-      setupStem(mc,true);
-      Element xml = sendStemReply(mc,"START",null,null);
-      Assert.assertTrue(IvyXml.isElement(xml,"RESULT"));
-      
+      FrameData fd = setupTest(mc,project,launch);
+
       IvyXmlWriter xw = new IvyXmlWriter();
       xw.begin("PROBLEM");
       xw.field("FRAME",fd.getId());
-      xw.field("THREAD",ld.getThreadId());
+      xw.field("THREAD",fd.getThreadId());
       xw.field("TYPE","VARIABLE");
       xw.textElement("ITEM","a");
       xw.textElement("ORIGINAL","java.lang.String pup");
@@ -331,16 +268,7 @@ public void testRoseOffByOne()
       xw.end("PROBLEM");
       String cnts = xw.toString();
       
-      CommandArgs args = new CommandArgs(
-            "METHOD",fd.getMethod(),
-            "LINE",fd.getLine(),
-            "CLASS",fd.getClassName(),
-            "FILE",fd.getSourceFile(mc),
-            "PROJECT",fd.getProject(mc),
-            "FRAME",fd.getId(),
-            "THREAD",ld.getThreadId() );
-      xml = sendStemReply(mc,"HISTORY",args,cnts);
-      Assert.assertTrue(IvyXml.isElement(xml,"RESULT"));
+      runTest(mc,fd,cnts);
     }
    catch (Throwable t) {
       RoseLog.logE("Problem processing test",t);
@@ -361,32 +289,18 @@ public void testRoseLocation()
    MintControl mc = setupBedrock(workspace,project);
    
    try {
-      LaunchData ld = startLaunch(mc,project,launch);
-      waitForStop();
-      FrameData fd = getTopFrame(mc,project,ld);
-      setupStem(mc,true);
-      Element xml = sendStemReply(mc,"START",null,null);
-      Assert.assertTrue(IvyXml.isElement(xml,"RESULT"));
+      FrameData fd = setupTest(mc,project,launch);
       
       IvyXmlWriter xw = new IvyXmlWriter();
       xw.begin("PROBLEM");
       xw.field("FRAME",fd.getId());
-      xw.field("THREAD",ld.getThreadId());
+      xw.field("THREAD",fd.getThreadId());
       xw.field("TYPE","LOCATION");
       fd.outputLocation(xw,project,5,mc);
       xw.end("PROBLEM");
       String cnts = xw.toString();
       
-      CommandArgs args = new CommandArgs(
-            "METHOD",fd.getMethod(),
-            "LINE",fd.getLine(),
-            "CLASS",fd.getClassName(),
-            "FILE",fd.getSourceFile(mc),
-            "PROJECT",fd.getProject(mc),
-            "FRAME",fd.getId(),
-            "THREAD",ld.getThreadId() );
-      xml = sendStemReply(mc,"HISTORY",args,cnts);
-      Assert.assertTrue(IvyXml.isElement(xml,"RESULT"));
+      runTest(mc,fd,cnts);
     }
    catch (Throwable t) {
       RoseLog.logE("Problem processing test",t);
@@ -398,8 +312,90 @@ public void testRoseLocation()
 
 
 
+/********************************************************************************/
+/*                                                                              */
+/*      Test Helper methods                                                     */
+/*                                                                              */
+/********************************************************************************/
+
+private FrameData setupTest(MintControl ctrl,String project,String launch)
+{
+   LaunchData ld = startLaunch(ctrl,project,launch);
+   waitForStop();
+   FrameData fd = getTopFrame(ctrl,project,ld);
+   setupStem(ctrl,true);
+   
+   Element xml = sendStemReply(ctrl,"START",null,null);
+   Assert.assertTrue(IvyXml.isElement(xml,"RESULT"));
+   
+   return fd;
+}
 
 
+
+private void runTest(MintControl ctrl,FrameData fd,String prob)
+{
+   getChangedVariables(ctrl,fd);
+   
+   getHistory(ctrl,fd,prob);
+}
+
+
+private void getHistory(MintControl ctrl,FrameData fd,String prob)
+{
+   CommandArgs args = new CommandArgs("TYPE","EXCEPTION",
+         "METHOD",fd.getMethod(),
+         "LINE",fd.getLine(),
+         "CLASS",fd.getClassName(),
+         "FILE",fd.getSourceFile(ctrl),
+         "PROJECT",fd.getProject(ctrl),
+         "FRAME",fd.getId(),
+         "THREAD",fd.getThreadId() );
+   Element xml = sendStemReply(ctrl,"HISTORY",args,prob);
+   Assert.assertTrue(IvyXml.isElement(xml,"RESULT"));
+}
+
+
+
+private void getChangedVariables(MintControl ctrl,FrameData fd)
+{
+   CommandArgs args = new CommandArgs("TYPE","EXCEPTION",
+         "METHOD",fd.getMethod(),
+         "LINE",fd.getLine(),
+         "CLASS",fd.getClassName(),
+         "FILE",fd.getSourceFile(ctrl),
+         "PROJECT",fd.getProject(ctrl),
+         "FRAME",fd.getId(),
+         "THREAD",fd.getThreadId() );
+   Element xml = sendStemReply(ctrl,"CHANGEDITEMS",args,null);
+   Assert.assertTrue(IvyXml.isElement(xml,"RESULT"));
+   
+   String pvals = null;
+   for (Element cve : IvyXml.children(xml,"VARIABLE")) {
+      String typ = IvyXml.getAttrString(cve,"TYPE");
+      String nam = IvyXml.getAttrString(cve,"NAME");
+      if (typ == null || nam == null) continue;
+      switch (typ) {
+         case "PARAMETER" :
+            String pt = "<PARAMETER NAME='" + nam + "'/>";
+            if (pvals == null) pvals = pt;
+            else pvals += pt;
+            break;
+       }
+    }
+      
+   if (pvals != null) {
+      args = new CommandArgs("METHOD",fd.getMethod(),
+            "CLASS",fd.getClassName(),
+            "LINE",fd.getLine(),
+            "FILE",fd.getSourceFile(ctrl),
+            "PROJECT",fd.getProject(ctrl),
+            "FRAME",fd.getId(),
+            "THREAD",fd.getThreadId());
+      Element pxml = sendStemReply(ctrl,"PARAMETERVALUES",args,pvals);
+      Assert.assertTrue(IvyXml.isElement(pxml,"RESULT"));
+    }
+}
 
 
 /********************************************************************************/
@@ -623,7 +619,7 @@ private List<FrameData> getFrames(MintControl mc,String project,LaunchData ld)
    for (Element thrslt : IvyXml.children(framesrslt,"THREAD")) {
       if (ld.getThreadId().equals(IvyXml.getAttrString(thrslt,"ID"))) {
          for (Element frslt : IvyXml.children(thrslt,"STACKFRAME")) {
-            frames.add(new FrameData(frslt));
+            frames.add(new FrameData(ld,frslt));
           }
        }
     }
@@ -660,6 +656,7 @@ private static class LaunchData {
 
 private static class FrameData {
    
+   private LaunchData   for_launch;
    private String       frame_id;
    private String       method_name;
    private String       class_name;
@@ -667,7 +664,8 @@ private static class FrameData {
    private String       project_name;
    private int          line_number;
    
-   FrameData(Element xml) {
+   FrameData(LaunchData ld,Element xml) {
+      for_launch = ld;
       frame_id = IvyXml.getAttrString(xml,"ID");
       method_name = IvyXml.getAttrString(xml,"METHOD");
       line_number = IvyXml.getAttrInt(xml,"LINENO");
@@ -682,6 +680,7 @@ private static class FrameData {
    String getMethod()                   { return method_name; }
    String getClassName()                { return class_name; }
    int getLine()                        { return line_number; }
+   String getThreadId()                 { return for_launch.getThreadId(); }
    
    String getSourceFile(MintControl ctrl) {
       if (file_name == null) {

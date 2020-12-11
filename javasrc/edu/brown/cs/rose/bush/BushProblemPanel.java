@@ -1,8 +1,8 @@
 /********************************************************************************/
 /*										*/
-/*		BushPanelSimple.java						*/
+/*		BushProblemPanel.java						*/
 /*										*/
-/*	description of class							*/
+/*	Panel for getting a description of the problm to be fixed		*/
 /*										*/
 /********************************************************************************/
 /*	Copyright 2011 Brown University -- Steven P. Reiss		      */
@@ -82,7 +82,7 @@ import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
 import edu.brown.cs.rose.root.RootNodeContext;
 
-class BushPanelSimple implements BushConstants
+class BushProblemPanel implements BushConstants
 {
 
 
@@ -117,7 +117,7 @@ private boolean         rose_ready;
 /*										*/
 /********************************************************************************/
 
-BushPanelSimple(BumpThread th,BumpStackFrame frm,Component base,BaleFileOverview doc)
+BushProblemPanel(BumpThread th,BumpStackFrame frm,Component base,BaleFileOverview doc)
 {
    for_thread = th;
    for_frame = frm;
@@ -157,8 +157,7 @@ BudaBubble createBubble(Component src)
 
    BudaBubbleArea bba = BudaRoot.findBudaBubbleArea(base_editor);
    BudaBubble bbl = new PanelBubble(content_panel);
-   bba.addBubble(bbl,base_editor,null,
-         BudaConstants.PLACEMENT_LOGICAL|BudaConstants.PLACEMENT_BELOW);
+   bba.addBubble(bbl,base_editor,null,BudaConstants.PLACEMENT_LOGICAL);
    bbl.setVisible(true);
    
    return bbl;
@@ -348,7 +347,7 @@ private class ShowHandler implements ActionListener, Runnable {
       Map<BumpLocation,String> locs = new HashMap<>();
       List<BumpLocation> loclist = new ArrayList<>();
       List<BushLocation> bloclist = new ArrayList<>();
-      Element gelt = IvyXml.getChild(show_result,"GRAPH");
+      Element gelt = IvyXml.getChild(show_result,"NODES");
       for (Element nelt : IvyXml.children(gelt,"NODE")) {
          Element locelt = IvyXml.getChild(nelt,"LOCATION");
          if (locelt == null) continue;
@@ -361,7 +360,6 @@ private class ShowHandler implements ActionListener, Runnable {
             int pri = IvyXml.getAttrInt(nelt,"PRIORITY");
             BushLocation bloc = new BushLocation(loc,pri);
             bloclist.add(bloc);
-            BoardLog.logD("BUSH","Line " + bloc.getLineNumber());
           }       
          if (locs.size() > 256) break;
        }
@@ -556,7 +554,6 @@ private abstract class VarExprPanel extends DataPanel implements ActionListener,
       for (String elt : elts) variable_selector.addItem(elt);
     }
    
-   
    @Override public boolean isReady()                           { return is_ready; }
    
    @Override public void actionPerformed(ActionEvent evt) {
@@ -622,9 +619,6 @@ private abstract class VarExprPanel extends DataPanel implements ActionListener,
          setupShouldBe(value);
        }
     }
-   
-   
-   
    
    protected String getCurrentItem() {
       return (String) variable_selector.getSelectedItem();
@@ -1078,10 +1072,10 @@ private class EnableWhenReady extends Thread {
 
 
 
-}	// end of class BushPanelSimple
+}	// end of class BushProblemPanel
 
 
 
 
-/* end of BushPanelSimple.java */
+/* end of BushProblemPanel.java */
 

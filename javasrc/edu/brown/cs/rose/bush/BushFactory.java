@@ -876,7 +876,7 @@ private class AskRoseAction extends AbstractAction implements Runnable {
       RoseStarter starter = new RoseStarter();
       starter.start();
       
-      BushPanelSimple pnl = new BushPanelSimple(for_thread,for_frame,base_editor,bale_file);
+      BushProblemPanel pnl = new BushProblemPanel(for_thread,for_frame,base_editor,bale_file);
       starter.setPanelId(pnl.getMetricId());
     
       pnl.createBubble(base_editor);

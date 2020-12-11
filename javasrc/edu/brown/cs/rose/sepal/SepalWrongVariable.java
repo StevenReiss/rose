@@ -1,8 +1,8 @@
 /********************************************************************************/
 /*                                                                              */
-/*              BudStackFrame.java                                              */
+/*              SepalWrongVariable.java                                         */
 /*                                                                              */
-/*      description of class                                                    */
+/*      Suggest repairs where the user might have used the wrong variable       */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
@@ -33,17 +33,11 @@
 
 
 
-package edu.brown.cs.rose.bud;
+package edu.brown.cs.rose.sepal;
 
-import java.util.ArrayList;
-import java.util.List;
+import edu.brown.cs.rose.root.RootRepairFinderDefault;
 
-import org.w3c.dom.Element;
-
-import edu.brown.cs.ivy.file.IvyFormat;
-import edu.brown.cs.ivy.xml.IvyXml;
-
-public class BudStackFrame implements BudConstants
+public class SepalWrongVariable extends RootRepairFinderDefault
 {
 
 
@@ -53,14 +47,6 @@ public class BudStackFrame implements BudConstants
 /*                                                                              */
 /********************************************************************************/
 
-private String frame_id;
-private String class_name;
-private String method_name;
-private String method_signature;
-private String format_signature;
-private List<String> frame_variables;
-private int     line_number;
-
 
 
 /********************************************************************************/
@@ -69,54 +55,32 @@ private int     line_number;
 /*                                                                              */
 /********************************************************************************/
 
-BudStackFrame(Element xml)
+public SepalWrongVariable()
+{ }
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Processing methods                                                      */
+/*                                                                              */
+/********************************************************************************/
+
+@Override public void process()
 {
-   frame_id = IvyXml.getAttrString(xml,"ID");
-   class_name = IvyXml.getAttrString(xml,"RECEIVER");
-   method_name = IvyXml.getAttrString(xml,"METHOD");
-   int idx = method_name.lastIndexOf(".");
-   if (idx > 0) method_name = method_name.substring(idx+1);
    
-   String sgn = IvyXml.getAttrString(xml,"SIGNATURE");
-   method_signature = sgn;
-   if (sgn != null) {
-      int sidx = sgn.lastIndexOf(")");
-      if (sidx > 0) sgn = sgn.substring(0,sidx+1);
-      String fsgn = IvyFormat.formatTypeName(sgn);
-      format_signature = fsgn;
-    }
-   else format_signature = null;
-   
-   line_number = IvyXml.getAttrInt(xml,"LINENO");
-   
-   frame_variables = new ArrayList<>();
-   for (Element e : IvyXml.children(xml,"VALUE")) {
-      String varnm = IvyXml.getAttrString(e,"NAME");
-      frame_variables.add(varnm);
-    }
 }
 
 
 
-/********************************************************************************/
-/*                                                                              */
-/*      Access methods                                                          */
-/*                                                                              */
-/********************************************************************************/
-
-public String getFrameId()                      { return frame_id; }
-public String getClassName()                    { return class_name; }
-public String getMethodName()                   { return method_name; }
-public String getMethodSignature()              { return method_signature; }
-public String getFormatSignature()              { return format_signature; }
-public int getLineNumber()                      { return line_number; }
-   
-
-
-}       // end of class BudStackFrame
 
 
 
 
-/* end of BudStackFrame.java */
+
+}       // end of class SepalWrongVariable
+
+
+
+
+/* end of SepalWrongVariable.java */
 

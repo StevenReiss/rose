@@ -35,7 +35,6 @@
 
 package edu.brown.cs.rose.stem;
 
-import org.eclipse.jdt.core.dom.ASTNode;
 import org.w3c.dom.Element;
 
 import edu.brown.cs.ivy.mint.MintConstants.CommandArgs;
@@ -83,31 +82,7 @@ StemQueryLocationHistory(StemMain ctrl,RootProblem prob)
 
 
 
-/********************************************************************************/
-/*                                                                              */
-/*      Get execution location                                                  */
-/*                                                                              */
-/********************************************************************************/
 
-private String getExecLocation() throws RoseException
-{
-   String rslt = null;
-   ASTNode node = getSourceStatement();
-   
-   IvyXmlWriter xw = new IvyXmlWriter();
-   xw.begin("LOCATION");
-   xw.field("FILE",for_file);
-   xw.field("LINE",line_number);
-   xw.field("START",node.getStartPosition());
-   xw.field("END",node.getStartPosition() + node.getLength());
-   xw.field("NODETYPE",getNodeTypeName(node));
-   xw.field("NODETYPEID",node.getNodeType());
-   xw.end("LOCATION");
-   rslt = xw.toString();
-   xw.close();
-   
-   return rslt;
-}
 
 
 

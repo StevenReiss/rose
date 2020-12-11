@@ -174,7 +174,8 @@ private static class ExprFinder extends ASTVisitor {
           }
        }
     }
-}
+   
+}       // end of inner class ExprFinder
 
 
 

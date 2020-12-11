@@ -39,9 +39,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 import edu.brown.cs.rose.root.RoseException;
+import edu.brown.cs.ivy.xml.IvyXmlWriter;
 import edu.brown.cs.rose.root.RootValue;
 
-public class BudValue implements RootValue, BudConstants, BudConstants.BudGenericValue
+public abstract class BudValue implements RootValue, BudConstants, BudConstants.BudGenericValue
 {
 
 
@@ -180,6 +181,27 @@ public BudType getDataType()                   { return value_type; }
 
 /********************************************************************************/
 /*                                                                              */
+/*      Output methods                                                          */
+/*                                                                              */
+/********************************************************************************/
+
+public void outputXml(IvyXmlWriter xw)
+{
+   xw.begin("VALUE");
+   xw.field("TYPE",value_type.getName());
+   localOutputXml(xw);
+   xw.end("VALUE");
+}
+
+
+
+abstract protected void localOutputXml(IvyXmlWriter xw);
+
+
+
+
+/********************************************************************************/
+/*                                                                              */
 /*      Null value                                                              */
 /*                                                                              */
 /********************************************************************************/
@@ -191,6 +213,10 @@ private static class NullValue extends BudValue {
     }
    
    @Override public boolean isNull()           { return true; }
+   
+   @Override protected void localOutputXml(IvyXmlWriter xw) {
+      xw.field("NULL",true);
+    }
    
 }       // end of inner class NullValue
 
@@ -212,6 +238,10 @@ private static class BooleanValue extends BudValue {
     }
    
    @Override public boolean getBoolean()                 { return cur_value; }
+   
+   @Override protected void localOutputXml(IvyXmlWriter xw) {
+      xw.field("BOOLEAN",cur_value);
+    }
    
 }       // end of inner class BooleanValue
 
@@ -236,6 +266,10 @@ private static class NumericValue extends BudValue {
       return cur_value.longValue();
     }
    
+   @Override protected void localOutputXml(IvyXmlWriter xw) {
+      xw.field("NUMBER",cur_value);
+    }
+   
 }       // end of inner class IntegerValue
 
 
@@ -257,6 +291,11 @@ private static class StringValue extends BudValue {
    
    @Override public String getString() {
       return cur_value;
+    }
+   
+   @Override protected void localOutputXml(IvyXmlWriter xw) {
+      xw.field("STRING",true);
+      xw.cdataElement("CONTENTS",cur_value);
     }
    
 }       // end of inner class StringValue
@@ -294,6 +333,22 @@ private static class ObjectValue extends BudValue {
       return (BudValue) gv;
     }
    
+   @Override protected void localOutputXml(IvyXmlWriter xw) {
+      xw.field("OBJECT",true);
+      for (Map.Entry<String,BudGenericValue> ent : field_values.entrySet()) {
+         xw.begin("FIELD");
+         xw.field("NAME",ent.getKey());
+         BudGenericValue gv = ent.getValue();
+         if (gv instanceof BudDeferredValue) {
+            xw.field("DEFERRED",true);
+          }
+         else if (gv instanceof BudValue) {
+            BudValue fvl = (BudValue) gv;
+            fvl.outputXml(xw);
+          }
+         xw.end("FIELD");
+       }
+    }
 }       // end of inner class ObjectValue
 
 

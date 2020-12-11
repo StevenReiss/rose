@@ -35,10 +35,15 @@
 
 package edu.brown.cs.rose.stem;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.w3c.dom.Element;
 
 import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
+import edu.brown.cs.rose.bract.BractFactory;
+import edu.brown.cs.rose.root.RootLocation;
 import edu.brown.cs.rose.root.RootMetrics;
 import edu.brown.cs.rose.root.RootProblem;
 import edu.brown.cs.rose.root.RoseException;
@@ -114,18 +119,80 @@ protected void outputGraph(Element hrslt,IvyXmlWriter xw) throws RoseException
    hrslt = IvyXml.getChild(hrslt,"QUERY");
    xw.begin("RESULT");
    Element grslt = IvyXml.getChild(hrslt,"GRAPH");
-   xw.writeXml(grslt);
+   processGraph(grslt,xw);
    xw.end("RESULT");
-   
-   int ct = 0;
-   for (Element e : IvyXml.elementsByTag(grslt,"LOCATION")) {
-      if (e != null) ++ct;
-    }
-   RootMetrics.noteCommand("STEM","HISTORYRESULT",
-         IvyXml.getAttrInt(grslt,"SIZE"),ct,
-         IvyXml.getAttrInt(grslt,"TIME"));
 }
 
+
+
+private void processGraph(Element gelt,IvyXmlWriter xw)
+{
+   Map<String,GraphNode> locs = new HashMap<>();
+   
+   for (Element nelt : IvyXml.children(gelt,"NODE")) {
+      GraphNode gn = new GraphNode(nelt);
+      if (!gn.isValid()) continue;
+      String id = gn.getLocationString();
+      GraphNode ogn = locs.get(id);
+      if (ogn != null) {
+         if (ogn.getPriority() >= gn.getPriority()) continue;
+       }
+      locs.put(id,gn);
+    }
+   xw.begin("NODES");
+   for (GraphNode gn : locs.values()) {
+      gn.outputXml(xw);
+    }
+   xw.end("NODES");
+   
+   RootMetrics.noteCommand("STEM","HISTORYRESULT",
+         IvyXml.getAttrInt(gelt,"SIZE"),locs.size(),
+         IvyXml.getAttrInt(gelt,"TIME"));
+}
+
+
+
+
+private static class GraphNode {
+    
+   private RootLocation node_location;
+   private int node_priority;
+   private String node_reason;
+   
+   GraphNode(Element nelt) {
+      Element locelt = IvyXml.getChild(nelt,"LOCATION");
+      node_location = BractFactory.getFactory().createLocation(locelt);
+      node_reason = IvyXml.getAttrString(nelt,"REASON");
+      node_priority = IvyXml.getAttrInt(nelt,"PRIORITY",5);
+    }
+   
+   boolean isValid() {
+      if (node_location == null || node_reason == null) return false;
+      if (node_location.getFile() == null) return false;
+      if (!node_location.getFile().exists()) return false;
+      if (node_location.getLineNumber() <= 0) return false;
+      return true;
+    }
+   
+   int getPriority()                    { return node_priority; }
+   
+   String getLocationString() {
+      String s = node_location.getFile().getPath();
+      s += "@" + node_location.getLineNumber();
+      s += ":" + node_location.getStartOffset();
+      s += "-" + node_location.getEndOffset();
+      return s;
+    }
+   
+   void outputXml(IvyXmlWriter xw) {
+      xw.begin("NODE");
+      xw.field("PRIORITY",node_priority);
+      xw.field("REASON",node_reason);
+      node_location.outputXml(xw);
+      xw.end("NODE");
+    }
+   
+}       // end of inner class GraphNode
 
 
 

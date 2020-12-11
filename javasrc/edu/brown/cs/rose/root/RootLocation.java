@@ -107,7 +107,7 @@ protected RootLocation(File f,int start,int end,int line,String proj,String meth
 
 public File getFile()                           { return for_file; }
 public int getStartOffset()                     { return start_offset; }
-public int getEndOffseet()                      { return end_offset; }
+public int getEndOffset()                      { return end_offset; }
 public String getProject()                      { return project_name; }
 public int getPriority()                        { return location_priority; }
 

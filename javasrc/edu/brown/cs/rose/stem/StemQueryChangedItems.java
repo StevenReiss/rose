@@ -1,8 +1,8 @@
 /********************************************************************************/
 /*                                                                              */
-/*              BudStackFrame.java                                              */
+/*              StemQueryChangedItems.java                                      */
 /*                                                                              */
-/*      description of class                                                    */
+/*      Find the variables/fields/etc. that changed since the entry to method   */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
@@ -33,17 +33,19 @@
 
 
 
-package edu.brown.cs.rose.bud;
+package edu.brown.cs.rose.stem;
 
-import java.util.ArrayList;
 import java.util.List;
 
+import org.eclipse.jdt.core.dom.ASTNode;
 import org.w3c.dom.Element;
 
-import edu.brown.cs.ivy.file.IvyFormat;
-import edu.brown.cs.ivy.xml.IvyXml;
+import edu.brown.cs.ivy.xml.IvyXmlWriter;
+import edu.brown.cs.rose.root.RoseException;
+import edu.brown.cs.rose.thorn.ThornFactory;
+import edu.brown.cs.rose.thorn.ThornConstants.ThornVariable;
 
-public class BudStackFrame implements BudConstants
+class StemQueryChangedItems extends StemQueryBase
 {
 
 
@@ -53,15 +55,6 @@ public class BudStackFrame implements BudConstants
 /*                                                                              */
 /********************************************************************************/
 
-private String frame_id;
-private String class_name;
-private String method_name;
-private String method_signature;
-private String format_signature;
-private List<String> frame_variables;
-private int     line_number;
-
-
 
 /********************************************************************************/
 /*                                                                              */
@@ -69,54 +62,47 @@ private int     line_number;
 /*                                                                              */
 /********************************************************************************/
 
-BudStackFrame(Element xml)
+StemQueryChangedItems(StemMain ctrl,Element xml)
 {
-   frame_id = IvyXml.getAttrString(xml,"ID");
-   class_name = IvyXml.getAttrString(xml,"RECEIVER");
-   method_name = IvyXml.getAttrString(xml,"METHOD");
-   int idx = method_name.lastIndexOf(".");
-   if (idx > 0) method_name = method_name.substring(idx+1);
-   
-   String sgn = IvyXml.getAttrString(xml,"SIGNATURE");
-   method_signature = sgn;
-   if (sgn != null) {
-      int sidx = sgn.lastIndexOf(")");
-      if (sidx > 0) sgn = sgn.substring(0,sidx+1);
-      String fsgn = IvyFormat.formatTypeName(sgn);
-      format_signature = fsgn;
-    }
-   else format_signature = null;
-   
-   line_number = IvyXml.getAttrInt(xml,"LINENO");
-   
-   frame_variables = new ArrayList<>();
-   for (Element e : IvyXml.children(xml,"VALUE")) {
-      String varnm = IvyXml.getAttrString(e,"NAME");
-      frame_variables.add(varnm);
-    }
+   super(ctrl,xml);
 }
 
 
 
 /********************************************************************************/
 /*                                                                              */
-/*      Access methods                                                          */
+/*      Processing methods                                                      */
 /*                                                                              */
 /********************************************************************************/
 
-public String getFrameId()                      { return frame_id; }
-public String getClassName()                    { return class_name; }
-public String getMethodName()                   { return method_name; }
-public String getMethodSignature()              { return method_signature; }
-public String getFormatSignature()              { return format_signature; }
-public int getLineNumber()                      { return line_number; }
+void process(StemMain sm,IvyXmlWriter xw) throws RoseException
+{
+   ASTNode n = getResolvedSourceStatement();
+   if (n == null) throw new RoseException("Can't find starting statement");
+   ThornFactory tf = new ThornFactory(sm);
+   List<ThornVariable> rslt = tf.getChangedVariables(n);
    
+   if (rslt == null) throw new RoseException("Problem finding changed variables");
+   
+   xw.begin("RESULT");
+   for (ThornVariable tv : rslt) {
+      xw.begin("VARIABLE");
+      xw.field("TYPE",tv.getVariableType());
+      xw.field("NAME",tv.getName());
+      xw.end("VARIABLE");
+    }
+   
+   xw.end("RESULT");
+}
 
 
-}       // end of class BudStackFrame
+
+
+
+}       // end of class StemQueryChangedItems
 
 
 
 
-/* end of BudStackFrame.java */
+/* end of StemQueryChangedItems.java */
 
