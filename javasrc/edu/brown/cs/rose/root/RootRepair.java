@@ -35,11 +35,13 @@
 
 package edu.brown.cs.rose.root;
 
+
 import org.w3c.dom.Element;
 
+import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
 
-public class RootRepair implements RootConstants
+abstract public class RootRepair implements RootConstants
 {
 
 
@@ -48,6 +50,12 @@ public class RootRepair implements RootConstants
 /*      Private Storage                                                         */
 /*                                                                              */
 /********************************************************************************/
+
+private String          repair_finder;
+private String          repair_description;
+private double          repair_priority;
+private RootEdit        repair_edit;
+private RootLocation    repair_location;
 
 
 
@@ -58,12 +66,26 @@ public class RootRepair implements RootConstants
 /********************************************************************************/
 
 
-protected RootRepair()
-{ }
+protected RootRepair(RootRepairFinder finder,String desc,double pri,
+      RootLocation loc,RootEdit edit)
+{ 
+   repair_finder = finder.getClass().getName();
+   repair_description = desc;
+   repair_priority = pri;
+   repair_edit = edit;
+   repair_location = loc;
+}
 
 
-protected RootRepair(Element xml)
-{ }
+
+protected RootRepair(Element xml,RootLocation loc)
+{
+   repair_finder = IvyXml.getAttrString(xml,"FINDER:");
+   repair_priority = IvyXml.getAttrDouble(xml,"PRIORITY");
+   repair_description = IvyXml.getTextElement(xml,"DESCRIPTION");
+   repair_edit = new RootEdit(IvyXml.getChild(xml,"REPAIREDIT"));
+   repair_location = loc;
+}
 
 
 
@@ -85,12 +107,17 @@ protected RootRepair(Element xml)
 
 public String getDescription()
 {
-   return "Repair";
+   return repair_description;
 }
 
-public int getPriority()
+public double getPriority()
 {
-   return DEFAULT_PRIORITY;
+   return repair_priority;
+}
+
+public RootLocation getLocation()
+{
+   return repair_location;
 }
 
 
@@ -105,7 +132,11 @@ public int getPriority()
 public void outputXml(IvyXmlWriter xw)
 {
    xw.begin("REPAIR");
-   localOutputXml(xw);
+   xw.field("PRIORITY",repair_priority);
+   xw.field("FINDER",repair_finder);
+   repair_edit.outputXml(xw);
+   xw.textElement("DESCRIPTION",repair_description);
+   repair_location.outputXml(xw);
    xw.end("REPAIR");
 }
 

@@ -43,15 +43,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.jdt.core.dom.SimpleName;
+import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 
+import edu.brown.cs.ivy.file.IvyStringDiff;
 import edu.brown.cs.ivy.jcomp.JcompAst;
 import edu.brown.cs.ivy.jcomp.JcompScope;
 import edu.brown.cs.ivy.jcomp.JcompSymbol;
 import edu.brown.cs.ivy.jcomp.JcompType;
 import edu.brown.cs.rose.root.RootRepairFinderDefault;
+import edu.brown.cs.rose.root.RoseLog;
 
 public class SepalWrongVariable extends RootRepairFinderDefault
 {
@@ -95,7 +101,25 @@ public SepalWrongVariable()
    
    int ct = findReplacements(stmt,types);
    if (ct == 0) return;
+   
+   for (UserVariable uv : vars) {
+     for (JcompSymbol js : uv.getReplacements()) {
+         for (ASTNode n : uv.getLocations()) {
+            createRepair(uv,js,n);
+          }
+       }
+    }
+   
+   return;
 }
+
+
+
+@Override protected double getFinderPriority()
+{
+   return 50.0;
+}
+
 
 
 
@@ -190,7 +214,7 @@ private int findReplacements(ASTNode base,Map<JcompType,List<UserVariable>> type
       List<UserVariable> vars = typemap.get(jt);
       if (vars == null) continue;
       for (UserVariable uv : vars) {
-         if (isRelevant(cand,uv.getSymbol())) {
+         if (isRelevant(cand,uv.getSymbol(),base)) {
             uv.addReplacement(cand);
             ++ct;
           }
@@ -208,7 +232,7 @@ private boolean isRelevant(JcompSymbol js)
 }
 
 
-private boolean isRelevant(JcompSymbol rep,JcompSymbol orig)
+private boolean isRelevant(JcompSymbol rep,JcompSymbol orig,ASTNode base)
 {
    if (rep == orig) return false;
    
@@ -216,10 +240,49 @@ private boolean isRelevant(JcompSymbol rep,JcompSymbol orig)
    if (rep.isFinal() != rep.isFinal()) return false;
    if (rep.getName().equals(orig.getName())) return false;
    if (rep.getSymbolKind() != orig.getSymbolKind()) return false;
+   if (rep.getDefinitionNode().getStartPosition() >= base.getStartPosition()) return false;
    
    return true;
 }
 
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Create a repair based on substitution                                   */
+/*                                                                              */
+/********************************************************************************/
+
+private void createRepair(UserVariable uv,JcompSymbol js,ASTNode where)
+{
+   AST ast = where.getAST();
+   ASTRewrite rw = null;
+   
+   synchronized (ast) {
+      if (where instanceof SimpleName) {
+         rw = ASTRewrite.create(ast);
+         String nnm = js.getName();
+         RoseLog.logD("SEPAL","Use replacement name " + nnm);
+         ASTNode rep = ast.newSimpleName(nnm);
+         rw.replace(where,rep,null);
+       }
+      else if (where instanceof QualifiedName) {
+         // handle qualified name changes
+       }
+    }
+   
+   if (rw != null) {
+      double pri = IvyStringDiff.normalizedStringDiff(uv.getSymbol().getName(),js.getName());
+      
+      CompilationUnit cu = (CompilationUnit) where.getRoot();
+      String desc = "Replace `" + uv.getSymbol().getName() + "' with `" + js.getName() + 
+            "' in line " + cu.getLineNumber(where.getStartPosition()) + 
+            "/" + cu.getColumnNumber(where.getStartPosition());
+      
+      addRepair(rw,desc,pri);
+    }
+   
+}
 
 /********************************************************************************/
 /*                                                                              */
@@ -240,6 +303,8 @@ private class UserVariable {
     }
    
    JcompSymbol getSymbol()                      { return variable_symbol; }
+   Collection<JcompSymbol> getReplacements()    { return replace_with; }
+   Collection<ASTNode> getLocations()           { return variable_locations; }
    
    void addReplacement(JcompSymbol js) {
       if (js == variable_symbol) return;

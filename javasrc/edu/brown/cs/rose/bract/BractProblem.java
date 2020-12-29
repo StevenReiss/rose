@@ -37,6 +37,7 @@ package edu.brown.cs.rose.bract;
 
 import org.w3c.dom.Element;
 
+import edu.brown.cs.rose.root.RootControl;
 import edu.brown.cs.rose.root.RootProblem;
 
 class BractProblem extends RootProblem implements BractConstants
@@ -57,9 +58,9 @@ class BractProblem extends RootProblem implements BractConstants
 /*                                                                              */
 /********************************************************************************/
 
-BractProblem(Element xml)
+BractProblem(RootControl ctrl,Element xml)
 { 
-   super(xml);
+   super(ctrl,xml);
 }
 
 

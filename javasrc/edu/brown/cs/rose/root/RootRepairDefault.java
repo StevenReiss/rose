@@ -1,8 +1,8 @@
 /********************************************************************************/
 /*                                                                              */
-/*              BushRepair.java                                                 */
+/*              RootRepairDefault.java                                          */
 /*                                                                              */
-/*      Representation of a potential repair                                    */
+/*      description of class                                                    */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
@@ -33,13 +33,13 @@
 
 
 
-package edu.brown.cs.rose.bush;
+package edu.brown.cs.rose.root;
 
-import org.w3c.dom.Element;
 
-import edu.brown.cs.rose.root.RootRepair;
+import org.eclipse.text.edits.TextEdit;
 
-class BushRepair extends RootRepair implements BushConstants
+
+public class RootRepairDefault extends RootRepair
 {
 
 
@@ -50,38 +50,24 @@ class BushRepair extends RootRepair implements BushConstants
 /********************************************************************************/
 
 
-
 /********************************************************************************/
 /*                                                                              */
 /*      Constructors                                                            */
 /*                                                                              */
 /********************************************************************************/
 
-BushRepair(Element xml,BushLocation loc)
-{ 
-   super(xml,loc);
-}
-
-
-
-/********************************************************************************/
-/*                                                                              */
-/*      Output methods                                                          */
-/*                                                                              */
-/********************************************************************************/
-
-@Override public String toString()
+RootRepairDefault(RootRepairFinder finder,String desc,double pri,RootLocation loc,TextEdit te)
 {
-   return getDescription();
+   super(finder,desc,pri,loc,new RootEdit(loc.getFile(),te));
 }
 
 
 
 
-}       // end of class BushRepair
+}       // end of class RootRepairDefault
 
 
 
 
-/* end of BushRepair.java */
+/* end of RootRepairDefault.java */
 

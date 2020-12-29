@@ -60,7 +60,9 @@ enum RoseProblemType {
 /*                                                                              */
 /********************************************************************************/
 
-int DEFAULT_PRIORITY = 5;
+double DEFAULT_PRIORITY = 50;
+double MAX_NODE_PRIORITY = 10;
+
 
 
 

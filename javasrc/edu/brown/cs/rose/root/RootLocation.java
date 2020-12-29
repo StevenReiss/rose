@@ -61,8 +61,12 @@ private String          project_name;
 private int             start_offset;
 private int             end_offset;
 private int             line_number;
-private int             location_priority;
+private double          location_priority;
 private String          in_method;
+private String          full_method;
+private int             method_offset;
+private int             method_length;
+
 
 
 
@@ -72,15 +76,27 @@ private String          in_method;
 /*                                                                              */
 /********************************************************************************/
 
-protected RootLocation(Element xml)
+protected RootLocation(RootControl ctrl,Element xml)
 {
    String fnm = IvyXml.getAttrString(xml,"FILE");
    for_file = new File(fnm);
    start_offset = IvyXml.getAttrInt(xml,"OFFSET");
    end_offset = IvyXml.getAttrInt(xml,"ENDOFFSET");
+   if (end_offset < 0) {
+      int len = IvyXml.getAttrInt(xml,"LENGTH");
+      if (len > 0) end_offset = start_offset+len;
+      else end_offset = start_offset+1;
+    }
    project_name = IvyXml.getAttrString(xml,"PROJECT");
+   if (project_name == null) {
+      project_name = ctrl.getProjectForFile(for_file);
+    }
+    
    line_number = IvyXml.getAttrInt(xml,"LINE");
-   location_priority = IvyXml.getAttrInt(xml,"PRIORITY",DEFAULT_PRIORITY);
+   location_priority = IvyXml.getAttrDouble(xml,"PRIORITY",DEFAULT_PRIORITY);
+   full_method = null;
+   method_offset = 0;
+   method_length = 0;
    in_method = IvyXml.getAttrString(xml,"METHOD");
    if (in_method == null) {
       Element itm = IvyXml.getChild(xml,"ITEM");
@@ -89,12 +105,16 @@ protected RootLocation(Element xml)
          if (typ.equals("Function")) {
             in_method = IvyXml.getAttrString(itm,"QNAME");
           }
+         full_method = IvyXml.getAttrString(itm,"HANDLE");
+         if (full_method == null) full_method = IvyXml.getAttrString(itm,"KEY");
+         method_offset = IvyXml.getAttrInt(itm,"STARTOFFSET");
+         method_length = IvyXml.getAttrInt(itm,"LENGTH");
        }
     }
 }
 
 
-protected RootLocation(File f,int start,int end,int line,String proj,String method,int pri)
+protected RootLocation(File f,int start,int end,int line,String proj,String method,double pri)
 {
    for_file = f;
    start_offset = start;
@@ -116,11 +136,20 @@ protected RootLocation(File f,int start,int end,int line,String proj,String meth
 
 public File getFile()                           { return for_file; }
 public int getStartOffset()                     { return start_offset; }
-public int getEndOffset()                      { return end_offset; }
+public int getEndOffset()                       { return end_offset; }
 public String getProject()                      { return project_name; }
-public int getPriority()                        { return location_priority; }
+
+public double getPriority()                     { return location_priority; }
+public void setPriority(double v)               { location_priority = v; }
 
 public String getMethod()                       { return in_method; }
+
+protected void setMethodData(String full,int off,int len)
+{
+   full_method = full;
+   method_offset = off;
+   method_length = len;
+}
 
 public int getLineNumber()
 {
@@ -147,13 +176,32 @@ public int getLineNumber()
 public void outputXml(IvyXmlWriter xw) 
 {
    xw.begin("LOCATION");
+   xw.field("PRIORITY",location_priority);
    xw.field("FILE",for_file);
    if (start_offset > 0) xw.field("OFFSET",start_offset);
-   if (end_offset > 0) xw.field("ENDOFFSET",end_offset);
+   if (end_offset > 0) {
+      xw.field("ENDOFFSET",end_offset);
+      xw.field("LENGTH",end_offset - start_offset);
+    }
+   else {
+      xw.field("LENGTH",1);
+      xw.field("ENDOFFSET",start_offset+1);
+    }
    if (line_number > 0) xw.field("LINE",line_number);
    if (project_name != null) xw.field("PROJECT",project_name);
-   if (in_method != null) xw.field("METHOD",in_method);
-   xw.field("PRIORITY",location_priority);
+   if (in_method != null) {
+      xw.field("TYPE","Function");
+      xw.field("METHOD",in_method);
+      xw.begin("ITEM");
+      xw.field("QNAME",in_method);
+      xw.field("TYPE","Function");
+      xw.field("STARTOFFSET",method_offset);
+      xw.field("LENGTH",method_length);
+      xw.field("KEY",full_method);
+      xw.field("HANDLE",full_method);
+      xw.field("PROJECT",project_name);
+      xw.end("ITEM");
+    }
    xw.end("LOCATION");
 }
 

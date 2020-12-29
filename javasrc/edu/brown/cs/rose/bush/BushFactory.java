@@ -66,6 +66,7 @@ import edu.brown.cs.bubbles.buda.BudaBubble;
 import edu.brown.cs.bubbles.buda.BudaRoot;
 import edu.brown.cs.bubbles.bump.BumpClient;
 import edu.brown.cs.bubbles.bump.BumpConstants;
+import edu.brown.cs.bubbles.bump.BumpLocation;
 import edu.brown.cs.ivy.exec.IvyExec;
 import edu.brown.cs.ivy.exec.IvyExecQuery;
 import edu.brown.cs.ivy.file.IvyFile;
@@ -260,7 +261,13 @@ private void handleSuggestion(Element xml)
    String who = IvyXml.getAttrString(xml,"NAME");
    BushRepairAdder ra = current_repairs.get(who);
    if (ra == null) return;
-   BushRepair br = new BushRepair(IvyXml.getChild(xml,"REPAIR"));
+   Element repairxml = IvyXml.getChild(xml,"REPAIR");
+   Element locxml = IvyXml.getChild(repairxml,"LOCATION");
+   BumpLocation bumploc = BumpLocation.getLocationFromXml(locxml);
+   int pri = IvyXml.getAttrInt(locxml,"PRIORITY");
+   if (pri < 0) pri = 5;
+   BushLocation bloc = new BushLocation(bumploc,IvyXml.getAttrInt(locxml,"PRIORITY"));
+   BushRepair br = new BushRepair(repairxml,bloc);
    ra.addRepair(br);
 }
 
@@ -901,7 +908,8 @@ private static class RoseSuggestAction extends AbstractAction implements Runnabl
    private static final long serialVersionUID = 1;
    
    RoseSuggestAction(BushProblem p,BushLocation l,Component c) {
-      super("Suggest Repairs for " + p.getDescription());
+      super("Suggest Repairs for " + p.getDescription() +
+            (l != null ? " here" : ""));
       for_problem = p;
       for_location = l;
       from_component = c;
@@ -933,6 +941,7 @@ private class RoseHandler implements MintHandler {
    
    @Override public void receive(MintMessage msg,MintArguments args) {
       String cmd = args.getArgument(0);
+      BoardLog.logD("BUSH","ROSE message : " + msg.getText());
       switch (cmd) {
          case "SUGGEST" :
             handleSuggestion(msg.getXml());

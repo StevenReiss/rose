@@ -35,9 +35,13 @@
 
 package edu.brown.cs.rose.root;
 
-import org.eclipse.jdt.core.dom.ASTNode;
+import java.io.File;
 
-public abstract class RootRepairFinderDefault implements RootRepairFinder
+import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
+import org.eclipse.text.edits.TextEdit;
+
+public abstract class RootRepairFinderDefault implements RootRepairFinder, RootConstants
 {
 
 
@@ -107,6 +111,8 @@ protected RootLocation getLocation()            { return at_location; }
 
 @Override public abstract void process();
 
+protected abstract double getFinderPriority();
+
 
 
 /********************************************************************************/
@@ -135,6 +141,40 @@ protected ASTNode getResolvedStatementForLocation(RootLocation loc)
    return bract_control.getController().getSourceNode(loc,true,true);
 }
 
+
+/**
+ *      Add a potential repair.  Given the ASTRewrite based on the AST returned
+ *      from getResolved... and a priority.  The priority is between 0 and 1 and
+ *      is used to scale the priority of the repair finder.
+ **/ 
+
+protected void addRepair(ASTRewrite rw,String desc,double priority)
+{
+   if (rw == null) return;
+   double pri = getFinderPriority();
+   double p1 = getLocation().getPriority();
+   if (p1 > 0) {
+      pri = (1+priority+(p1/MAX_NODE_PRIORITY))/3.0 * getFinderPriority();
+    }
+   else {
+      pri = (1+priority)/2.0 * getFinderPriority();
+    }
+
+   File f = getLocation().getFile();
+   String p = getLocation().getProject();
+   
+   TextEdit te = null;
+   try {
+      te = rw.rewriteAST(getProcessor().getController().getSourceDocument(p,f),null);
+    }
+   catch (Throwable e) {
+      RoseLog.logE("ROOT","Problem creating text edit from rewrite",e);
+    } 
+   if (te == null) return;
+   
+   RootRepair rr = new RootRepairDefault(this,desc,pri,getLocation(),te);
+   getProcessor().sendRepair(rr);
+}
 
 }       // end of class RootRepairFinderDefault
 

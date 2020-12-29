@@ -48,6 +48,7 @@ import java.util.StringTokenizer;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jface.text.IDocument;
 import org.w3c.dom.Element;
 
 import edu.brown.cs.bubbles.board.BoardProperties;
@@ -110,6 +111,8 @@ private AnalysisState	analysis_state;
 private boolean 	local_fait;
 private Map<String,EvalData> eval_handlers;
 private StemCompiler    stem_compiler;
+private Map<File,String> project_map;
+private String          default_project;
 
 
 private static boolean	use_all_files = true;
@@ -202,6 +205,8 @@ private void process()
    mint_control.register("<FAITEXEC TYPE='_VAR_0' />",new UpdateHandler());
    mint_control.register("<BEDROCK SOURCE='ECLIPSE' TYPE='_VAR_0' />",new EclipseHandler());
    mint_control.register("<BUBBLES DO='_VAR_0' />",new BubblesHandler());
+   
+   buildProjectMap();
 
    new WaitForExit().start();
 }
@@ -449,6 +454,46 @@ private void handleParameterValuesCommand(MintMessage msg) throws RoseException
 /*										*/
 /********************************************************************************/
 
+@Override public List<RootLocation> getLocations(RootProblem prob)
+{
+   List<RootLocation> rslt = new ArrayList<>();
+   StemQueryHistory histq = StemQueryHistory.createHistoryQuery(this,prob);
+   if (histq != null) {
+      IvyXmlWriter xw = new IvyXmlWriter();
+      try {
+         histq.process(this,xw);
+       }
+      catch (RoseException e) {
+         RoseLog.logE("STEM","Problem finding locations for problem",e);
+       }
+      BractFactory bf = BractFactory.getFactory();
+      Element e = IvyXml.convertStringToXml(xw.toString());
+      Element nodes = IvyXml.getChild(e,"NODES");
+      Map<String,RootLocation> done = new HashMap<>();
+      for (Element n : IvyXml.children(nodes,"NODE")) {
+         double p = IvyXml.getAttrDouble(n,"PRIORITY");
+         Element locelt = IvyXml.getChild(n,"LOCATION");
+         RootLocation loc = bf.createLocation(this,locelt);
+         double p1 = loc.getPriority();
+         p1 = p1 * p / MAX_NODE_PRIORITY;
+         loc.setPriority(p1);
+         String s = loc.getFile().getPath() + "@" + loc.getLineNumber();
+         RootLocation oloc = done.putIfAbsent(s,loc);
+         if (oloc != null) {
+            double p2 = oloc.getPriority();
+            if (p1 > p2) oloc.setPriority(p1);
+          }
+         else {
+            rslt.add(loc);
+          }
+       }
+    }
+   
+   return rslt;
+}
+
+
+
 private void handleHistoryCommand(MintMessage msg) throws RoseException
 {
    Element msgxml = msg.getXml();
@@ -457,7 +502,7 @@ private void handleHistoryCommand(MintMessage msg) throws RoseException
    waitForAnalysis();
    long start = System.currentTimeMillis();
    Element probxml = IvyXml.getChild(msgxml,"PROBLEM");
-   RootProblem prob = BractFactory.getFactory().createProblemDescription(probxml);
+   RootProblem prob = BractFactory.getFactory().createProblemDescription(this,probxml);
    StemQueryHistory histq = StemQueryHistory.createHistoryQuery(this,prob);
    if (histq != null) {
       IvyXmlWriter xw = new IvyXmlWriter();
@@ -484,14 +529,14 @@ private void handleSuggestCommand(MintMessage msg) throws RoseException
    Element msgxml = msg.getXml();
    BractFactory bract = BractFactory.getFactory();
    Element probxml = IvyXml.getChild(msgxml,"PROBLEM");
-   RootProblem problem = bract.createProblemDescription(probxml);
+   RootProblem problem = bract.createProblemDescription(this,probxml);
    String id = IvyXml.getAttrString(msgxml,"NAME");
    if (id == null) {
       id = "ROSESUGGEST_" + IvyExecQuery.getProcessId() + "_" + 
          id_counter.incrementAndGet();
     }
    Element locxml = IvyXml.getChild(msgxml,"LOCATION");
-   RootLocation loc = bract.createLocation(locxml);
+   RootLocation loc = bract.createLocation(this,locxml);
    
    IvyXmlWriter xw = new IvyXmlWriter();
    xw.begin("RESULT");
@@ -531,8 +576,8 @@ private void handleMetricsCommand(MintMessage msg)
       args.add(argv.trim());
     }
    for (Element argelt : IvyXml.children(msgxml,"ARG")) {
-      String txt = IvyXml.getText(argelt).trim();
-      if (txt != null) args.add(txt);
+      String txt = IvyXml.getText(argelt);
+      if (txt != null) args.add(txt.trim());
     }
    Object [] argarr = args.toArray();
 
@@ -1142,7 +1187,63 @@ private static class EvalData {
 }
 
 
+@Override public IDocument getSourceDocument(String proj,File f)
+{
+   synchronized (this) {
+      if (stem_compiler == null) stem_compiler = new StemCompiler(this);
+    }
+   
+   return stem_compiler.getSourceDocument(proj,f);
+}
 
+
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Handle finding relevant project for file                                */
+/*                                                                              */
+/********************************************************************************/
+
+@Override public String getProjectForFile(File f)
+{
+   if (f == null) return default_project;
+   
+   String p = project_map.get(f);
+   if (p == null) p = default_project;
+   
+   return p;
+}
+
+
+
+private void buildProjectMap()
+{
+   project_map = new HashMap<>();
+   default_project = null;
+   
+   Element xml = sendBubblesMessage("PROJECTS",null,null);
+   for (Element p : IvyXml.children(xml,"PROJECT")) {
+      String nm = IvyXml.getAttrString(p,"NAME");
+      CommandArgs args = new CommandArgs("PROJECT",nm,"FILES",true);
+      Element pxml = sendBubblesMessage("OPENPROJECT",args,null);
+      Element rxml = IvyXml.getChild(pxml,"PROJECT");
+      Element files = IvyXml.getChild(rxml,"FILES");
+      for (Element fxml : IvyXml.children(files,"FILE")) {
+         if (IvyXml.getAttrBool(fxml,"SOURCE")) {
+            String fnm = IvyXml.getAttrString(fxml,"PATH");
+            File f = new File(fnm);
+            project_map.putIfAbsent(f,nm);
+            if (default_project != null) default_project = nm;
+          }
+       }
+    }
+}
+
+   
+   
+   
 }	// end of class StemMain
 
 

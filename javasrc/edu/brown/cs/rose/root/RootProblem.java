@@ -81,7 +81,7 @@ protected RootProblem(RoseProblemType typ,String item,String orig,String tgt,
 }
 
 
-protected RootProblem(Element xml)
+protected RootProblem(RootControl ctrl,Element xml)
 {
    problem_type = IvyXml.getAttrEnum(xml,"TYPE",RoseProblemType.OTHER);
    problem_item = IvyXml.getTextElement(xml,"ITEM");
@@ -91,7 +91,7 @@ protected RootProblem(Element xml)
    frame_id = IvyXml.getAttrString(xml,"FRAME");
    
    Element loc = IvyXml.getChild(xml,"LOCATION");
-   if (loc != null) bug_location = new RootLocation(loc);
+   if (loc != null) bug_location = new RootLocation(ctrl,loc);
    
    Element ctx = IvyXml.getChild(xml,"CONTEXT");
    if (ctx == null) ctx = IvyXml.getChild(xml,"EXPRESSION");

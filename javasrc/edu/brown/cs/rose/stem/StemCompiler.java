@@ -47,6 +47,8 @@ import java.util.Map;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.Statement;
+import org.eclipse.jface.text.Document;
+import org.eclipse.jface.text.IDocument;
 import org.w3c.dom.Element;
 
 import edu.brown.cs.ivy.file.IvyFile;
@@ -128,6 +130,13 @@ ASTNode getStatementOfNode(ASTNode node)
    return node; 
 }
 
+
+
+IDocument getSourceDocument(String proj,File file)
+{
+   SourceFile sf = getSourceFile(file);
+   return sf.getDocument();
+}
 
 
 /********************************************************************************/
@@ -306,13 +315,22 @@ private static class SourceFile implements JcompSource {
 
    private File for_file;
    private String file_body;
+   private Document file_document;
    
    SourceFile(File f) {
       for_file = f;
       file_body = null;
+      file_document = null;
     }
    
    @Override public String getFileName()        { return for_file.getPath(); }
+   
+   synchronized IDocument getDocument() {
+      if (file_document == null) {
+         file_document = new Document(getFileContents());
+       }
+      return file_document;
+    }
    
    @Override public String getFileContents() {
       if (file_body != null) return file_body;

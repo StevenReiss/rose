@@ -36,9 +36,9 @@
 
 package edu.brown.cs.rose.stem;
 
+import edu.brown.cs.rose.root.RootConstants;
 
-
-public interface StemConstants
+public interface StemConstants extends RootConstants
 {
 
 

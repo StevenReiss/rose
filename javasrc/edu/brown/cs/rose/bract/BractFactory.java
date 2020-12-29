@@ -47,6 +47,7 @@ import edu.brown.cs.rose.root.RootControl;
 import edu.brown.cs.rose.root.RootLocation;
 import edu.brown.cs.rose.root.RootProblem;
 import edu.brown.cs.rose.root.RootRepairFinder;
+import edu.brown.cs.rose.root.RoseLog;
 
 public class BractFactory implements BractConstants
 {
@@ -85,9 +86,11 @@ private BractFactory()
    processor_classes = new ArrayList<>();
    location_classes = new ArrayList<>();
    BoardProperties props = BoardProperties.getProperties("Rose");
+   RoseLog.logD("BRACT","Found properties " + props.size());
    for (String s : props.stringPropertyNames()) {
       if (s.startsWith("Rose.processor")) {
          String v = props.getString(s);
+         RoseLog.logD("BRACT","REGISTER " + s + " " +  v);
          registerProcessor(v);
        }
     }
@@ -100,9 +103,9 @@ private BractFactory()
 /*                                                                              */
 /********************************************************************************/
 
-public RootProblem createProblemDescription(Element xml)
+public RootProblem createProblemDescription(RootControl ctrl,Element xml)
 {
-   return new BractProblem(xml);
+   return new BractProblem(ctrl,xml);
 }
 
 
@@ -114,11 +117,11 @@ public RootProblem createProblemDescription(Element xml)
 /*                                                                              */
 /********************************************************************************/
 
-public RootLocation createLocation(Element xml)
+public RootLocation createLocation(RootControl ctrl,Element xml)
 {
    if (xml == null) return null;
    
-   return new BractLocation(xml);
+   return new BractLocation(ctrl,xml);
 }
 
 
@@ -141,6 +144,7 @@ public boolean registerProcessor(String clsnm)
       boolean loc = rrf.requiresLocation();
       if (loc) location_classes.add(cls);
       else processor_classes.add(cls);
+      RoseLog.logD("BRACT","Successful load");
       return true;
     }
    catch (ClassNotFoundException e) { }

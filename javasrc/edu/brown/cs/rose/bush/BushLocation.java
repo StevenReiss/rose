@@ -62,6 +62,9 @@ private BumpLocation    bump_location;
 BushLocation(BumpLocation loc,int pri) 
 {
    super(loc.getFile(),loc.getOffset(),loc.getEndOffset(),-1,loc.getProject(),null,pri);
+   
+   setMethodData(loc.getKey(),loc.getDefinitionOffset(),
+         loc.getDefinitionEndOffset()-loc.getDefinitionOffset());
 }
 
 

@@ -36,8 +36,10 @@
 package edu.brown.cs.rose.root;
 
 import java.io.File;
+import java.util.List;
 
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jface.text.IDocument;
 import org.w3c.dom.Element;
 
 import edu.brown.cs.ivy.mint.MintConstants.CommandArgs;
@@ -84,7 +86,10 @@ ASTNode getSourceNode(String proj,File f,int offset,int line,boolean resolve,boo
 
 public default ASTNode getSourceNode(RootLocation loc,boolean resolve,boolean stmt)
 {
-   return getSourceNode(loc.getProject(),loc.getFile(),loc.getStartOffset(),-1,resolve,stmt);
+   int line = -1;
+   if (loc.getStartOffset() < 0) line = loc.getLineNumber();
+   
+   return getSourceNode(loc.getProject(),loc.getFile(),loc.getStartOffset(),line,resolve,stmt);
 }
 
 
@@ -100,9 +105,26 @@ public default ASTNode getSourceStatement(String proj,File f,int offset,int line
 }
 
 
+/**
+ *      return document to be used to create text edit for a change
+ **/
+ 
+IDocument getSourceDocument(String proj,File f);
 
 
 
+/**
+ *      Return locations associated with a problem
+ **/
+
+List<RootLocation> getLocations(RootProblem prob);
+
+
+/**
+ *      Find project associated with a given file
+ **/
+
+String getProjectForFile(File f);
 
 
 

@@ -104,6 +104,7 @@ private DataPanel       other_panel;
 private JPanel		content_panel;
 private JButton         show_button;
 private JButton         suggest_button;
+private JComboBox<?>    problem_panel;
 private DataPanel       active_panel;    
 private BushUsageMonitor usage_monitor;
 private Map<String,Element> expression_data;
@@ -157,7 +158,8 @@ BudaBubble createBubble(Component src)
 
    BudaBubbleArea bba = BudaRoot.findBudaBubbleArea(base_editor);
    BudaBubble bbl = new PanelBubble(content_panel);
-   bba.addBubble(bbl,base_editor,null,BudaConstants.PLACEMENT_LOGICAL);
+   bba.addBubble(bbl,base_editor,null,
+         BudaConstants.PLACEMENT_LOGICAL|BudaConstants.PLACEMENT_BELOW);
    bbl.setVisible(true);
    
    return bbl;
@@ -200,7 +202,8 @@ private JPanel createDisplay()
    choices.add("Variable value incorrect");
    choices.add("Expression value incorrect");
    choices.add("Other ...");
-   pnl.addChoice("Problem",choices,0,false,new PanelSelector());
+   problem_panel = pnl.addChoice("Problem",choices,0,false,new PanelSelector());
+   problem_panel.setEnabled(false);
    
    show_button = pnl.addBottomButton("Show History","HISTORY",new ShowHandler());
    show_button.setEnabled(false);
@@ -236,6 +239,8 @@ private void updateSize()
 private void updateShow()
 {
    BoardLog.logD("BUSH","Update show " + rose_ready + " " + active_panel);
+   if (rose_ready) problem_panel.setEnabled(true);
+   
    if (active_panel != null && rose_ready) {
       active_panel.setVisible(true);
       show_button.setEnabled(active_panel.isReady());
@@ -307,6 +312,7 @@ private class ShowHandler implements ActionListener, Runnable {
    @Override public void actionPerformed(ActionEvent evt) {
       if (is_active) return;
       is_active = true;
+      show_result = null;
       BoardLog.logD("BUSH","Handle show");
       BoardThreadPool.start(this);
     }
@@ -353,10 +359,10 @@ private class ShowHandler implements ActionListener, Runnable {
          if (locelt == null) continue;
          BumpLocation loc = BumpLocation.getLocationFromXml(locelt);
          String reason = IvyXml.getAttrString(nelt,"REASON");
-         BoardLog.logD("BUSH","LOC " + IvyXml.convertXmlToString(nelt));
          if (loc != null) {
             if (reason != null) locs.put(loc,reason);
             loclist.add(loc);
+            BoardLog.logD("BUSH","LOC " + IvyXml.convertXmlToString(nelt) + " " + loc);
             int pri = IvyXml.getAttrInt(nelt,"PRIORITY");
             BushLocation bloc = new BushLocation(loc,pri);
             bloclist.add(bloc);
@@ -516,7 +522,7 @@ private abstract class VarExprPanel extends DataPanel implements ActionListener,
    private JLabel current_value;
    private SwingComboBox<String> should_be;
    private JTextField other_value;
-   private SwingGridPanel other_panel;
+   private SwingGridPanel other_value_panel;
    private boolean is_ready;
    
    private static final long serialVersionUID = 1;
@@ -536,13 +542,13 @@ private abstract class VarExprPanel extends DataPanel implements ActionListener,
       List<String> shoulds = new ArrayList<>();
       should_be = addChoice("Should Be",shoulds,0,false,this);
       should_be.setVisible(false);
-      other_panel = new SwingGridPanel();
-      other_panel.setBackground(BoardColors.getColor("Rose.background.color"));
-      other_panel.setOpaque(false);
-      other_panel.beginLayout();
-      other_value = other_panel.addTextField("Other Value","",32,this,null);
-      addLabellessRawComponent("OTHER",other_panel);
-      other_panel.setVisible(false);
+      other_value_panel = new SwingGridPanel();
+      other_value_panel.setBackground(BoardColors.getColor("Rose.background.color"));
+      other_value_panel.setOpaque(false);
+      other_value_panel.beginLayout();
+      other_value = other_value_panel.addTextField("Other Value","",32,this,null);
+      addLabellessRawComponent("OTHER",other_value_panel);
+      other_value_panel.setVisible(false);
     }
    
    protected abstract List<String> getElements();
@@ -582,13 +588,13 @@ private abstract class VarExprPanel extends DataPanel implements ActionListener,
             String s = (String) should_be.getSelectedItem();
             BoardLog.logD("BUSH","Should be " + s + " " + should_be.getSelectedIndex());
             if (s != null && s.startsWith("Other")) {
-               other_panel.setVisible(true);
+               other_value_panel.setVisible(true);
                BoardLog.logD("BUSH","Other panel should be visible");
                invalidate();
              }
             else {
                BoardLog.logD("BUSH","Set other invisible");
-               other_panel.setVisible(false);
+               other_value_panel.setVisible(false);
              }
             updateSize();
             break;
@@ -609,7 +615,7 @@ private abstract class VarExprPanel extends DataPanel implements ActionListener,
          current_value.setForeground(BoardColors.getColor("Rose.value.error.color"));
          current_value.setText("???");
          should_be.setVisible(false);
-         other_panel.setVisible(false);
+         other_value_panel.setVisible(false);
        }
       else {
          current_value.setForeground(BoardColors.getColor("Rose.value.color"));
@@ -633,6 +639,9 @@ private abstract class VarExprPanel extends DataPanel implements ActionListener,
       if (shd.startsWith("Other")) {
          shd = other_value.getText();
        }
+      else if (shd.startsWith("A different value")) {
+         shd = null;
+       }
       return shd;
     }
    
@@ -643,12 +652,13 @@ private abstract class VarExprPanel extends DataPanel implements ActionListener,
    
    private void setupShouldBe(BumpRunValue value) {
       List<String> alternatives = findAlternatives(value);
-      other_panel.setVisible(false);
+      other_value_panel.setVisible(false);
       if (alternatives == null || alternatives.isEmpty()) {
          BoardLog.logD("BUSH","Should be contents: NONE");
          should_be.setVisible(false);
        }
       else {
+         alternatives.add(0,"A different value");
          BoardLog.logD("BUSH","Should be contents: " + alternatives.size());
          should_be.setContents(alternatives);
          should_be.setSelectedIndex(0);

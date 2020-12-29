@@ -77,9 +77,9 @@ class StemQueryParameterValues extends StemQueryBase
 /*                                                                              */
 /********************************************************************************/
 
-private Set<String>    parameter_set;
-private String          method_name; 
-private String          project_name;
+private Set<String>     parameter_set;
+private String          value_method_name; 
+private String          value_project_name;
 
 
 /********************************************************************************/
@@ -91,9 +91,9 @@ private String          project_name;
 StemQueryParameterValues(StemMain ctrl,Element xml)
 {
    super(ctrl,xml);
-   method_name = IvyXml.getAttrString(xml,"METHOD");
+   value_method_name = IvyXml.getAttrString(xml,"METHOD");
    parameter_set = new HashSet<>();
-   project_name = null;
+   value_project_name = null;
    for (Element p : IvyXml.children(xml,"PARAMETER")) {
       parameter_set.add(IvyXml.getAttrString(p,"NAME"));
     }
@@ -153,7 +153,7 @@ void process(StemMain sm,IvyXmlWriter xw) throws RoseException
    
    // then for each argument (or this), evaluate the corresponding expression
    
-   BudLaunch pctx = new BudLaunch(sm,thread_id,prev.getFrameId(),project_name);
+   BudLaunch pctx = new BudLaunch(sm,thread_id,prev.getFrameId(),value_project_name);
    Map<String,BudValue> pvals = new HashMap<>();
    for (int i = 0; i < callargs.size(); ++i) {
       String nm = parms.get(i);
@@ -192,7 +192,7 @@ private ASTNode getAstForFrame(StemMain sm,BudStackFrame frm,ASTNode base)
     }
    if (fnm == null || pnm == null) return null;
    
-   project_name = pnm;
+   value_project_name = pnm;
    
    try {
       String text = IvyFile.loadFile(fnm);
@@ -214,7 +214,7 @@ private ASTNode getAstForFrame(StemMain sm,BudStackFrame frm,ASTNode base)
 
 private List<ASTNode> findMethodCallArgs(ASTNode n)
 {
-   String mnm = method_name;
+   String mnm = value_method_name;
    int idx = mnm.indexOf("(");
    if (idx > 0) mnm = mnm.substring(0,idx);
    idx = mnm.lastIndexOf(".");

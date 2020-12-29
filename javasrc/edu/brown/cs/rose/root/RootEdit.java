@@ -1,8 +1,8 @@
 /********************************************************************************/
 /*                                                                              */
-/*              BushRepair.java                                                 */
+/*              RootEdit.java                                                   */
 /*                                                                              */
-/*      Representation of a potential repair                                    */
+/*      Representation of a text edit                                           */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
@@ -33,13 +33,29 @@
 
 
 
-package edu.brown.cs.rose.bush;
+package edu.brown.cs.rose.root;
 
+import java.io.File;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.eclipse.text.edits.CopySourceEdit;
+import org.eclipse.text.edits.CopyTargetEdit;
+import org.eclipse.text.edits.CopyingRangeMarker;
+import org.eclipse.text.edits.DeleteEdit;
+import org.eclipse.text.edits.InsertEdit;
+import org.eclipse.text.edits.MoveSourceEdit;
+import org.eclipse.text.edits.MoveTargetEdit;
+import org.eclipse.text.edits.MultiTextEdit;
+import org.eclipse.text.edits.RangeMarker;
+import org.eclipse.text.edits.ReplaceEdit;
+import org.eclipse.text.edits.TextEdit;
+import org.eclipse.text.edits.UndoEdit;
 import org.w3c.dom.Element;
 
-import edu.brown.cs.rose.root.RootRepair;
+import edu.brown.cs.ivy.xml.IvyXml;
+import edu.brown.cs.ivy.xml.IvyXmlWriter;
 
-class BushRepair extends RootRepair implements BushConstants
+public class RootEdit implements RootConstants
 {
 
 
@@ -49,6 +65,11 @@ class BushRepair extends RootRepair implements BushConstants
 /*                                                                              */
 /********************************************************************************/
 
+private Element         complete_edit;
+private File            base_file;
+private TextEdit        text_edit;
+
+private static AtomicInteger edit_counter = new AtomicInteger(1);
 
 
 /********************************************************************************/
@@ -57,11 +78,22 @@ class BushRepair extends RootRepair implements BushConstants
 /*                                                                              */
 /********************************************************************************/
 
-BushRepair(Element xml,BushLocation loc)
-{ 
-   super(xml,loc);
+public RootEdit(Element xml)
+{
+   complete_edit = xml;
+   String f = IvyXml.getAttrString(xml,"FILE");
+   if (f == null) base_file = null;
+   else base_file = new File(f);
 }
 
+
+public RootEdit(File f,TextEdit te)
+{ 
+   complete_edit = null;
+   base_file = f;
+   text_edit = te;
+}
+   
 
 
 /********************************************************************************/
@@ -70,18 +102,85 @@ BushRepair(Element xml,BushLocation loc)
 /*                                                                              */
 /********************************************************************************/
 
-@Override public String toString()
+public void outputXml(IvyXmlWriter xw)
 {
-   return getDescription();
+   if (complete_edit != null) {
+      xw.writeXml(complete_edit);
+    }
+   else {
+      xw.begin("REPAIREDIT");
+      xw.field("FILE",base_file);
+      outputTextEdit(text_edit,xw);
+      xw.end("REPAIREDIT");
+    }
 }
 
 
 
+private static void outputTextEdit(TextEdit te,IvyXmlWriter xw)
+{
+   xw.begin("EDIT");
+   xw.field("OFFSET",te.getOffset());
+   xw.field("LENGTH",te.getLength());
+   xw.field("INCEND",te.getInclusiveEnd());
+   xw.field("EXCEND",te.getExclusiveEnd());
+   xw.field("ID",te.hashCode());
+   xw.field("COUNTER",edit_counter.incrementAndGet());
+   
+   if (te instanceof CopyingRangeMarker) {
+      xw.field("TYPE","COPYRANGE"); 
+    }
+   else if (te instanceof CopySourceEdit) {
+      CopySourceEdit cse = (CopySourceEdit) te;
+      xw.field("TYPE","COPYSOURCE");
+      xw.field("TARGET",cse.getTargetEdit().hashCode());
+    }
+   else if (te instanceof CopyTargetEdit) {
+      xw.field("TYPE","COPYTARGET");
+    }
+   else if (te instanceof DeleteEdit) {
+      xw.field("TYPE","DELETE");
+    }
+   else if (te instanceof InsertEdit) {
+      InsertEdit ite = (InsertEdit) te;
+      xw.field("TYPE","INSERT");
+      xw.cdataElement("TEXT",ite.getText());
+    }
+   else if (te instanceof MoveSourceEdit) {
+      MoveSourceEdit mse = (MoveSourceEdit) te;
+      xw.field("TYPE","MOVESOURCE");
+      xw.field("TARGET",mse.getTargetEdit().hashCode());
+    }
+   else if (te instanceof MoveTargetEdit) {
+      xw.field("TYPE","MOVETARGET");
+    }
+   else if (te instanceof MultiTextEdit) {
+      xw.field("TYPE","MULTI");
+    }
+   else if (te instanceof RangeMarker) {
+      xw.field("TYPE","RANGEMARKER");
+    }
+   else if (te instanceof ReplaceEdit) {
+      ReplaceEdit rte = (ReplaceEdit) te;
+      xw.field("TYPE","REPLACE");
+      xw.cdataElement("TEXT",rte.getText());
+    }
+   else if (te instanceof UndoEdit) {
+      xw.field("TYPE","UNDO");
+    }
+   
+   if (te.hasChildren()) {
+      for (TextEdit cte : te.getChildren()) {
+	 outputTextEdit(cte,xw);
+       }
+    }
+   xw.end("EDIT");
+}
 
-}       // end of class BushRepair
+}       // end of class RootEdit
 
 
 
 
-/* end of BushRepair.java */
+/* end of RootEdit.java */
 

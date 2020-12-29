@@ -43,6 +43,7 @@ import org.w3c.dom.Element;
 import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
 import edu.brown.cs.rose.bract.BractFactory;
+import edu.brown.cs.rose.root.RootControl;
 import edu.brown.cs.rose.root.RootLocation;
 import edu.brown.cs.rose.root.RootMetrics;
 import edu.brown.cs.rose.root.RootProblem;
@@ -113,7 +114,7 @@ abstract void process(StemMain stem,IvyXmlWriter xw) throws RoseException;
 
 protected void outputGraph(Element hrslt,IvyXmlWriter xw) throws RoseException
 {
-//    RoseLog.logD("STEM","HISTORY RESULT: " + IvyXml.convertXmlToString(hrslt));
+// RoseLog.logD("STEM","HISTORY RESULT: " + IvyXml.convertXmlToString(hrslt));
    
    if (hrslt == null) throw new RoseException("Can't find history");
    hrslt = IvyXml.getChild(hrslt,"QUERY");
@@ -130,7 +131,7 @@ private void processGraph(Element gelt,IvyXmlWriter xw)
    Map<String,GraphNode> locs = new HashMap<>();
    
    for (Element nelt : IvyXml.children(gelt,"NODE")) {
-      GraphNode gn = new GraphNode(nelt);
+      GraphNode gn = new GraphNode(stem_control,nelt);
       if (!gn.isValid()) continue;
       String id = gn.getLocationString();
       GraphNode ogn = locs.get(id);
@@ -158,12 +159,15 @@ private static class GraphNode {
    private RootLocation node_location;
    private int node_priority;
    private String node_reason;
+   private String node_type;
    
-   GraphNode(Element nelt) {
+   GraphNode(RootControl ctrl,Element nelt) {
       Element locelt = IvyXml.getChild(nelt,"LOCATION");
-      node_location = BractFactory.getFactory().createLocation(locelt);
+      node_location = BractFactory.getFactory().createLocation(ctrl,locelt);
       node_reason = IvyXml.getAttrString(nelt,"REASON");
       node_priority = IvyXml.getAttrInt(nelt,"PRIORITY",5);
+      Element point = IvyXml.getChild(nelt,"POINT");
+      node_type = IvyXml.getAttrString(point,"NODETYPE");
     }
    
    boolean isValid() {
@@ -171,6 +175,14 @@ private static class GraphNode {
       if (node_location.getFile() == null) return false;
       if (!node_location.getFile().exists()) return false;
       if (node_location.getLineNumber() <= 0) return false;
+      if (node_type == null) return false;
+      switch (node_type) {
+         case "MethodDeclaration" :
+            return false;
+         default :
+            
+       }
+      
       return true;
     }
    

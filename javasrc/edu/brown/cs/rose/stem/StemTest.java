@@ -248,7 +248,7 @@ public void testRoseNotNull()
 
 
 @Test
-public void testRoseOffByOne()
+public void testRoseLocation()
 {
    String workspace = "rosetest";
    String project = "rosetest";
@@ -262,10 +262,7 @@ public void testRoseOffByOne()
       xw.begin("PROBLEM");
       xw.field("FRAME",fd.getId());
       xw.field("THREAD",fd.getThreadId());
-      xw.field("TYPE","VARIABLE");
-      xw.textElement("ITEM","a");
-      xw.textElement("ORIGINAL","java.lang.String pup");
-      xw.textElement("TARGET","null");
+      xw.field("TYPE","LOCATION");
       fd.outputLocation(xw,project,5,mc);
       xw.end("PROBLEM");
       String cnts = xw.toString();
@@ -283,11 +280,46 @@ public void testRoseOffByOne()
 
 
 @Test
-public void testRoseLocation()
+public void testRoseString()
 {
    String workspace = "rosetest";
    String project = "rosetest";
    String launch = "test06";
+   MintControl mc = setupBedrock(workspace,project);
+   
+   try {
+      FrameData fd = setupTest(mc,project,launch);
+      
+      IvyXmlWriter xw = new IvyXmlWriter();
+      xw.begin("PROBLEM");
+      xw.field("FRAME",fd.getId());
+      xw.field("THREAD",fd.getThreadId());
+      xw.field("TYPE","VARIABLE");
+      xw.textElement("ITEM","baby");
+      xw.textElement("ORIGINAL","java.lang.String piglet");
+      xw.textElement("TARGET","piglets");
+      fd.outputLocation(xw,project,5,mc);
+      xw.end("PROBLEM");
+      String cnts = xw.toString();
+      
+      runTest(mc,fd,cnts);
+    }
+   catch (Throwable t) {
+      RoseLog.logE("Problem processing test",t);
+    }
+   finally {
+      shutdownBedrock(workspace);
+    }
+}
+
+
+
+@Test
+public void testRoseLocation_3()
+{
+   String workspace = "rosetest";
+   String project = "rosetest";
+   String launch = "test03";
    MintControl mc = setupBedrock(workspace,project);
    
    try {
@@ -338,6 +370,8 @@ private FrameData setupTest(MintControl ctrl,String project,String launch)
 private void runTest(MintControl ctrl,FrameData fd,String prob)
 {
    getChangedVariables(ctrl,fd);
+   
+   getSuggestionsFor(ctrl,fd,prob,null);
    
    Element locs = getHistory(ctrl,fd,prob);
    
@@ -1005,7 +1039,9 @@ private static class SuggestionSet {
     }
    
    void addSuggestion(Element xml) {
-      suggest_nodes.add(xml);
+      for (Element r : IvyXml.children(xml,"REPAIR")) { 
+         suggest_nodes.add(r);
+       }
     }
    
    synchronized void endSuggestions() {

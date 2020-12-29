@@ -37,6 +37,7 @@ package edu.brown.cs.rose.bract;
 
 import org.w3c.dom.Element;
 
+import edu.brown.cs.rose.root.RootControl;
 import edu.brown.cs.rose.root.RootLocation;
 
 class BractLocation extends RootLocation implements BractConstants
@@ -49,9 +50,9 @@ class BractLocation extends RootLocation implements BractConstants
 /*                                                                              */
 /********************************************************************************/
 
-BractLocation(Element xml)
+BractLocation(RootControl ctrl,Element xml)
 {
-   super(xml);
+   super(ctrl,xml);
 }
 
 

@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import edu.brown.cs.ivy.mint.MintConstants.CommandArgs;
+import edu.brown.cs.ivy.xml.IvyXmlWriter;
 import edu.brown.cs.rose.root.RootControl;
 import edu.brown.cs.rose.root.RootLocation;
 import edu.brown.cs.rose.root.RootProblem;
@@ -152,7 +153,7 @@ private ProcessorTask startTask(Class<?> cls,RootProblem p,RootLocation l)
    RootRepairFinder rrf = null;
    try {
       rrf = (RootRepairFinder) cnst.newInstance();
-      rrf.setup(this,for_problem,at_location);
+      rrf.setup(this,for_problem,l);
     }
    catch (Throwable t) { }
    if (rrf == null) return null;
@@ -165,8 +166,7 @@ private ProcessorTask startTask(Class<?> cls,RootProblem p,RootLocation l)
 private List<RootLocation> getLocations()
 {
    // compute the set of all locations -- use stem processing?
-   
-   return new ArrayList<>();
+   return rose_control.getLocations(for_problem);
 }
 
 
@@ -180,7 +180,10 @@ private List<RootLocation> getLocations()
 public void sendRepair(RootRepair br)
 {
    CommandArgs args = new CommandArgs("NAME",reply_id);
-   String body = null; // build from repair
+   
+   IvyXmlWriter xw = new IvyXmlWriter();
+   br.outputXml(xw);
+   String body = xw.toString();
    
    rose_control.sendRoseMessage("SUGGEST",args,body,-1);
 }
@@ -204,6 +207,7 @@ private static class ProcessorTask implements Runnable {
     }
    
    @Override public void run() {
+      RoseLog.logD("BRACT","Start repair finder");
       try {
          repair_finder.process();
        }
