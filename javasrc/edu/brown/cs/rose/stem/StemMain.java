@@ -67,10 +67,12 @@ import edu.brown.cs.ivy.xml.IvyXmlWriter;
 import edu.brown.cs.rose.bract.BractFactory;
 import edu.brown.cs.rose.root.RootMetrics;
 import edu.brown.cs.rose.root.RootProblem;
+import edu.brown.cs.rose.root.RootValidate;
 import edu.brown.cs.rose.root.RootControl;
 import edu.brown.cs.rose.root.RootLocation;
 import edu.brown.cs.rose.root.RoseException;
 import edu.brown.cs.rose.root.RoseLog;
+import edu.brown.cs.rose.saver.SaverFactory;
 
 public class StemMain implements StemConstants, MintConstants, RootControl
 {
@@ -103,12 +105,15 @@ private MintControl	mint_control;
 private String		workspace_path;
 private boolean 	fait_started;
 private boolean 	fait_running;
+private boolean         seede_started;
+private boolean         seede_running;
 private String		session_id;
 private Element 	last_analysis;
 private boolean 	is_done;
 private Set<File>	added_files;
 private AnalysisState	analysis_state;
 private boolean 	local_fait;
+private boolean         local_seede;
 private Map<String,EvalData> eval_handlers;
 private StemCompiler    stem_compiler;
 private Map<File,String> project_map;
@@ -137,9 +142,12 @@ private StemMain(String [] args)
    workspace_path = System.getProperty("user.home");
    fait_started = false;
    fait_running = false;
+   seede_started = false;
+   seede_running = false;
    session_id = null;
    is_done = false;
    local_fait = false;
+   local_seede = false;
    session_id = "ROSE_" + IvyExecQuery.getProcessId() + "_" + id_counter.incrementAndGet();
    added_files = new HashSet<>();
    analysis_state = AnalysisState.NONE;
@@ -176,6 +184,9 @@ private void scanArgs(String [] args)
 	  }
 	 else if (args[i].startsWith("-local")) {                       // -local
 	    local_fait = true;
+	  }
+         else if (args[i].startsWith("-lseede")) {                       // -local seede
+	    local_seede = true;
 	  }
 	 else badArgs();
        }
@@ -363,7 +374,7 @@ private boolean startFaitProcess()
 	       m.invoke(null,new Object [] { fargarr });
 	     }
 	    catch (Throwable t) {
-	       RoseLog.logE("Couldn't start fait locally",t);
+	       RoseLog.logE("STEM","Couldn't start fait locally",t);
 	       break;
 	     }
 	  }
@@ -371,6 +382,7 @@ private boolean startFaitProcess()
 	    try {
 	       exec = new IvyExec(args,null,IvyExec.ERROR_OUTPUT);     // make IGNORE_OUTPUT to clean up otuput
 	       isnew = true;
+               fait_started = true;
 	       RoseLog.logD("STEM","Run " + exec.getCommand());
 	     }
 	    catch (IOException e) {
@@ -538,6 +550,11 @@ private void handleSuggestCommand(MintMessage msg) throws RoseException
    Element locxml = IvyXml.getChild(msgxml,"LOCATION");
    RootLocation loc = bract.createLocation(this,locxml);
    
+   SaverFactory saver = SaverFactory.getFactory();
+   String fid = IvyXml.getAttrString(msgxml,"VALIDATE");
+   if (fid != null && fid.equals("*")) fid = null;
+   RootValidate validate = saver.createValidate(this,problem,fid,loc);
+   
    IvyXmlWriter xw = new IvyXmlWriter();
    xw.begin("RESULT");
    xw.field("NAME",id);
@@ -545,7 +562,7 @@ private void handleSuggestCommand(MintMessage msg) throws RoseException
    msg.replyTo(xw.toString());
    xw.close();
    
-   bract.startSuggestions(this,id,problem,loc);
+   bract.startSuggestions(this,id,problem,loc,validate);
 }
 
 
@@ -585,11 +602,171 @@ private void handleMetricsCommand(MintMessage msg)
 }
 
 
+
+/********************************************************************************/
+/*                                                                              */
+/*      Start seede process                                                     */
+/*                                                                              */
+/********************************************************************************/
+
+private boolean startSeede()
+{
+   RoseLog.logD("STEM","START SEEDE " + seede_running + " " + seede_started);
+   
+   if (seede_running || seede_started) return false;      // quick, informal check
+   
+   IvyExec exec = null;
+   File wd = new File(workspace_path);
+   File logf = new File(wd,"seede.log");
+   boolean isnew = false;
+   
+   BoardProperties bp = BoardProperties.getProperties("Rose");
+   String dbgargs = bp.getProperty("Rose.seede.jvm.args");
+   List<String> args = new ArrayList<String>();
+   args.add(IvyExecQuery.getJavaPath());
+   
+   if (dbgargs != null && dbgargs.contains("###")) {
+      int port = (int)(Math.random() * 1000 + 3000);
+      RoseLog.logI("STEM","Seede debugging port " + port);
+      dbgargs = dbgargs.replace("###",Integer.toString(port));
+    }
+   
+   if (dbgargs != null) {
+      StringTokenizer tok = new StringTokenizer(dbgargs);
+      while (tok.hasMoreTokens()) {
+         args.add(tok.nextToken());
+       }
+    }
+   
+   BoardSetup setup = BoardSetup.getSetup();
+   File f1 = setup.getRootDirectory();
+   File f2 = new File(f1,"dropins");
+   File seedejar = new File(f2,"seede.jar");
+   File fjar = IvyFile.getJarFile(StemMain.class);
+   if (fjar == null || fjar.getName().endsWith(".class")) {
+      File f3 = new File("/Users/spr/Eclipse/seede/seede/bin");
+      if (!f3.exists()) f3 = new File("/pro/seede/java");
+      if (!f3.exists()) f3 = new File("/research/people/spr/seede/java");
+      if (f3.exists()) seedejar = f3;
+    }
+   
+   args.add("-cp");
+   String xcp = bp.getProperty("Rose.seede.class.path");
+   if (xcp == null) {
+      xcp = System.getProperty("java.class.path");
+      String ycp = bp.getProperty("Rose.seede.add.path");
+      if (ycp != null) xcp = ycp + File.pathSeparator + xcp;
+    }
+   else {
+      StringBuffer buf = new StringBuffer();
+      StringTokenizer tok = new StringTokenizer(xcp,":;");
+      while (tok.hasMoreTokens()) {
+         String elt = tok.nextToken();
+         if (!elt.startsWith("/") &&  !elt.startsWith("\\")) {
+            if (elt.equals("eclipsejar")) {
+               elt = setup.getEclipsePath();
+             }
+            else if (elt.equals("seede.jar") && seedejar != null) {
+               elt = seedejar.getPath();
+             }
+            else {
+               elt = setup.getLibraryPath(elt);
+             }
+          }
+         if (buf.length() > 0) buf.append(File.pathSeparator);
+         buf.append(elt);
+       }
+      xcp = buf.toString();
+    }
+   
+   args.add(xcp);
+   args.add("edu.brown.cs.seede.sesame.SeedeMain");
+   args.add("-m");
+   args.add(mint_control.getMintName());
+   args.add("-L");
+   args.add(logf.getPath());
+   if (bp.getBoolean("Rose.seede.debug")) args.add("-D");
+   if (bp.getBoolean("Rose.seede.trace")) args.add("-T");
+   
+   synchronized (this) {
+      if (seede_started || seede_running) return false;
+      seede_started = true;
+    }
+   
+   for (int i = 0; i < 100; ++i) {
+      MintDefaultReply rply = new MintDefaultReply();
+      mint_control.send("<SEEDE DO='PING' SID='*' />",rply,MINT_MSG_FIRST_NON_NULL);
+      String rslt = rply.waitForString(1000);
+      if (rslt != null) {
+         seede_running = true;
+         break;
+       }
+      if (i == 0) {
+         if (local_seede) {
+            List<String> fargs = new ArrayList<>();
+            boolean use = false;
+            for (String s : args) {
+               if (s.equals("edu.brown.cs.seede.sesame.SeedeMain")) use = true;
+               else if (use) fargs.add(s);
+             }
+            String [] fargarr = new String[fargs.size()];
+            fargarr = fargs.toArray(fargarr);
+            try {
+               Class<?> faitcls = Class.forName("edu.brown.cs.seede.sesame.SeedeMain");
+               Method m = faitcls.getMethod("main",fargarr.getClass());
+               m.invoke(null,new Object [] { fargarr });
+             }
+            catch (Throwable t) {
+               RoseLog.logE("STEM","Couldn't start seede locally",t);
+               break;
+             }
+          }
+         else {   
+            try {
+               exec = new IvyExec(args,null,IvyExec.ERROR_OUTPUT);     // make IGNORE_OUTPUT to clean up otuput
+               isnew = true;
+               seede_started = true;
+               RoseLog.logD("STEM","Run " + exec.getCommand());
+             }
+            catch (IOException e) {
+               break;
+             }
+          }
+       }
+      else {
+         try {
+            if (exec != null && !local_seede) {
+               int sts = exec.exitValue();
+               RoseLog.logD("STEM","Seede server disappeared with status " + sts);
+               break;
+             }
+          }
+         catch (IllegalThreadStateException e) { }
+       }
+      
+      try {
+         wait(2000);
+       }
+      catch (InterruptedException e) { }
+    }
+   
+   if (!seede_running) {
+      RoseLog.logE("STEM","Unable to start seede server: " + args);
+    }
+   
+   return isnew;
+}
+
+
+
 /********************************************************************************/
 /*										*/
-/*	Send message to FAIT							*/
+/*	Handle messaging							*/
 /*										*/
 /********************************************************************************/
+
+@Override public MintControl getMintControl()           { return mint_control; }
+
 
 @Override public Element sendFaitMessage(String cmd,CommandArgs args,String cnts)
 {
@@ -641,6 +818,53 @@ private void handleMetricsCommand(MintMessage msg)
 {
    return sendBubblesXmlReply(cmd,null,args,cnts);
 }
+
+
+@Override public Element sendSeedeMessage(String id,String cmd,CommandArgs args,String cnts)
+{
+   if (!seede_running) startSeede();
+   
+   MintDefaultReply rply = new MintDefaultReply();
+   IvyXmlWriter xw = new IvyXmlWriter();
+   xw.begin("SEEDE");
+   xw.field("DO",cmd);
+   if (id != null) xw.field("SID",id);
+   if (args != null) {
+      for (Map.Entry<String,Object> ent : args.entrySet()) {
+	 xw.field(ent.getKey(),ent.getValue());
+       }
+    }
+   if (cnts != null) {
+      xw.xmlText(cnts);
+    }
+   xw.end("SEEDE");
+   String msg = xw.toString();
+   xw.close();
+   
+   RoseLog.logD("STEM","Send to SEEDE: " + msg);
+   
+   mint_control.send(msg,rply,MINT_MSG_FIRST_NON_NULL);
+   
+   Element rslt = rply.waitForXml(300000);
+   
+   RoseLog.logD("STEM","Reply from SEEDE: " + IvyXml.convertXmlToString(rslt));
+   if (rslt == null && (cmd.equals("START") || cmd.equals("BEGIN"))) {
+      MintDefaultReply prply = new MintDefaultReply();
+      mint_control.send("<SEEDE DO='PING' SID='*' />",rply,MINT_MSG_FIRST_NON_NULL);
+      String prslt = prply.waitForString(3000);
+      if (prslt == null) {
+	 seede_running = false;
+	 seede_started = false;
+	 startSeede();
+	 rply = new MintDefaultReply();
+	 mint_control.send(msg,rply,MINT_MSG_FIRST_NON_NULL);
+	 rslt = rply.waitForXml(0);
+       }
+    }
+   
+   return rslt;
+}
+
 
 
 

@@ -1,8 +1,8 @@
 /********************************************************************************/
 /*                                                                              */
-/*              RoseControl.java                                                */
+/*              SaverConstants.java                                             */
 /*                                                                              */
-/*       Controller for ROSE-Bubbles-Fait interactions                          */
+/*      Seede Access for Verification of Edit-Based Repairs                     */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
@@ -33,115 +33,24 @@
 
 
 
-package edu.brown.cs.rose.root;
+package edu.brown.cs.rose.saver;
 
-import java.io.File;
-import java.util.List;
 
-import org.eclipse.jdt.core.dom.ASTNode;
-import org.eclipse.jface.text.IDocument;
-import org.w3c.dom.Element;
 
-import edu.brown.cs.ivy.mint.MintControl;
-import edu.brown.cs.ivy.mint.MintConstants.CommandArgs;
-
-public interface RootControl
+public interface SaverConstants
 {
 
 
-/**
- *      Send a message to FAIT and wait for reply
- **/
-
-Element sendFaitMessage(String cmd,CommandArgs args,String xmlcnts);
-
-Element sendSeedeMessage(String sid,String cmd,CommandArgs args,String xmlcnts);
-
-
-/**
- *      Send a message to Bubbles back end (BEDROCK) and wait for reply
- **/
-
-Element sendBubblesMessage(String cmd,CommandArgs args,String xmlcnts);
-
-
-/**
- *      Wait for an evaluation to return and return the evaluation result
- **/ 
-
-Element waitForEvaluation(String eid);
-
-
-/**
- *      Send a message out.  If wait is < 0, no reply is needed.  Otherwise
- *      wait for <wait> ms for a reply.  (0 implies forever).
- **/
-
-Element sendRoseMessage(String cmd,CommandArgs args,String xmlcnts,long wait);
-
-
-/**
- *      Get AST Node for a location
- **/
-
-ASTNode getSourceNode(String proj,File f,int offset,int line,boolean resolve,boolean stmt);
-
-
-public default ASTNode getSourceNode(RootLocation loc,boolean resolve,boolean stmt)
-{
-   int line = -1;
-   if (loc.getStartOffset() < 0) line = loc.getLineNumber();
+interface SaverCheck {
    
-   return getSourceNode(loc.getProject(),loc.getFile(),loc.getStartOffset(),line,resolve,stmt);
 }
 
 
-public default ASTNode getSourceStatement(RootLocation loc,boolean resolve)
-{
-   return getSourceNode(loc,resolve,true);
-}
 
-
-public default ASTNode getSourceStatement(String proj,File f,int offset,int line,boolean resolve)
-{
-   return getSourceNode(proj,f,offset,line,resolve,true);
-}
-
-
-/**
- *      return document to be used to create text edit for a change
- **/
- 
-IDocument getSourceDocument(String proj,File f);
-
-
-
-/**
- *      Return locations associated with a problem
- **/
-
-List<RootLocation> getLocations(RootProblem prob);
-
-
-/**
- *      Find project associated with a given file
- **/
-
-String getProjectForFile(File f);
-
-
-/**
- *      Return mint handle for local commands
- **/
-
-MintControl getMintControl();
-
-
-
-}       // end of interface RoseControl
+}       // end of interface SaverConstants
 
 
 
 
-/* end of RoseControl.java */
+/* end of SaverConstants.java */
 

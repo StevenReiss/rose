@@ -1,8 +1,8 @@
 /********************************************************************************/
 /*                                                                              */
-/*              BractFactory.java                                               */
+/*              SaverStartLocator.java                                          */
 /*                                                                              */
-/*      Factory for Basic Resources for Accessing Common Teachnolgy             */
+/*      Find a starting point for validation                                    */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
@@ -33,24 +33,21 @@
 
 
 
-package edu.brown.cs.rose.bract;
+package edu.brown.cs.rose.saver;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
+import java.io.File;
 import java.util.List;
 
-import org.w3c.dom.Element;
+import org.eclipse.jdt.core.dom.ASTNode;
 
-import edu.brown.cs.bubbles.board.BoardProperties;
+import edu.brown.cs.rose.bud.BudLaunch;
+import edu.brown.cs.rose.bud.BudStack;
+import edu.brown.cs.rose.bud.BudStackFrame;
 import edu.brown.cs.rose.root.RootControl;
 import edu.brown.cs.rose.root.RootLocation;
 import edu.brown.cs.rose.root.RootProblem;
-import edu.brown.cs.rose.root.RootRepairFinder;
-import edu.brown.cs.rose.root.RootValidate;
-import edu.brown.cs.rose.root.RoseLog;
 
-public class BractFactory implements BractConstants
+class SaverStartLocator implements SaverConstants
 {
 
 
@@ -60,12 +57,10 @@ public class BractFactory implements BractConstants
 /*                                                                              */
 /********************************************************************************/
 
-private List<Class<?>> processor_classes;
-private List<Class<?>> location_classes;
-
-private static BractFactory the_factory;
-
-
+private RootControl  root_control;
+private BudLaunch    for_launch;
+private RootProblem  base_problem;
+private RootLocation at_location;
 
 
 /********************************************************************************/
@@ -74,108 +69,122 @@ private static BractFactory the_factory;
 /*                                                                              */
 /********************************************************************************/
 
-public static synchronized BractFactory getFactory()
+SaverStartLocator(RootProblem rp,BudLaunch bl,RootLocation at)
 {
-   if (the_factory == null) {
-      the_factory = new BractFactory();
-    }
-   return the_factory;
+   root_control = bl.getControl();
+   for_launch = bl;
+   base_problem = rp;
+   at_location = at;
 }
 
-private BractFactory() 
-{ 
-   processor_classes = new ArrayList<>();
-   location_classes = new ArrayList<>();
-   BoardProperties props = BoardProperties.getProperties("Rose");
-   RoseLog.logD("BRACT","Found properties " + props.size());
-   for (String s : props.stringPropertyNames()) {
-      if (s.startsWith("Rose.processor")) {
-         String v = props.getString(s);
-         RoseLog.logD("BRACT","REGISTER " + s + " " +  v);
-         registerProcessor(v);
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Processing methods                                                      */
+/*                                                                              */
+/********************************************************************************/
+
+String getStartingFrame()
+{
+   String startframe = for_launch.getFrame();
+   
+   if (at_location != null) startframe = updateFrameForLocation(startframe,at_location);
+   else {
+      List<RootLocation> locs = root_control.getLocations(base_problem);
+      if (locs != null) {
+         for (RootLocation loc : locs) {
+            startframe = updateFrameForLocation(startframe,loc);
+          }
        }
     }
-}
-
-
-/********************************************************************************/
-/*                                                                              */
-/*      Create a problem description                                            */
-/*                                                                              */
-/********************************************************************************/
-
-public RootProblem createProblemDescription(RootControl ctrl,Element xml)
-{
-   return new BractProblem(ctrl,xml);
-}
-
-
-
-
-/********************************************************************************/
-/*                                                                              */
-/*      Create a location                                                       */
-/*                                                                              */
-/********************************************************************************/
-
-public RootLocation createLocation(RootControl ctrl,Element xml)
-{
-   if (xml == null) return null;
    
-   return new BractLocation(ctrl,xml);
+   startframe = findValidStart(startframe);
+   
+   return startframe;
 }
 
 
 
+
 /********************************************************************************/
 /*                                                                              */
-/*      Register a suggestion processor                                         */
+/*      Move up stack based on location                                         */
 /*                                                                              */
 /********************************************************************************/
 
-public boolean registerProcessor(String clsnm)
+private String updateFrameForLocation(String fid,RootLocation loc)
 {
-   try {
-      Class<?> cls = (Class<?>) Class.forName(clsnm);
-      if (!RootRepairFinder.class.isAssignableFrom(cls)) {
-         return false;
+   String m = loc.getMethod();
+   
+   boolean fnd = false;
+   BudStack bs = for_launch.getStack();
+   for (BudStackFrame bf : bs.getFrames()) {
+      if (bf.getFrameId().equals(fid)) fnd = true;
+      else if (fnd) {
+         String m1 = bf.getClassName() + "." + bf.getMethodName();
+         if (m1.equals(m)) {
+            fid = bf.getFrameId();
+          }
        }
-      Constructor<?> cnst = cls.getConstructor();
-      RootRepairFinder rrf = (RootRepairFinder) cnst.newInstance();
-      boolean loc = rrf.requiresLocation();
-      if (loc) location_classes.add(cls);
-      else processor_classes.add(cls);
-      RoseLog.logD("BRACT","Successful load");
-      return true;
     }
-   catch (ClassNotFoundException e) { }
-   catch (NoSuchMethodException e) { }
-   catch (InvocationTargetException e) { }
-   catch (IllegalAccessException e) { }
-   catch (InstantiationException e) { }
    
-   return false;
+   return fid;
 }
 
 
 
 /********************************************************************************/
 /*                                                                              */
-/*      Start generating suggestions                                            */
+/*      Find a frame on stack for doing execution from                          */
 /*                                                                              */
 /********************************************************************************/
 
-public void startSuggestions(RootControl ctrl,String rid,RootProblem prob,RootLocation at,
-      RootValidate validate)
+private String findValidStart(String fid)
 {
-   BractControl proc = new BractControl(ctrl,rid,prob,at,processor_classes,location_classes);
-   proc.start();
+   boolean fnd = false;
+   BudStack bs = for_launch.getStack();
+   BudStackFrame prior = null;
+   int ct = 0;
+   for (BudStackFrame bf : bs.getFrames()) {
+      if (bf.getFrameId().equals(fid)) fnd = true;
+      else if (fnd) {
+         File f = bf.getSourceFile();
+         if (f != null && f.exists() && f.canRead()) {
+            String proj = null;
+            if (f != null) proj = root_control.getProjectForFile(f);
+            ASTNode n = root_control.getSourceNode(proj,f,-1,bf.getLineNumber(),true,false);
+            while (n != null) {
+               if (n.getNodeType() == ASTNode.METHOD_DECLARATION) break;
+               n = n.getParent();
+             }
+            // might want to check if method of n is not private
+            if (n != null) {
+               ++ct;
+               prior = bf;
+             }
+            else f = null;
+          }
+         else f = null;
+         if (f == null) {
+            if (prior != null && ct < 10) {
+               fid = prior.getFrameId();
+             }
+            break;
+          }
+       }
+    } 
+   
+   return fid;
 }
 
-}       // end of class BractFactory
+
+
+
+}       // end of class SaverStartLocator
 
 
 
 
-/* end of BractFactory.java */
+/* end of SaverStartLocator.java */
 

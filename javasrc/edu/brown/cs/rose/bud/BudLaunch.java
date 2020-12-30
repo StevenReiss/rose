@@ -44,8 +44,9 @@ import org.w3c.dom.Element;
 import edu.brown.cs.ivy.mint.MintConstants.CommandArgs;
 import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.rose.root.RootControl;
+import edu.brown.cs.rose.root.RootProblem;
 
-public class BudLaunch
+        public class BudLaunch
 {
 
 
@@ -84,17 +85,23 @@ public BudLaunch(RootControl ctrl,String tid,String fid,String proj)
 }
 
 
+public BudLaunch(RootControl ctrl,RootProblem p)
+{
+   this(ctrl,p.getThreadId(),p.getFrameId(),p.getBugLocation().getProject());
+}
+
+
 /********************************************************************************/
 /*                                                                              */
 /*      Access methods                                                          */
 /*                                                                              */
 /********************************************************************************/
 
-String getThread()                      { return thread_id; }
+public String getThread()               { return thread_id; }
 
-String getFrame()                       { return frame_id; }
+public String getFrame()                { return frame_id; }
 
-RootControl getControl()                { return rose_control; }
+public RootControl getControl()         { return rose_control; }
 
 BudType findType(String typ)
 {

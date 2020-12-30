@@ -1,8 +1,8 @@
 /********************************************************************************/
 /*                                                                              */
-/*              BudStackFrame.java                                              */
+/*              SaverFactory.java                                               */
 /*                                                                              */
-/*      description of class                                                    */
+/*      Seede Access for Verification of Edit-Based Repairs access class        */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
@@ -33,18 +33,20 @@
 
 
 
-package edu.brown.cs.rose.bud;
+package edu.brown.cs.rose.saver;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Map;
 
-import org.w3c.dom.Element;
 
-import edu.brown.cs.ivy.file.IvyFormat;
-import edu.brown.cs.ivy.xml.IvyXml;
+import edu.brown.cs.rose.bud.BudLaunch;
+import edu.brown.cs.rose.bud.BudValue;
+import edu.brown.cs.rose.root.RootControl;
+import edu.brown.cs.rose.root.RootLocation;
+import edu.brown.cs.rose.root.RootProblem;
+import edu.brown.cs.rose.root.RootValidate;
+import edu.brown.cs.rose.thorn.ThornConstants.ThornVariable;
 
-public class BudStackFrame implements BudConstants
+public class SaverFactory implements SaverConstants
 {
 
 
@@ -54,14 +56,7 @@ public class BudStackFrame implements BudConstants
 /*                                                                              */
 /********************************************************************************/
 
-private String frame_id;
-private File   source_file;
-private String class_name;
-private String method_name;
-private String method_signature;
-private String format_signature;
-private List<String> frame_variables;
-private int     line_number;
+private static SaverFactory the_factory = new SaverFactory();
 
 
 
@@ -71,59 +66,51 @@ private int     line_number;
 /*                                                                              */
 /********************************************************************************/
 
-BudStackFrame(Element xml)
+public static SaverFactory getFactory()
 {
-   frame_id = IvyXml.getAttrString(xml,"ID");
-   class_name = IvyXml.getAttrString(xml,"RECEIVER");
-   method_name = IvyXml.getAttrString(xml,"METHOD");
-   int idx = method_name.lastIndexOf(".");
-   if (idx > 0) method_name = method_name.substring(idx+1);
+   return the_factory;
+}
+
+
+
+private SaverFactory()
+{
    
-   String fnm = IvyXml.getAttrString(xml,"FILE");
-   if (fnm == null) source_file = null;
-   else source_file = new File(fnm);
-   
-   String sgn = IvyXml.getAttrString(xml,"SIGNATURE");
-   method_signature = sgn;
-   if (sgn != null) {
-      int sidx = sgn.lastIndexOf(")");
-      if (sidx > 0) sgn = sgn.substring(0,sidx+1);
-      String fsgn = IvyFormat.formatTypeName(sgn);
-      format_signature = fsgn;
-    }
-   else format_signature = null;
-   
-   line_number = IvyXml.getAttrInt(xml,"LINENO");
-   
-   frame_variables = new ArrayList<>();
-   for (Element e : IvyXml.children(xml,"VALUE")) {
-      String varnm = IvyXml.getAttrString(e,"NAME");
-      frame_variables.add(varnm);
-    }
 }
 
 
 
 /********************************************************************************/
 /*                                                                              */
-/*      Access methods                                                          */
+/*      Create a validate structure to handle validation data                   */
 /*                                                                              */
 /********************************************************************************/
 
-public String getFrameId()                      { return frame_id; }
-public String getClassName()                    { return class_name; }
-public String getMethodName()                   { return method_name; }
-public String getMethodSignature()              { return method_signature; }
-public String getFormatSignature()              { return format_signature; }
-public int getLineNumber()                      { return line_number; }
-public File getSourceFile()                     { return source_file; }
+public RootValidate createValidate(RootControl ctrl,RootProblem prob,String fid,RootLocation atloc)
+{
+   BudLaunch bl = new BudLaunch(ctrl,prob);
    
+   if (fid == null) {
+      SaverStartLocator ssl = new SaverStartLocator(prob,bl,atloc);
+      fid = ssl.getStartingFrame();
+    }
+   if (fid == null) return null;
+   
+   SaverChangedItems itms = new SaverChangedItems(bl,fid);
+   Map<ThornVariable,BudValue> cngs = itms.getChangedItems();
+   if (cngs != null) {
+      // get values here
+    }
+   
+   return null;
+}
 
 
-}       // end of class BudStackFrame
+
+}       // end of class SaverFactory
 
 
 
 
-/* end of BudStackFrame.java */
+/* end of SaverFactory.java */
 

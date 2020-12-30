@@ -1,6 +1,6 @@
 /********************************************************************************/
 /*                                                                              */
-/*              BudStackFrame.java                                              */
+/*              SaverChecker.java                                               */
 /*                                                                              */
 /*      description of class                                                    */
 /*                                                                              */
@@ -33,18 +33,15 @@
 
 
 
-package edu.brown.cs.rose.bud;
+package edu.brown.cs.rose.saver;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
+import edu.brown.cs.rose.bud.BudLaunch;
+import edu.brown.cs.rose.root.RootControl;
+import edu.brown.cs.rose.root.RootProblem;
+import edu.brown.cs.rose.root.RoseLog;
+import edu.brown.cs.rose.saver.SaverConstants.SaverCheck;
 
-import org.w3c.dom.Element;
-
-import edu.brown.cs.ivy.file.IvyFormat;
-import edu.brown.cs.ivy.xml.IvyXml;
-
-public class BudStackFrame implements BudConstants
+class SaverChecker implements SaverCheck, SaverConstants
 {
 
 
@@ -54,14 +51,9 @@ public class BudStackFrame implements BudConstants
 /*                                                                              */
 /********************************************************************************/
 
-private String frame_id;
-private File   source_file;
-private String class_name;
-private String method_name;
-private String method_signature;
-private String format_signature;
-private List<String> frame_variables;
-private int     line_number;
+private RootControl     root_control;
+private RootProblem     for_problem;
+private BudLaunch       for_launch;
 
 
 
@@ -71,59 +63,23 @@ private int     line_number;
 /*                                                                              */
 /********************************************************************************/
 
-BudStackFrame(Element xml)
+SaverChecker(RootControl ctrl,RootProblem p)
 {
-   frame_id = IvyXml.getAttrString(xml,"ID");
-   class_name = IvyXml.getAttrString(xml,"RECEIVER");
-   method_name = IvyXml.getAttrString(xml,"METHOD");
-   int idx = method_name.lastIndexOf(".");
-   if (idx > 0) method_name = method_name.substring(idx+1);
-   
-   String fnm = IvyXml.getAttrString(xml,"FILE");
-   if (fnm == null) source_file = null;
-   else source_file = new File(fnm);
-   
-   String sgn = IvyXml.getAttrString(xml,"SIGNATURE");
-   method_signature = sgn;
-   if (sgn != null) {
-      int sidx = sgn.lastIndexOf(")");
-      if (sidx > 0) sgn = sgn.substring(0,sidx+1);
-      String fsgn = IvyFormat.formatTypeName(sgn);
-      format_signature = fsgn;
-    }
-   else format_signature = null;
-   
-   line_number = IvyXml.getAttrInt(xml,"LINENO");
-   
-   frame_variables = new ArrayList<>();
-   for (Element e : IvyXml.children(xml,"VALUE")) {
-      String varnm = IvyXml.getAttrString(e,"NAME");
-      frame_variables.add(varnm);
-    }
+   root_control = ctrl;
+   for_problem = p;
+   for_launch = new BudLaunch(root_control,for_problem.getThreadId(),
+         for_problem.getFrameId(),for_problem.getBugLocation().getProject());
+   RoseLog.logD("SAVER","Set up checker " + for_launch);
 }
 
 
 
-/********************************************************************************/
-/*                                                                              */
-/*      Access methods                                                          */
-/*                                                                              */
-/********************************************************************************/
-
-public String getFrameId()                      { return frame_id; }
-public String getClassName()                    { return class_name; }
-public String getMethodName()                   { return method_name; }
-public String getMethodSignature()              { return method_signature; }
-public String getFormatSignature()              { return format_signature; }
-public int getLineNumber()                      { return line_number; }
-public File getSourceFile()                     { return source_file; }
-   
 
 
-}       // end of class BudStackFrame
+}       // end of class SaverChecker
 
 
 
 
-/* end of BudStackFrame.java */
+/* end of SaverChecker.java */
 

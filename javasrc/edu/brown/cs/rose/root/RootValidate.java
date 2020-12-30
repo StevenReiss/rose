@@ -1,8 +1,8 @@
 /********************************************************************************/
 /*                                                                              */
-/*              BudStackFrame.java                                              */
+/*              RootValidate.java                                               */
 /*                                                                              */
-/*      description of class                                                    */
+/*      Information for doing a validation                                      */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
@@ -33,18 +33,12 @@
 
 
 
-package edu.brown.cs.rose.bud;
+package edu.brown.cs.rose.root;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
-import org.w3c.dom.Element;
-
-import edu.brown.cs.ivy.file.IvyFormat;
-import edu.brown.cs.ivy.xml.IvyXml;
-
-public class BudStackFrame implements BudConstants
+public class RootValidate implements RootConstants
 {
 
 
@@ -54,15 +48,9 @@ public class BudStackFrame implements BudConstants
 /*                                                                              */
 /********************************************************************************/
 
-private String frame_id;
-private File   source_file;
-private String class_name;
-private String method_name;
-private String method_signature;
-private String format_signature;
-private List<String> frame_variables;
-private int     line_number;
-
+private RootProblem     for_problem;
+private String          starting_frame;
+private Map<String,RootValue> value_changes;
 
 
 /********************************************************************************/
@@ -71,35 +59,32 @@ private int     line_number;
 /*                                                                              */
 /********************************************************************************/
 
-BudStackFrame(Element xml)
+public RootValidate(RootProblem p,String fid)
 {
-   frame_id = IvyXml.getAttrString(xml,"ID");
-   class_name = IvyXml.getAttrString(xml,"RECEIVER");
-   method_name = IvyXml.getAttrString(xml,"METHOD");
-   int idx = method_name.lastIndexOf(".");
-   if (idx > 0) method_name = method_name.substring(idx+1);
-   
-   String fnm = IvyXml.getAttrString(xml,"FILE");
-   if (fnm == null) source_file = null;
-   else source_file = new File(fnm);
-   
-   String sgn = IvyXml.getAttrString(xml,"SIGNATURE");
-   method_signature = sgn;
-   if (sgn != null) {
-      int sidx = sgn.lastIndexOf(")");
-      if (sidx > 0) sgn = sgn.substring(0,sidx+1);
-      String fsgn = IvyFormat.formatTypeName(sgn);
-      format_signature = fsgn;
-    }
-   else format_signature = null;
-   
-   line_number = IvyXml.getAttrInt(xml,"LINENO");
-   
-   frame_variables = new ArrayList<>();
-   for (Element e : IvyXml.children(xml,"VALUE")) {
-      String varnm = IvyXml.getAttrString(e,"NAME");
-      frame_variables.add(varnm);
-    }
+   for_problem = p;
+   if (fid == null) fid = p.getFrameId();
+   starting_frame = fid;
+   value_changes = new HashMap<>();
+}
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Setup methods                                                           */
+/*                                                                              */
+/********************************************************************************/
+
+public void setStartingFrame(String fid)
+{
+   starting_frame = fid;
+}
+
+
+
+public void addValueSet(String var,RootValue v)
+{
+   if (v == null) value_changes.remove(var);
+   else value_changes.put(var,v);
 }
 
 
@@ -110,20 +95,20 @@ BudStackFrame(Element xml)
 /*                                                                              */
 /********************************************************************************/
 
-public String getFrameId()                      { return frame_id; }
-public String getClassName()                    { return class_name; }
-public String getMethodName()                   { return method_name; }
-public String getMethodSignature()              { return method_signature; }
-public String getFormatSignature()              { return format_signature; }
-public int getLineNumber()                      { return line_number; }
-public File getSourceFile()                     { return source_file; }
-   
+public RootProblem getProblem()                 { return for_problem; }
 
+public String getStartingFrame()                { return starting_frame; }
 
-}       // end of class BudStackFrame
+public Map<String,RootValue> getChanges()       { return value_changes; }
 
 
 
 
-/* end of BudStackFrame.java */
+
+}       // end of class RootValidate
+
+
+
+
+/* end of RootValidate.java */
 
