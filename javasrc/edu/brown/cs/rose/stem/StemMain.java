@@ -616,7 +616,10 @@ private boolean startSeede()
 {
    RoseLog.logD("STEM","START SEEDE " + seede_running + " " + seede_started);
    
-   if (seede_running || seede_started) return false;      // quick, informal check
+   synchronized (this) {
+      if (seede_running || seede_started) return false;      // quick, informal check
+      seede_started = true;
+    }
    
    IvyExec exec = null;
    File wd = new File(workspace_path);
@@ -647,7 +650,7 @@ private boolean startSeede()
    File seedejar = new File(f2,"seede.jar");
    File fjar = IvyFile.getJarFile(StemMain.class);
    if (fjar == null || fjar.getName().endsWith(".class")) {
-      File f3 = new File("/Users/spr/Eclipse/seede/seede/bin");
+      File f3 = new File("ls ");
       if (!f3.exists()) f3 = new File("/pro/seede/java");
       if (!f3.exists()) f3 = new File("/research/people/spr/seede/java");
       if (f3.exists()) seedejar = f3;
@@ -690,11 +693,6 @@ private boolean startSeede()
    args.add(logf.getPath());
    if (bp.getBoolean("Rose.seede.debug")) args.add("-D");
    if (bp.getBoolean("Rose.seede.trace")) args.add("-T");
-   
-   synchronized (this) {
-      if (seede_started || seede_running) return false;
-      seede_started = true;
-    }
    
    for (int i = 0; i < 100; ++i) {
       MintDefaultReply rply = new MintDefaultReply();
@@ -746,11 +744,12 @@ private boolean startSeede()
           }
          catch (IllegalThreadStateException e) { }
        }
-      
-      try {
-         wait(2000);
+      synchronized (this) {
+         try {
+            wait(2000);
+          }
+         catch (InterruptedException e) { }
        }
-      catch (InterruptedException e) { }
     }
    
    if (!seede_running) {
@@ -832,6 +831,7 @@ private boolean startSeede()
    xw.begin("SEEDE");
    xw.field("DO",cmd);
    if (id != null) xw.field("SID",id);
+   else xw.field("SID","*");
    if (args != null) {
       for (Map.Entry<String,Object> ent : args.entrySet()) {
 	 xw.field(ent.getKey(),ent.getValue());

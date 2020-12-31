@@ -98,6 +98,7 @@ private static Map<RootControl,ValidateFactory> factory_map = new HashMap<>();
 private ValidateFactory(RootControl ctrl)
 {
    root_control = ctrl;
+   exec_map = new HashMap<>();
    
    MintControl mc = root_control.getMintControl();
    mc.register("<SEEDEXEC TYPE='_VAR_0' ID='_VAR_1' />",new SeedeHandler());

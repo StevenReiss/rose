@@ -40,7 +40,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.w3c.dom.Element;
 
 import edu.brown.cs.ivy.mint.MintConstants.CommandArgs;
+import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.rose.root.RootControl;
+import edu.brown.cs.rose.root.RoseLog;
 
 class ValidateExecution implements ValidateConstants
 {
@@ -107,6 +109,10 @@ void start(RootControl rc)
    CommandArgs args = new CommandArgs("EXECID",exec_id,
          "CONTINUOUS",false);
    rc.sendSeedeMessage(session_id,"EXEC",args,null);
+   
+   // for debugging only:
+   Element xml = getSeedeResult();
+   RoseLog.logD("VALIDATE","Execution returned: " + IvyXml.convertXmlToString(xml));
 }
 
 

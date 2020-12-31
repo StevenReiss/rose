@@ -164,26 +164,29 @@ BudValue getBudValue()
       case OBJECT :
 	 Map<String,BudGenericValue> inits = new HashMap<>();
 	 Map<String,BudValueData> sets = new HashMap<>();
-	 for (Map.Entry<String,BudType> ent : typ.getFields().entrySet()) {
-	    String fnm = ent.getKey();
-	    String cnm = null;
-	    String key = fnm;
-	    int idx1 = fnm.lastIndexOf(".");
-	    if (idx1 >= 0) {
-	       cnm = fnm.substring(0,idx1);
-	       key = fnm.substring(idx1+1);
-	     }
-	    key = getKey(key,cnm);
-	    if (sub_values != null && sub_values.get(key) != null) {
-	       BudValueData fsvd = sub_values.get(key);
-	       fsvd = bud_launch.getUniqueValue(fsvd);
-	       sets.put(fnm,fsvd);
-	     }
-	    else {
-	       DeferredLookup def = new DeferredLookup(fnm);
-	       inits.put(fnm,def);
-	     }
-	  }
+         if (typ.getFields() != null) {
+            for (Map.Entry<String,BudType> ent : typ.getFields().entrySet()) {
+               String fnm = ent.getKey();
+               String cnm = null;
+               String key = fnm;
+               int idx1 = fnm.lastIndexOf(".");
+               if (idx1 >= 0) {
+                  cnm = fnm.substring(0,idx1);
+                  key = fnm.substring(idx1+1);
+                }
+               if (cnm == null) cnm = typ.getName();
+               key = getKey(key,cnm);
+               if (sub_values != null && sub_values.get(key) != null) {
+                  BudValueData fsvd = sub_values.get(key);
+                  fsvd = bud_launch.getUniqueValue(fsvd);
+                  sets.put(fnm,fsvd);
+                }
+               else {
+                  DeferredLookup def = new DeferredLookup(fnm);
+                  inits.put(fnm,def);
+                }
+             }
+          }
 	 if (hash_code == 0) {
 	    inits.put(HASH_CODE_FIELD,new DeferredLookup(HASH_CODE_FIELD));
 	  }

@@ -274,6 +274,10 @@ private class CallFinder extends ASTVisitor {
       if (mi.getName().getIdentifier().equals(called_method)) {
          call_args = mi.arguments();
          this_arg = mi.getExpression();
+         if (this_arg == null) {
+            ASTNode tn = mi.getAST().newThisExpression();
+            this_arg = tn;
+          }
        }
     }
    
