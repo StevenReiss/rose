@@ -1,8 +1,8 @@
 /********************************************************************************/
 /*                                                                              */
-/*              SaverFactory.java                                               */
+/*              ValidateExecution.java                                          */
 /*                                                                              */
-/*      Seede Access for Verification of Edit-Based Repairs access class        */
+/*      Representation of a SEEDE execution                                     */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
@@ -33,20 +33,16 @@
 
 
 
-package edu.brown.cs.rose.saver;
+package edu.brown.cs.rose.validate;
 
-import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import org.w3c.dom.Element;
 
-import edu.brown.cs.rose.bud.BudLaunch;
-import edu.brown.cs.rose.bud.BudValue;
+import edu.brown.cs.ivy.mint.MintConstants.CommandArgs;
 import edu.brown.cs.rose.root.RootControl;
-import edu.brown.cs.rose.root.RootLocation;
-import edu.brown.cs.rose.root.RootProblem;
-import edu.brown.cs.rose.root.RootValidate;
-import edu.brown.cs.rose.thorn.ThornConstants.ThornVariable;
 
-public class SaverFactory implements SaverConstants
+class ValidateExecution implements ValidateConstants
 {
 
 
@@ -56,8 +52,14 @@ public class SaverFactory implements SaverConstants
 /*                                                                              */
 /********************************************************************************/
 
-private static SaverFactory the_factory = new SaverFactory();
+enum ExecState { INITIAL, PENDING, READY };
 
+private String          session_id;
+private String          exec_id;
+private Element         seede_result;
+private ExecState       exec_state;
+
+private static AtomicInteger exec_counter = new AtomicInteger();
 
 
 /********************************************************************************/
@@ -66,51 +68,108 @@ private static SaverFactory the_factory = new SaverFactory();
 /*                                                                              */
 /********************************************************************************/
 
-public static SaverFactory getFactory()
+ValidateExecution(String sid)
 {
-   return the_factory;
-}
-
-
-
-private SaverFactory()
-{
-   
+   session_id = sid;
+   seede_result = null;
+   exec_state = ExecState.INITIAL;
+   exec_id = "ROSE_EXEC_" + exec_counter.incrementAndGet();
 }
 
 
 
 /********************************************************************************/
 /*                                                                              */
-/*      Create a validate structure to handle validation data                   */
+/*      Access methods                                                          */
 /*                                                                              */
 /********************************************************************************/
 
-public RootValidate createValidate(RootControl ctrl,RootProblem prob,String fid,RootLocation atloc)
+String getSessionId()                   { return session_id; }
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Start method                                                    */
+/*                                                                              */
+/********************************************************************************/
+
+void start(RootControl rc)
 {
-   BudLaunch bl = new BudLaunch(ctrl,prob);
-   
-   if (fid == null) {
-      SaverStartLocator ssl = new SaverStartLocator(prob,bl,atloc);
-      fid = ssl.getStartingFrame();
-    }
-   if (fid == null) return null;
-   
-   SaverChangedItems itms = new SaverChangedItems(bl,fid);
-   Map<ThornVariable,BudValue> cngs = itms.getChangedItems();
-   if (cngs != null) {
-      // get values here
+   synchronized(this) {
+      seede_result = null;
+      exec_state = ExecState.PENDING;
     }
    
+   ValidateFactory vfac = ValidateFactory.getFactory(rc);
+   vfac.register(this);
+   
+   CommandArgs args = new CommandArgs("EXECID",exec_id,
+         "CONTINUOUS",false);
+   rc.sendSeedeMessage(session_id,"EXEC",args,null);
+}
+
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Update methods                                                          */
+/*                                                                              */
+/********************************************************************************/
+
+synchronized void handleResult(Element xml)
+{
+   seede_result = xml;
+   exec_state = ExecState.READY;
+   notifyAll();
+}
+
+
+synchronized void handleReset()
+{
+   seede_result = null;
+   exec_state = ExecState.PENDING;
+}
+
+
+synchronized String handleInput(String file)
+{
+   return null; 
+}
+
+
+synchronized String handleInitialValue(String what)
+{
    return null;
 }
 
 
 
-}       // end of class SaverFactory
+/********************************************************************************/
+/*                                                                              */
+/*      Get result                                                              */
+/*                                                                              */
+/********************************************************************************/
+
+Element getSeedeResult()
+{
+   synchronized (this) {
+      while (exec_state != ExecState.READY) {
+         try {
+            wait(3000);
+          }
+         catch (InterruptedException e) { }
+       }
+      return seede_result;
+    }
+}
+
+
+}       // end of class ValidateExecution
 
 
 
 
-/* end of SaverFactory.java */
+/* end of ValidateExecution.java */
 

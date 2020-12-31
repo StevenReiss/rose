@@ -54,6 +54,7 @@ private RoseProblemType problem_type;
 private String          problem_item;
 private String          original_value;
 private String          target_value;
+private String          launch_id;
 private String          thread_id;
 private String          frame_id;
 private RootLocation    bug_location;
@@ -74,6 +75,7 @@ protected RootProblem(RoseProblemType typ,String item,String orig,String tgt,
    problem_item = item;
    original_value = orig;
    target_value = tgt;
+   launch_id = null;
    thread_id = null;
    frame_id = null;
    bug_location = null;
@@ -87,6 +89,7 @@ protected RootProblem(RootControl ctrl,Element xml)
    problem_item = IvyXml.getTextElement(xml,"ITEM");
    original_value = IvyXml.getTextElement(xml,"ORIGINAL");
    target_value = IvyXml.getTextElement(xml,"TARGET");
+   launch_id = IvyXml.getAttrString(xml,"LAUNCH");
    thread_id = IvyXml.getAttrString(xml,"THREAD");
    frame_id = IvyXml.getAttrString(xml,"FRAME");
    
@@ -100,8 +103,9 @@ protected RootProblem(RootControl ctrl,Element xml)
 
 
 
-protected void setBugFrame(String tid,String fid)
+protected void setBugFrame(String lid,String tid,String fid)
 {
+   launch_id = lid;
    thread_id = tid;
    frame_id = fid;
 }
@@ -147,6 +151,8 @@ public String getTargetValue()
 }
 
 
+public String getLaunchId()                     { return launch_id; }
+
 public String getThreadId()                     { return thread_id; }
 
 public String getFrameId()                      { return frame_id; }
@@ -188,6 +194,7 @@ public void outputXml(IvyXmlWriter xw)
 {
    xw.begin("PROBLEM");
    xw.field("TYPE",problem_type);
+   if (launch_id != null) xw.field("LAUNCH",launch_id);
    if (frame_id != null) xw.field("FRAME",frame_id);
    if (thread_id != null) xw.field("THREAD",thread_id);
    if (problem_item != null) xw.textElement("ITEM",problem_item);

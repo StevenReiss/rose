@@ -10,6 +10,7 @@
       <ant antfile="build.xml" dir="edu/brown/cs/rose/bract" />
       <ant antfile="build.xml" dir="edu/brown/cs/rose/bud" />
       <ant antfile="build.xml" dir="edu/brown/cs/rose/thorn" />
+      <ant antfile="build.xml" dir="edu/brown/cs/rose/validate" />
       <ant antfile="build.xml" dir="edu/brown/cs/rose/stem" />
       <ant antfile="build.xml" dir="edu/brown/cs/rose/sepal" />
    </target>

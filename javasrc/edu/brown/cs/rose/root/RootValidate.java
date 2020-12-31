@@ -35,58 +35,9 @@
 
 package edu.brown.cs.rose.root;
 
-import java.util.HashMap;
-import java.util.Map;
 
-public class RootValidate implements RootConstants
+public interface RootValidate extends RootConstants
 {
-
-
-/********************************************************************************/
-/*                                                                              */
-/*      Private Storage                                                         */
-/*                                                                              */
-/********************************************************************************/
-
-private RootProblem     for_problem;
-private String          starting_frame;
-private Map<String,RootValue> value_changes;
-
-
-/********************************************************************************/
-/*                                                                              */
-/*      Constructors                                                            */
-/*                                                                              */
-/********************************************************************************/
-
-public RootValidate(RootProblem p,String fid)
-{
-   for_problem = p;
-   if (fid == null) fid = p.getFrameId();
-   starting_frame = fid;
-   value_changes = new HashMap<>();
-}
-
-
-/********************************************************************************/
-/*                                                                              */
-/*      Setup methods                                                           */
-/*                                                                              */
-/********************************************************************************/
-
-public void setStartingFrame(String fid)
-{
-   starting_frame = fid;
-}
-
-
-
-public void addValueSet(String var,RootValue v)
-{
-   if (v == null) value_changes.remove(var);
-   else value_changes.put(var,v);
-}
-
 
 
 /********************************************************************************/
@@ -95,12 +46,7 @@ public void addValueSet(String var,RootValue v)
 /*                                                                              */
 /********************************************************************************/
 
-public RootProblem getProblem()                 { return for_problem; }
-
-public String getStartingFrame()                { return starting_frame; }
-
-public Map<String,RootValue> getChanges()       { return value_changes; }
-
+abstract RootProblem getProblem();
 
 
 

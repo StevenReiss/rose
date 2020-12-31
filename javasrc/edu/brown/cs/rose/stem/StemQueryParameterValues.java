@@ -35,35 +35,14 @@
 
 package edu.brown.cs.rose.stem;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.eclipse.jdt.core.dom.ASTNode;
-import org.eclipse.jdt.core.dom.ASTVisitor;
-import org.eclipse.jdt.core.dom.ClassInstanceCreation;
-import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.eclipse.jdt.core.dom.ConstructorInvocation;
-import org.eclipse.jdt.core.dom.MethodDeclaration;
-import org.eclipse.jdt.core.dom.MethodInvocation;
-import org.eclipse.jdt.core.dom.SimpleName;
-import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
-import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
 import org.w3c.dom.Element;
 
-import edu.brown.cs.ivy.file.IvyFile;
-import edu.brown.cs.ivy.jcomp.JcompAst;
-import edu.brown.cs.ivy.mint.MintConstants.CommandArgs;
 import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
-import edu.brown.cs.rose.bud.BudLaunch;
-import edu.brown.cs.rose.bud.BudStack;
-import edu.brown.cs.rose.bud.BudStackFrame;
 import edu.brown.cs.rose.bud.BudValue;
 import edu.brown.cs.rose.root.RoseException;
 
@@ -78,8 +57,6 @@ class StemQueryParameterValues extends StemQueryBase
 /********************************************************************************/
 
 private Set<String>     parameter_set;
-private String          value_method_name; 
-private String          value_project_name;
 
 
 /********************************************************************************/
@@ -91,12 +68,11 @@ private String          value_project_name;
 StemQueryParameterValues(StemMain ctrl,Element xml)
 {
    super(ctrl,xml);
-   value_method_name = IvyXml.getAttrString(xml,"METHOD");
    parameter_set = new HashSet<>();
-   value_project_name = null;
    for (Element p : IvyXml.children(xml,"PARAMETER")) {
       parameter_set.add(IvyXml.getAttrString(p,"NAME"));
     }
+   if (parameter_set.isEmpty()) parameter_set = null;
 }
 
 
@@ -109,64 +85,16 @@ StemQueryParameterValues(StemMain ctrl,Element xml)
 
 void process(StemMain sm,IvyXmlWriter xw) throws RoseException
 {
-   // first find the previous stack frame
-   BudStack stk = bud_launch.getStack();
-   boolean usenext = false;
-   BudStackFrame prev = null;
-   for (BudStackFrame frm : stk.getFrames()) {
-      if (usenext) {
-         prev = frm;
-         break;
-       }
-      if (frm.getFrameId().equals(frame_id)) usenext = true;
-    }
-   if (prev == null) throw new RoseException("Can't find previous frame");
- 
-   // then find the method declaration of the caller
-   ASTNode n = getSourceStatement();
-   MethodDeclaration mthd = null;
-   for (ASTNode m = n; m != null; m = m.getParent()) {
-      if (m instanceof MethodDeclaration) {
-         mthd = (MethodDeclaration) m;
-         break;
-       }
-    }
-   if (mthd == null) throw new RoseException("Can't find called method");
+   // get the values
    
-   // then get parameter numbers for each required parameter, -1 for this
-   Map<Integer,String> parms = new HashMap<>();
-   int idx = 1;
-   if (parameter_set.contains("this")) parms.put(0,"this");
-   for (Object o : mthd.parameters()) {
-      SingleVariableDeclaration svd = (SingleVariableDeclaration) o;
-      SimpleName sn = svd.getName();
-      String parmnm = sn.getIdentifier();
-      if (parameter_set.contains(parmnm)) parms.put(idx,parmnm);
-      ++idx;
-    }
-   if (parameter_set.size() != parms.size()) throw new RoseException("Missing parameters");
-   
-   // next find the AST for the caller
-   ASTNode past = getAstForFrame(sm,prev,mthd);
-   if (past == null) throw new RoseException("Can't find previous frame code"); 
-   List<ASTNode> callargs = findMethodCallArgs(past);
-   
-   // then for each argument (or this), evaluate the corresponding expression
-   
-   BudLaunch pctx = new BudLaunch(sm,thread_id,prev.getFrameId(),value_project_name);
-   Map<String,BudValue> pvals = new HashMap<>();
-   for (int i = 0; i < callargs.size(); ++i) {
-      String nm = parms.get(i);
-      if (nm == null) continue;
-      String expr = callargs.get(i).toString();
-      BudValue bv = pctx.evaluate(expr);
-      pvals.put(nm,bv);
-    }
+   Map<String,BudValue> pvals = bud_launch.getParameterValues();
    
    // then output the results
+   
    xw.begin("RESULT");
    for (Map.Entry<String,BudValue> ent : pvals.entrySet()) {
       String nm = ent.getKey();
+      if (parameter_set != null && !parameter_set.contains(nm)) continue;
       BudValue bv = ent.getValue();
       xw.begin("PARAMETER");
       xw.field("NAME",nm);
@@ -175,104 +103,6 @@ void process(StemMain sm,IvyXmlWriter xw) throws RoseException
     }
    xw.end("RESULT");
 }
-
-
-
-private ASTNode getAstForFrame(StemMain sm,BudStackFrame frm,ASTNode base) 
-{
-   CommandArgs args = new CommandArgs("PATTERN",IvyXml.xmlSanitize(frm.getClassName()),
-         "DEFS",true,"REFS",false,"FOR","TYPE");
-   Element cxml = sm.sendBubblesMessage("PATTERNSEARCH",args,null);
-   File fnm = null;
-   String pnm = null;
-   for (Element lxml : IvyXml.elementsByTag(cxml,"MATCH")) {
-      fnm = new File(IvyXml.getAttrString(lxml,"FILE"));
-      Element ielt = IvyXml.getChild(lxml,"ITEM");
-      pnm = IvyXml.getAttrString(ielt,"PROJECT");
-    }
-   if (fnm == null || pnm == null) return null;
-   
-   value_project_name = pnm;
-   
-   try {
-      String text = IvyFile.loadFile(fnm);
-      CompilationUnit cu;
-      if (fnm.equals(for_file)) {
-         cu = (CompilationUnit) base.getRoot();
-       }
-      else {
-         cu = JcompAst.parseSourceFile(text);
-       }
-      return findNode(cu,text,frm.getLineNumber());
-    }
-   catch (IOException e) {
-      return null;
-    }
-}
-
-
-
-private List<ASTNode> findMethodCallArgs(ASTNode n)
-{
-   String mnm = value_method_name;
-   int idx = mnm.indexOf("(");
-   if (idx > 0) mnm = mnm.substring(0,idx);
-   idx = mnm.lastIndexOf(".");
-   if (idx > 0) mnm = mnm.substring(idx+1);
-   
-   CallFinder cf = new CallFinder(mnm);
-   for (ASTNode p = n; p != null; p = p.getParent()) {
-      p.accept(cf);
-      List<ASTNode> args = cf.getCallArgs();
-      if (args != null) return args;
-      if (p instanceof MethodDeclaration) return null;
-    }
-  
-   return null;
-}
-
-
-private class CallFinder extends ASTVisitor {
-   
-   private String called_method;
-   private List<?> call_args;
-   private ASTNode this_arg;
-   
-   CallFinder(String cm) {
-      call_args = null;
-      called_method = cm;
-      this_arg = null;
-    }
-   
-   List<ASTNode> getCallArgs() {
-      if (call_args == null) return null;
-      List<ASTNode> rslt = new ArrayList<>();
-      rslt.add(this_arg);
-      for (Object o : call_args) {
-         rslt.add((ASTNode) o);
-       }
-      return rslt;
-    }
-   
-   @Override public void endVisit(MethodInvocation mi) {
-      if (mi.getName().getIdentifier().equals(called_method)) {
-         call_args = mi.arguments();
-         this_arg = mi.getExpression();
-       }
-    }
-   
-   @Override public void endVisit(ConstructorInvocation ci) { }
-   
-   @Override public void endVisit(SuperConstructorInvocation ci) { }
-   
-   @Override public void endVisit(ClassInstanceCreation ci) {
-      if (ci.getType().toString().equals(called_method)) {
-         call_args = ci.arguments();
-         this_arg = ci.getExpression();
-       }
-    }
-   
-}       // end of inner class CallFinder
 
 
 

@@ -35,6 +35,7 @@
 
 package edu.brown.cs.rose.bush;
 
+import edu.brown.cs.bubbles.bump.BumpConstants.BumpLaunch;
 import edu.brown.cs.bubbles.bump.BumpConstants.BumpStackFrame;
 import edu.brown.cs.bubbles.bump.BumpConstants.BumpThread;
 import edu.brown.cs.rose.root.RootLocation;
@@ -63,7 +64,7 @@ private BumpStackFrame  stack_frame;
 BushProblem(BumpStackFrame frame,RoseProblemType typ,String item,String orig,String tgt,RootNodeContext ctx)
 {
    super(typ,item,orig,tgt,ctx);
-   setBugFrame(frame.getThread().getId(),frame.getId());  
+   setBugFrame(frame.getThread().getLaunch().getId(),frame.getThread().getId(),frame.getId());  
    stack_frame = frame;
    RootLocation floc = new BushLocation(frame);
    setBugLocation(floc);
@@ -87,6 +88,13 @@ BumpThread getThread()
 {
    return stack_frame.getThread();
 }
+
+
+BumpLaunch getLaunch()
+{
+   return stack_frame.getThread().getLaunch();
+}
+
 
 
 }       // end of class BushProblem

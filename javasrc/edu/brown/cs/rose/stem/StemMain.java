@@ -72,7 +72,7 @@ import edu.brown.cs.rose.root.RootControl;
 import edu.brown.cs.rose.root.RootLocation;
 import edu.brown.cs.rose.root.RoseException;
 import edu.brown.cs.rose.root.RoseLog;
-import edu.brown.cs.rose.saver.SaverFactory;
+import edu.brown.cs.rose.validate.ValidateFactory;
 
 public class StemMain implements StemConstants, MintConstants, RootControl
 {
@@ -233,9 +233,9 @@ private void process()
 private void handleStartCommand(MintMessage msg) throws RoseException
 {
    boolean sts = startFaitProcess();
-   RoseLog.logD("STEM","START returned " + sts);
+   RoseLog.logD("STEM","START FAIT returned " + sts);
    if (!fait_running) return;
-
+ 
    Element rslt = sendFaitMessage("BEGIN",null,null);
    if (!IvyXml.isElement(rslt,"RESULT")) {
       analysis_state = AnalysisState.NONE;
@@ -259,6 +259,9 @@ private void handleStartCommand(MintMessage msg) throws RoseException
       analysis_state = AnalysisState.NONE;
       throw new RoseException("ANALYZE for session failed");
     }
+   
+   sts = startSeede();
+   RoseLog.logD("STEM","START SEEDE returned " + sts);
 }									
 
 
@@ -550,10 +553,10 @@ private void handleSuggestCommand(MintMessage msg) throws RoseException
    Element locxml = IvyXml.getChild(msgxml,"LOCATION");
    RootLocation loc = bract.createLocation(this,locxml);
    
-   SaverFactory saver = SaverFactory.getFactory();
+   ValidateFactory vfac = ValidateFactory.getFactory(this);
    String fid = IvyXml.getAttrString(msgxml,"VALIDATE");
    if (fid != null && fid.equals("*")) fid = null;
-   RootValidate validate = saver.createValidate(this,problem,fid,loc);
+   RootValidate validate = vfac.createValidate(problem,fid,loc);
    
    IvyXmlWriter xw = new IvyXmlWriter();
    xw.begin("RESULT");

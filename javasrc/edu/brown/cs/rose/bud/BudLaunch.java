@@ -46,7 +46,7 @@ import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.rose.root.RootControl;
 import edu.brown.cs.rose.root.RootProblem;
 
-        public class BudLaunch
+public class BudLaunch
 {
 
 
@@ -57,6 +57,7 @@ import edu.brown.cs.rose.root.RootProblem;
 /********************************************************************************/
 
 private RootControl     rose_control;
+private String          launch_id;
 private String          thread_id;
 private String          frame_id;
 private String          project_name;
@@ -73,9 +74,10 @@ private static AtomicInteger eval_counter = new AtomicInteger();
 /*                                                                              */
 /********************************************************************************/
 
-public BudLaunch(RootControl ctrl,String tid,String fid,String proj)
+public BudLaunch(RootControl ctrl,String lid,String tid,String fid,String proj)
 {
    rose_control = ctrl;
+   launch_id = lid;
    thread_id = tid;
    frame_id = fid;
    project_name = proj;
@@ -87,7 +89,8 @@ public BudLaunch(RootControl ctrl,String tid,String fid,String proj)
 
 public BudLaunch(RootControl ctrl,RootProblem p)
 {
-   this(ctrl,p.getThreadId(),p.getFrameId(),p.getBugLocation().getProject());
+   this(ctrl,p.getLaunchId(),p.getThreadId(),p.getFrameId(),
+         p.getBugLocation().getProject());
 }
 
 
@@ -97,11 +100,21 @@ public BudLaunch(RootControl ctrl,RootProblem p)
 /*                                                                              */
 /********************************************************************************/
 
+public String getLaunch()               { return launch_id; }
+
 public String getThread()               { return thread_id; }
 
 public String getFrame()                { return frame_id; }
 
 public RootControl getControl()         { return rose_control; }
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Local type access methods                                               */
+/*                                                                              */
+/********************************************************************************/
 
 BudType findType(String typ)
 {
@@ -149,6 +162,21 @@ public BudStack getStack()
    
    return call_stack;
 }
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Parameter computation methods                                           */
+/*                                                                              */
+/********************************************************************************/
+
+public Map<String,BudValue> getParameterValues()
+{
+   BudParameterValues pvs = new BudParameterValues(this);
+   return pvs.getValues();
+}
+
 
 
 

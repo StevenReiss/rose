@@ -1,8 +1,8 @@
 /********************************************************************************/
 /*                                                                              */
-/*              SaverChecker.java                                               */
+/*              ValidateAction.java                                             */
 /*                                                                              */
-/*      description of class                                                    */
+/*      Action for setting up proper execution context                          */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
@@ -33,16 +33,30 @@
 
 
 
-package edu.brown.cs.rose.saver;
+package edu.brown.cs.rose.validate;
 
-import edu.brown.cs.rose.bud.BudLaunch;
+
+import edu.brown.cs.ivy.mint.MintConstants.CommandArgs;
+import edu.brown.cs.ivy.xml.IvyXmlWriter;
+import edu.brown.cs.rose.bud.BudValue;
 import edu.brown.cs.rose.root.RootControl;
-import edu.brown.cs.rose.root.RootProblem;
-import edu.brown.cs.rose.root.RoseLog;
-import edu.brown.cs.rose.saver.SaverConstants.SaverCheck;
 
-class SaverChecker implements SaverCheck, SaverConstants
+abstract class ValidateAction implements ValidateConstants
 {
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Factory methods                                                         */
+/*                                                                              */
+/********************************************************************************/
+
+static ValidateAction createSetAction(String nm,BudValue bv)
+{
+   return new SetAction(nm,bv);
+}
+
 
 
 /********************************************************************************/
@@ -50,10 +64,6 @@ class SaverChecker implements SaverCheck, SaverConstants
 /*      Private Storage                                                         */
 /*                                                                              */
 /********************************************************************************/
-
-private RootControl     root_control;
-private RootProblem     for_problem;
-private BudLaunch       for_launch;
 
 
 
@@ -63,23 +73,62 @@ private BudLaunch       for_launch;
 /*                                                                              */
 /********************************************************************************/
 
-SaverChecker(RootControl ctrl,RootProblem p)
-{
-   root_control = ctrl;
-   for_problem = p;
-   for_launch = new BudLaunch(root_control,for_problem.getThreadId(),
-         for_problem.getFrameId(),for_problem.getBugLocation().getProject());
-   RoseLog.logD("SAVER","Set up checker " + for_launch);
-}
+protected ValidateAction()
+{ }
+
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Action methods                                                          */
+/*                                                                              */
+/********************************************************************************/
+
+abstract void perform(RootControl ctrl,String session);
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Set a variable to a value                                               */
+/*                                                                              */
+/********************************************************************************/
+
+private static class SetAction extends ValidateAction {
+  
+   private String var_name;
+   private BudValue set_value;
+   
+   SetAction(String nm,BudValue v) {
+      var_name = nm;
+      set_value = v;
+    }
+   
+   @Override public String toString() {
+      return var_name + "=" + set_value;
+    }
+   
+   @Override void perform(RootControl rc,String session) {
+      CommandArgs args = new CommandArgs("VAR",var_name);
+      IvyXmlWriter xw = new IvyXmlWriter();
+      set_value.outputXml(xw);
+      String cnts = xw.toString();
+      xw.close();
+      rc.sendSeedeMessage(session,"SETVALUE",args,cnts);
+    }
+   
+}       // end of inner class SetAction
 
 
 
 
 
-}       // end of class SaverChecker
+
+}       // end of class ValidateAction
 
 
 
 
-/* end of SaverChecker.java */
+/* end of ValidateAction.java */
 

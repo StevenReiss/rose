@@ -1,8 +1,8 @@
 /********************************************************************************/
 /*                                                                              */
-/*              ServerChangedItems.java                                         */
+/*              BudParameterValues.java                                         */
 /*                                                                              */
-/*      Handle finding changed items for a stack frame                          */
+/*      Get initial parameter values from caller                                */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
@@ -33,16 +33,14 @@
 
 
 
-package edu.brown.cs.rose.saver;
+package edu.brown.cs.rose.bud;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
@@ -56,21 +54,14 @@ import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
 import org.w3c.dom.Element;
 
-import edu.brown.cs.fait.server.ServerConstants;
 import edu.brown.cs.ivy.file.IvyFile;
 import edu.brown.cs.ivy.jcomp.JcompAst;
+import edu.brown.cs.ivy.jcomp.JcompSymbol;
 import edu.brown.cs.ivy.mint.MintConstants.CommandArgs;
 import edu.brown.cs.ivy.xml.IvyXml;
-import edu.brown.cs.rose.bud.BudLaunch;
-import edu.brown.cs.rose.bud.BudStack;
-import edu.brown.cs.rose.bud.BudStackFrame;
-import edu.brown.cs.rose.bud.BudValue;
 import edu.brown.cs.rose.root.RootControl;
-import edu.brown.cs.rose.thorn.ThornFactory;
-import edu.brown.cs.rose.thorn.ThornConstants.ThornVariable;
-import edu.brown.cs.rose.thorn.ThornConstants.ThornVariableType;
 
-class SaverChangedItems implements ServerConstants
+class BudParameterValues implements BudConstants
 {
 
 
@@ -80,9 +71,8 @@ class SaverChangedItems implements ServerConstants
 /*                                                                              */
 /********************************************************************************/
 
+private BudLaunch       bud_launch;
 private RootControl     root_control;
-private BudLaunch       for_launch;
-private String          for_frame;
 
 
 
@@ -92,100 +82,23 @@ private String          for_frame;
 /*                                                                              */
 /********************************************************************************/
 
-SaverChangedItems(BudLaunch bl,String frame)
+BudParameterValues(BudLaunch bl)
 {
+   bud_launch = bl;
    root_control = bl.getControl();
-   for_launch = bl;
-   for_frame = frame;
 }
 
 
-
 /********************************************************************************/
 /*                                                                              */
-/*      Processing methods                                                      */
+/*      Computation methods                                                     */
 /*                                                                              */
 /********************************************************************************/
 
-Map<ThornVariable,BudValue> getChangedItems()
+Map<String,BudValue> getValues()
 {
-   Set<ThornVariable> items = findChangedItems();
-   
-   if (items == null) return null;
-   
-   Map<ThornVariable,BudValue> rslt = new HashMap<>();
-   
-   Set<String> params = new HashSet<>();
-   for (ThornVariable tv : items) {
-      if (tv.getVariableType() == ThornVariableType.PARAMETER) {
-         params.add(tv.getName());
-       }
-    }
-   Map<String,BudValue> pvals = getParameterValues(params);
-   if (pvals != null) {
-      for (ThornVariable tv : items) {
-         if (tv.getVariableType() == ThornVariableType.PARAMETER) {
-            BudValue bv = pvals.get(tv.getName());
-            rslt.put(tv,bv);
-          }
-       }
-    }
-   
-   return null;
-}
-
-
-
-/********************************************************************************/
-/*                                                                              */
-/*      Find the set of items that have changed                                 */
-/*                                                                              */
-/********************************************************************************/
-
-private Set<ThornVariable> findChangedItems()
-{
-   Set<ThornVariable> rslt = new HashSet<>();
-   BudStack bs = for_launch.getStack();
-   ThornFactory tf = new ThornFactory(root_control);
-   
-   for (BudStackFrame bf : bs.getFrames()) {
-      File f = bf.getSourceFile();
-      if (f != null && f.exists() && f.canRead()) {
-         String proj = null;
-         if (f != null) proj = root_control.getProjectForFile(f);
-         ASTNode n = root_control.getSourceNode(proj,f,-1,bf.getLineNumber(),true,true);
-         List<ThornVariable> fnd = tf.getChangedVariables(n);
-         if (fnd != null && !fnd.isEmpty()) {
-            boolean top = for_frame.equals(bf.getFrameId());
-            for (ThornVariable tv : fnd) {
-               if (!top && tv.getVariableType() == ThornVariableType.PARAMETER) continue;
-               rslt.add(tv);
-             }
-          }
-         // this needs to track what is internal and removed by outer method
-         // This should probably be done in THORN, with getChangedVariables() taking
-         // the current set as arguments and returning the resultant set
-       }
-    }
-   
-   return rslt;
-}
-
-
-
-
-/********************************************************************************/
-/*                                                                              */
-/*      Get values for parameters of a call                                     */
-/*                                                                              */
-/********************************************************************************/
-
-Map<String,BudValue> getParameterValues(Set<String> params)
-{
-   Map<String,BudValue> rslt = new HashMap<>();
-   if (params == null || params.isEmpty()) return rslt;
-   
-   BudStack stk = for_launch.getStack();
+   // first find the previous stack frame
+   BudStack stk = bud_launch.getStack();
    boolean usenext = false;
    BudStackFrame prev = null;
    BudStackFrame cur = null;
@@ -194,40 +107,38 @@ Map<String,BudValue> getParameterValues(Set<String> params)
          prev = frm;
          break;
        }
-      if (frm.getFrameId().equals(for_frame)) {
+      if (frm.getFrameId().equals(bud_launch.getFrame())) {
          cur = frm;
          usenext = true;
        }
     }
    if (prev == null) return null;
-   
+  
    // then find the method declaration of the caller
    File f = cur.getSourceFile();
    String proj = root_control.getProjectForFile(f);
-   
-   
-   ASTNode n = root_control.getSourceStatement(proj,f,-1,cur.getLineNumber(),false);
+   ASTNode n = root_control.getSourceStatement(proj,f,-1,cur.getLineNumber(),true);
    MethodDeclaration mthd = null;
    for (ASTNode m = n; m != null; m = m.getParent()) {
       if (m instanceof MethodDeclaration) {
-         mthd = (MethodDeclaration) m;
-         break;
+	 mthd = (MethodDeclaration) m;
+	 break;
        }
     }
    if (mthd == null) return null;
+   JcompSymbol msym = JcompAst.getDefinition(mthd);
    
-   // then get parameter numbers for each required parameter, -1 for this
+   // then get parameter numbers for each parameter, 0 for this
    Map<Integer,String> parms = new HashMap<>();
    int idx = 1;
-   if (params.contains("this")) parms.put(0,"this");
+   if (!msym.isStatic()) parms.put(0,"this");
    for (Object o : mthd.parameters()) {
       SingleVariableDeclaration svd = (SingleVariableDeclaration) o;
       SimpleName sn = svd.getName();
       String parmnm = sn.getIdentifier();
-      if (params.contains(parmnm)) parms.put(idx,parmnm);
+      parms.put(idx,parmnm);
       ++idx;
     }
-   if (params.size() != parms.size()) return null;
    
    // next find the AST for the caller
    ASTNode past = getAstForFrame(prev,mthd);
@@ -236,8 +147,9 @@ Map<String,BudValue> getParameterValues(Set<String> params)
    
    // then for each argument (or this), evaluate the corresponding expression
    
-   BudLaunch pctx = new BudLaunch(root_control,for_launch.getThread(),
+   BudLaunch pctx = new BudLaunch(root_control,bud_launch.getLaunch(),bud_launch.getThread(),
          prev.getFrameId(),proj);
+   
    Map<String,BudValue> pvals = new HashMap<>();
    for (int i = 0; i < callargs.size(); ++i) {
       String nm = parms.get(i);
@@ -247,16 +159,21 @@ Map<String,BudValue> getParameterValues(Set<String> params)
       pvals.put(nm,bv);
     }
    
-   return rslt;
+   return pvals;
 }
 
 
 
+/********************************************************************************/
+/*                                                                              */
+/*      Find AST node corrresponding to a frame                                 */
+/*                                                                              */
+/********************************************************************************/
 
-private ASTNode getAstForFrame(BudStackFrame frm,ASTNode base) 
+private ASTNode getAstForFrame(BudStackFrame frm,ASTNode base)
 {
    CommandArgs args = new CommandArgs("PATTERN",IvyXml.xmlSanitize(frm.getClassName()),
-         "DEFS",true,"REFS",false,"FOR","TYPE");
+	 "DEFS",true,"REFS",false,"FOR","TYPE");
    Element cxml = root_control.sendBubblesMessage("PATTERNSEARCH",args,null);
    File fnm = null;
    String pnm = null;
@@ -281,23 +198,35 @@ private ASTNode getAstForFrame(BudStackFrame frm,ASTNode base)
 
 
 
-protected ASTNode findNode(CompilationUnit cu,String text,int line) 
+/********************************************************************************/
+/*                                                                              */
+/*      Find AST node for a given line                                          */
+/*                                                                              */
+/********************************************************************************/
+
+protected ASTNode findNode(CompilationUnit cu,String text,int line)
 {
    if (cu == null) return null;
    int off = -1;
    if (line > 0) {
       off = cu.getPosition(line,0);
       while (off < text.length()) {
-         char c = text.charAt(off);
-         if (!Character.isWhitespace(c)) break;
-         ++off;
+	 char c = text.charAt(off);
+	 if (!Character.isWhitespace(c)) break;
+	 ++off;
        }
     }
-   ASTNode node = JcompAst.findNodeAtOffset(cu,off);   
+   ASTNode node = JcompAst.findNodeAtOffset(cu,off);
    return node;
 }
 
 
+
+/********************************************************************************/
+/*                                                                              */
+/*      Return the list of argument expressions                                 */
+/*                                                                              */
+/********************************************************************************/
 
 private List<ASTNode> findMethodCallArgs(ASTNode n,String mthd)
 {
@@ -317,6 +246,7 @@ private List<ASTNode> findMethodCallArgs(ASTNode n,String mthd)
    
    return null;
 }
+
 
 private class CallFinder extends ASTVisitor {
 
@@ -358,13 +288,14 @@ private class CallFinder extends ASTVisitor {
        }
     }
 
-}       // end of inner class CallFinder
-
-
-}       // end of class ServerChangedItems
+}	// end of inner class CallFinder
 
 
 
+}       // end of class BudParameterValues
 
-/* end of ServerChangedItems.java */
+
+
+
+/* end of BudParameterValues.java */
 

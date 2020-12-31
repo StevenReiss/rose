@@ -122,6 +122,7 @@ public void testRoseNullPointer()
       
       IvyXmlWriter xw = new IvyXmlWriter();
       xw.begin("PROBLEM");
+      xw.field("LAUNCH",fd.getLaunchId());
       xw.field("FRAME",fd.getId());
       xw.field("THREAD",fd.getThreadId());
       xw.field("TYPE","EXCEPTION");
@@ -157,6 +158,7 @@ public void testRoseArrayIndex()
       
       IvyXmlWriter xw = new IvyXmlWriter();
       xw.begin("PROBLEM");
+      xw.field("LAUNCH",fd.getLaunchId());
       xw.field("FRAME",fd.getId());
       xw.field("THREAD",fd.getThreadId());
       xw.field("TYPE","EXCEPTION");
@@ -190,6 +192,7 @@ public void testRoseWrongVariable()
       
       IvyXmlWriter xw = new IvyXmlWriter();
       xw.begin("PROBLEM");
+      xw.field("LAUNCH",fd.getLaunchId());
       xw.field("FRAME",fd.getId());
       xw.field("THREAD",fd.getThreadId());
       xw.field("TYPE","VARIABLE");
@@ -226,6 +229,7 @@ public void testRoseNotNull()
       
       IvyXmlWriter xw = new IvyXmlWriter();
       xw.begin("PROBLEM");
+      xw.field("LAUNCH",fd.getLaunchId());     
       xw.field("FRAME",fd.getId());
       xw.field("THREAD",fd.getThreadId());
       xw.field("TYPE","VARIABLE");
@@ -260,6 +264,7 @@ public void testRoseLocation()
 
       IvyXmlWriter xw = new IvyXmlWriter();
       xw.begin("PROBLEM");
+      xw.field("LAUNCH",fd.getLaunchId());      
       xw.field("FRAME",fd.getId());
       xw.field("THREAD",fd.getThreadId());
       xw.field("TYPE","LOCATION");
@@ -292,6 +297,7 @@ public void testRoseString()
       
       IvyXmlWriter xw = new IvyXmlWriter();
       xw.begin("PROBLEM");
+      xw.field("LAUNCH",fd.getLaunchId());
       xw.field("FRAME",fd.getId());
       xw.field("THREAD",fd.getThreadId());
       xw.field("TYPE","VARIABLE");
@@ -327,6 +333,7 @@ public void testRoseLocation_3()
       
       IvyXmlWriter xw = new IvyXmlWriter();
       xw.begin("PROBLEM");
+      xw.field("LAUNCH",fd.getLaunchId());     
       xw.field("FRAME",fd.getId());
       xw.field("THREAD",fd.getThreadId());
       xw.field("TYPE","LOCATION");
@@ -402,6 +409,7 @@ private Element getHistory(MintControl ctrl,FrameData fd,String prob)
          "CLASS",fd.getClassName(),
          "FILE",fd.getSourceFile(ctrl),
          "PROJECT",fd.getProject(ctrl),
+         "LAUNCH",fd.getLaunchId(),
          "FRAME",fd.getId(),
          "THREAD",fd.getThreadId() );
    Element xml = sendStemReply(ctrl,"HISTORY",args,prob);
@@ -420,6 +428,7 @@ private void getChangedVariables(MintControl ctrl,FrameData fd)
          "CLASS",fd.getClassName(),
          "FILE",fd.getSourceFile(ctrl),
          "PROJECT",fd.getProject(ctrl),
+         "LAUNCH",fd.getLaunchId(),
          "FRAME",fd.getId(),
          "THREAD",fd.getThreadId() );
    Element xml = sendStemReply(ctrl,"CHANGEDITEMS",args,null);
@@ -767,6 +776,7 @@ private static class FrameData {
    String getClassName()                { return class_name; }
    int getLine()                        { return line_number; }
    String getThreadId()                 { return for_launch.getThreadId(); }
+   String getLaunchId()                 { return for_launch.getLaunchId(); }
    
    String getSourceFile(MintControl ctrl) {
       if (file_name == null) {

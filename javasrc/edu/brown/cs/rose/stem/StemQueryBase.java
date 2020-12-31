@@ -66,6 +66,7 @@ abstract class StemQueryBase implements StemConstants
 /*                                                                              */
 /********************************************************************************/
 
+protected String        launch_id;
 protected String        thread_id;
 protected String        frame_id;
 protected File          for_file;
@@ -88,6 +89,7 @@ protected StemMain      stem_control;
 
 protected StemQueryBase(StemMain ctrl,Element xml)
 {
+   launch_id = IvyXml.getAttrString(xml,"LAUNCH");
    thread_id = IvyXml.getAttrString(xml,"THREAD");
    frame_id = IvyXml.getAttrString(xml,"FRAME");
    for_file = new File(IvyXml.getAttrString(xml,"FILE"));
@@ -97,7 +99,7 @@ protected StemQueryBase(StemMain ctrl,Element xml)
    method_name = IvyXml.getAttrString(xml,"METHOD");
    stem_control = ctrl;
    
-   bud_launch = new BudLaunch(ctrl,thread_id,frame_id,project_name);
+   bud_launch = new BudLaunch(ctrl,launch_id,thread_id,frame_id,project_name);
 }
 
 
@@ -114,7 +116,7 @@ protected StemQueryBase(StemMain ctrl,RootProblem prob)
    method_name = loc.getMethod();
    node_context = prob.getNodeContext();
    
-   bud_launch = new BudLaunch(ctrl,thread_id,frame_id,project_name);
+   bud_launch = new BudLaunch(ctrl,prob);
 }
 
 
