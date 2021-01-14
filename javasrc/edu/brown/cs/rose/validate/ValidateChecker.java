@@ -1,8 +1,8 @@
 /********************************************************************************/
 /*                                                                              */
-/*              RootValidate.java                                               */
+/*              ValidateChecker.java                                            */
 /*                                                                              */
-/*      Information for doing a validation                                      */
+/*      Check if a new execution is valid for given problem                     */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
@@ -33,36 +33,61 @@
 
 
 
-package edu.brown.cs.rose.root;
+package edu.brown.cs.rose.validate;
 
 
-public interface RootValidate extends RootConstants
+class ValidateChecker implements ValidateConstants
 {
 
 
 /********************************************************************************/
 /*                                                                              */
-/*      Access methods                                                          */
+/*      Private Storage                                                         */
 /*                                                                              */
 /********************************************************************************/
 
-RootProblem getProblem();
+private ValidateContext         validate_context;
+private ValidateTrace           original_execution;
+private ValidateTrace           check_execution;
+
 
 
 /********************************************************************************/
 /*                                                                              */
-/*      Processing methods                                                      */
+/*      Constructors                                                            */
 /*                                                                              */
 /********************************************************************************/
 
-void validateAndSend(RootProcessor rp,RootRepair rr);
+ValidateChecker(ValidateContext ctx,ValidateTrace orig,ValidateTrace check)
+{
+   validate_context = ctx;
+   original_execution = orig;
+   check_execution = check;
+   
+   original_execution.setupForLaunch(ctx.getLaunch());
+}
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Checking methods                                                        */
+/*                                                                              */
+/********************************************************************************/
+
+boolean check()
+{
+   if (check_execution == null) return false;
+   if (original_execution == null) return true;
+   if (validate_context.getProblem() == null) return false;
+   
+   return true;
+}
+
+
+}       // end of class ValidateChecker
 
 
 
-}       // end of class RootValidate
 
-
-
-
-/* end of RootValidate.java */
+/* end of ValidateChecker.java */
 

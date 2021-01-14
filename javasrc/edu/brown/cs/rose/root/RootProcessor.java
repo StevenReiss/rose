@@ -47,10 +47,16 @@ public interface RootProcessor extends RootConstants
 RootControl getController();
 
 /**
- *      Add a suggested repair
+ *      Add a suggested repair without validation
  **/
 
 void sendRepair(RootRepair repair);
+
+/**
+ *      Validate and then add a suggested repair
+ **/
+
+void validateRepair(RootRepair repair);
 
 
 

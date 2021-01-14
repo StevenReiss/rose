@@ -47,6 +47,9 @@ import edu.brown.cs.rose.bud.BudStack;
 import edu.brown.cs.rose.bud.BudStackFrame;
 import edu.brown.cs.rose.root.RootControl;
 import edu.brown.cs.rose.root.RootProblem;
+import edu.brown.cs.rose.root.RootProcessor;
+import edu.brown.cs.rose.root.RootRepair;
+import edu.brown.cs.rose.root.RootThreadPool;
 import edu.brown.cs.rose.root.RootValidate;
 
 class ValidateContext implements RootValidate, ValidateConstants
@@ -61,6 +64,7 @@ class ValidateContext implements RootValidate, ValidateConstants
 
 private RootControl	root_control;
 private RootProblem	for_problem;
+private String          frame_id;
 private BudLaunch	for_launch;
 private List<ValidateAction> setup_actions;
 private String          base_session;
@@ -74,11 +78,13 @@ private ValidateExecution base_execution;
 /*										*/
 /********************************************************************************/
 
-ValidateContext(RootControl ctrl,RootProblem p,List<ValidateAction> acts)
+ValidateContext(RootControl ctrl,RootProblem p,String fid,List<ValidateAction> acts)
 {
    root_control = ctrl;
    for_problem = p;
    for_launch = new BudLaunch(root_control,for_problem);
+   frame_id = fid;
+   if (frame_id == null) frame_id = for_launch.getFrame();
    setup_actions = acts;
 }
 
@@ -98,6 +104,26 @@ BudLaunch getLaunch()                                   { return for_launch; }
 
 List<ValidateAction> getActions()                       { return setup_actions; }
 
+RootControl getControl()                                { return root_control; }
+
+ValidateExecution getBaseExecution()                    { return base_execution; }
+
+
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Validation methods                                                      */
+/*                                                                              */
+/********************************************************************************/
+
+public void validateAndSend(RootProcessor rp,RootRepair rr)
+{
+   ValidateRunner vr = new ValidateRunner(this,rp,rr);
+   RootThreadPool.start(vr);
+}
+
 
 
 /********************************************************************************/
@@ -106,32 +132,15 @@ List<ValidateAction> getActions()                       { return setup_actions; 
 /*                                                                              */
 /********************************************************************************/
 
-void getBaseExecution()
+void setupBaseExecution()
 {
    CommandArgs args = new CommandArgs("TYPE","LAUNCH",
          "PROJECT",for_problem.getBugLocation().getProject(),
          "LAUNCHID",for_launch.getLaunch(),
          "THREADID",for_launch.getThread(),
-         "FRAMEID",for_launch.getFrame());
+         "FRAMEID",frame_id); 
    
-   IvyXmlWriter xw = new IvyXmlWriter();
-   BudStack bs = for_launch.getStack();
-   for (BudStackFrame bsf : bs.getFrames()) {
-      xw.begin("LOCATION");
-      xw.field("FILE",bsf.getSourceFile());
-      xw.field("METHOD",bsf.getMethodName());
-      xw.field("SIGNATURE",bsf.getMethodSignature());
-      xw.field("CLASS",bsf.getClassName());
-      xw.field("THREAD",for_launch.getThread());
-      xw.field("ACTIVE",true);
-      xw.field("LINE",bsf.getLineNumber());
-      xw.end("LOCATION");
-      if (bsf.getFrameId().equals(for_launch.getFrame())) break;
-    }
-   String cnts = xw.toString();
-   xw.close();
-   
-   Element rslt = root_control.sendSeedeMessage(null,"BEGIN",args,cnts);
+   Element rslt = root_control.sendSeedeMessage(null,"BEGIN",args,null);
    if (!IvyXml.isElement(rslt,"RESULT")) return;
    Element sessxml = IvyXml.getChild(rslt,"SESSION");
    base_session = IvyXml.getAttrString(sessxml,"ID");
@@ -141,10 +150,74 @@ void getBaseExecution()
       va.perform(root_control,base_session);
     }
    
-   base_execution = new ValidateExecution(base_session);
+   IvyXmlWriter xw = new IvyXmlWriter();
+   BudStack bs = for_launch.getStack();
+   for (BudStackFrame bsf : bs.getFrames()) {
+      xw.begin("FILE");
+      xw.field("NAME",bsf.getSourceFile());
+      xw.end("FILE");
+      if (bsf.getFrameId().equals(frame_id)) break;
+    }
+   String cnts = xw.toString();
+   xw.close();
+   root_control.sendSeedeMessage(base_session,"ADDFILE",null,cnts);
+   
+   base_execution = new ValidateExecution(base_session,this);
    base_execution.start(root_control);
+   
+   // for debugging
+   base_execution.getSeedeResult().setupForLaunch(getLaunch());
 }
 
+
+ValidateExecution getSubsession() 
+{
+   if (base_session == null) return null;
+   
+   Element rslt = root_control.sendSeedeMessage(base_session,"SUBSESSION",null,null);
+   if (!IvyXml.isElement(rslt,"RESULT")) return null;
+   Element sessxml = IvyXml.getChild(rslt,"SESSION");
+   String ssid = IvyXml.getAttrString(sessxml,"ID");
+   if (ssid == null) return null;
+   
+   ValidateExecution ve = new ValidateExecution(ssid,this);
+   
+   return ve;
+}
+
+
+void removeSubsession(String ssid)
+{
+   root_control.sendSeedeMessage(ssid,"REMOVE",null,null);
+}
+
+
+String handleEdits(String ssid,String edits)
+{
+   Element rslt = root_control.sendSeedeMessage(ssid,"EDITFILE",null,edits);
+   
+   String sts = IvyXml.getAttrString(rslt,"STATUS");
+   if (sts == null) sts = "FAIL";
+   return sts;
+}
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Execution comparison methods                                            */
+/*                                                                              */
+/********************************************************************************/
+
+boolean checkValidResult(ValidateExecution ve)
+{
+   ValidateTrace e2 = base_execution.getSeedeResult();
+   ValidateTrace e1 = ve.getSeedeResult();
+   
+   ValidateChecker checker = new ValidateChecker(this,e2,e1);
+   
+   return checker.check();
+}
 
 }	// end of class ValidateContext
 

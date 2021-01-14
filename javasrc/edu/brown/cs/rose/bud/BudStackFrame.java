@@ -36,8 +36,9 @@
 package edu.brown.cs.rose.bud;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.w3c.dom.Element;
 
@@ -60,7 +61,7 @@ private String class_name;
 private String method_name;
 private String method_signature;
 private String format_signature;
-private List<String> frame_variables;
+private Map<String,BudLocalVariable> frame_variables;
 private int     line_number;
 
 
@@ -95,10 +96,10 @@ BudStackFrame(Element xml)
    
    line_number = IvyXml.getAttrInt(xml,"LINENO");
    
-   frame_variables = new ArrayList<>();
+   frame_variables = new HashMap<>();
    for (Element e : IvyXml.children(xml,"VALUE")) {
-      String varnm = IvyXml.getAttrString(e,"NAME");
-      frame_variables.add(varnm);
+      BudLocalVariable blv = new BudLocalVariable(e);
+      frame_variables.put(blv.getName(),blv);
     }
 }
 
@@ -117,7 +118,12 @@ public String getMethodSignature()              { return method_signature; }
 public String getFormatSignature()              { return format_signature; }
 public int getLineNumber()                      { return line_number; }
 public File getSourceFile()                     { return source_file; }
+
+public Collection<String> getLocals()           { return frame_variables.keySet(); }
+public BudLocalVariable getLocal(String nm)     { return frame_variables.get(nm); }
+
    
+
 
 
 }       // end of class BudStackFrame

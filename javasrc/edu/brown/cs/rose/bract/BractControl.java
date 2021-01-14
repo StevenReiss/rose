@@ -47,6 +47,7 @@ import edu.brown.cs.rose.root.RootProblem;
 import edu.brown.cs.rose.root.RootProcessor;
 import edu.brown.cs.rose.root.RootRepair;
 import edu.brown.cs.rose.root.RootThreadPool;
+import edu.brown.cs.rose.root.RootValidate;
 import edu.brown.cs.rose.root.RoseLog;
 import edu.brown.cs.rose.root.RootRepairFinder;
 
@@ -66,6 +67,7 @@ private RootProblem for_problem;
 private RootLocation at_location;
 private List<Class<?>> processor_classes;
 private List<Class<?>> location_classes;
+private RootValidate base_validator;
 
 
 
@@ -76,7 +78,7 @@ private List<Class<?>> location_classes;
 /********************************************************************************/
 
 BractControl(RootControl ctrl,String id,RootProblem prob,RootLocation at,
-        List<Class<?>> pclass,List<Class<?>> lclass)
+        List<Class<?>> pclass,List<Class<?>> lclass,RootValidate validator)
 { 
    super("BractControl_" + id);
    rose_control = ctrl;
@@ -85,6 +87,7 @@ BractControl(RootControl ctrl,String id,RootProblem prob,RootLocation at,
    at_location = at;
    processor_classes = pclass;
    location_classes = lclass;
+   base_validator = validator;
 }
 
 
@@ -177,7 +180,19 @@ private List<RootLocation> getLocations()
 /*                                                                              */
 /********************************************************************************/
 
-public void sendRepair(RootRepair br)
+@Override public void validateRepair(RootRepair br)
+{
+   if (base_validator != null) {
+      base_validator.validateAndSend(this,br);
+    }
+   else {
+      sendRepair(br);
+    }
+}
+
+
+
+@Override public void sendRepair(RootRepair br)
 {
    CommandArgs args = new CommandArgs("NAME",reply_id);
    

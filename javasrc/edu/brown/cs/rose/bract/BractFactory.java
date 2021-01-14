@@ -168,7 +168,8 @@ public boolean registerProcessor(String clsnm)
 public void startSuggestions(RootControl ctrl,String rid,RootProblem prob,RootLocation at,
       RootValidate validate)
 {
-   BractControl proc = new BractControl(ctrl,rid,prob,at,processor_classes,location_classes);
+   BractControl proc = new BractControl(ctrl,rid,prob,at,processor_classes,
+         location_classes,validate);
    proc.start();
 }
 

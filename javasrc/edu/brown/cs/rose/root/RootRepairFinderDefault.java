@@ -173,7 +173,7 @@ protected void addRepair(ASTRewrite rw,String desc,double priority)
    if (te == null) return;
    
    RootRepair rr = new RootRepairDefault(this,desc,pri,getLocation(),te);
-   getProcessor().sendRepair(rr);
+   getProcessor().validateRepair(rr);
 }
 
 }       // end of class RootRepairFinderDefault

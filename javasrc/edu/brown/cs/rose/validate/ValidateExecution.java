@@ -35,8 +35,6 @@
 
 package edu.brown.cs.rose.validate;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 import org.w3c.dom.Element;
 
 import edu.brown.cs.ivy.mint.MintConstants.CommandArgs;
@@ -57,11 +55,9 @@ class ValidateExecution implements ValidateConstants
 enum ExecState { INITIAL, PENDING, READY };
 
 private String          session_id;
-private String          exec_id;
-private Element         seede_result;
+private ValidateTrace   seede_result;
 private ExecState       exec_state;
 
-private static AtomicInteger exec_counter = new AtomicInteger();
 
 
 /********************************************************************************/
@@ -70,12 +66,11 @@ private static AtomicInteger exec_counter = new AtomicInteger();
 /*                                                                              */
 /********************************************************************************/
 
-ValidateExecution(String sid)
+ValidateExecution(String sid,ValidateContext ctx)
 {
    session_id = sid;
    seede_result = null;
    exec_state = ExecState.INITIAL;
-   exec_id = "ROSE_EXEC_" + exec_counter.incrementAndGet();
 }
 
 
@@ -92,7 +87,7 @@ String getSessionId()                   { return session_id; }
 
 /********************************************************************************/
 /*                                                                              */
-/*      Start method                                                    */
+/*      Start method                                                            */
 /*                                                                              */
 /********************************************************************************/
 
@@ -106,13 +101,13 @@ void start(RootControl rc)
    ValidateFactory vfac = ValidateFactory.getFactory(rc);
    vfac.register(this);
    
-   CommandArgs args = new CommandArgs("EXECID",exec_id,
+   CommandArgs args = new CommandArgs("EXECID",session_id,
          "CONTINUOUS",false);
-   rc.sendSeedeMessage(session_id,"EXEC",args,null);
-   
-   // for debugging only:
-   Element xml = getSeedeResult();
-   RoseLog.logD("VALIDATE","Execution returned: " + IvyXml.convertXmlToString(xml));
+   Element r1 = rc.sendSeedeMessage(session_id,"EXEC",args,null);
+   if (!IvyXml.isElement(r1,"RESULT")) {
+      RoseLog.logD("VALIDATE","Exec setup returned: " + IvyXml.convertXmlToString(r1));     exec_state = ExecState.READY;
+      return;
+    }
 }
 
 
@@ -126,7 +121,7 @@ void start(RootControl rc)
 
 synchronized void handleResult(Element xml)
 {
-   seede_result = xml;
+   seede_result = new ValidateTrace(xml);
    exec_state = ExecState.READY;
    notifyAll();
 }
@@ -158,7 +153,7 @@ synchronized String handleInitialValue(String what)
 /*                                                                              */
 /********************************************************************************/
 
-Element getSeedeResult()
+ValidateTrace getSeedeResult()
 {
    synchronized (this) {
       while (exec_state != ExecState.READY) {

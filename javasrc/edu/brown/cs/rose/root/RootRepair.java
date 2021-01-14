@@ -121,6 +121,10 @@ public RootLocation getLocation()
 }
 
 
+public RootEdit getEdit()
+{
+   return repair_edit;
+}
 
 
 /********************************************************************************/

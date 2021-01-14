@@ -56,6 +56,7 @@ import edu.brown.cs.ivy.jcomp.JcompAst;
 import edu.brown.cs.ivy.jcomp.JcompScope;
 import edu.brown.cs.ivy.jcomp.JcompSymbol;
 import edu.brown.cs.ivy.jcomp.JcompType;
+import edu.brown.cs.ivy.jcomp.JcompTyper;
 import edu.brown.cs.rose.root.RootRepairFinderDefault;
 import edu.brown.cs.rose.root.RoseLog;
 
@@ -207,10 +208,12 @@ private int findReplacements(ASTNode base,Map<JcompType,List<UserVariable>> type
     }
    if (curscp == null) return 0;
    
+   JcompTyper typer = JcompAst.getTyper(base);
+   
    Collection<JcompSymbol> allsyms = curscp.getAllSymbols();
    for (JcompSymbol cand : allsyms) {
       if (!isRelevant(cand)) continue;
-      JcompType jt = cand.getDeclaredType();
+      JcompType jt = cand.getDeclaredType(typer);
       List<UserVariable> vars = typemap.get(jt);
       if (vars == null) continue;
       for (UserVariable uv : vars) {

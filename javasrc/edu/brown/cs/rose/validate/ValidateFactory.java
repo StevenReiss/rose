@@ -137,9 +137,9 @@ public RootValidate createValidate(RootProblem prob,String frameid,RootLocation 
    ValidateChangedItems itms = new ValidateChangedItems(bl,frameid);
    List<ValidateAction> cngs = itms.getChangeActions();
 
-   ValidateContext ctx = new ValidateContext(root_control,prob,cngs);
+   ValidateContext ctx = new ValidateContext(root_control,prob,frameid,cngs);
    
-   ctx.getBaseExecution();
+   ctx.setupBaseExecution();
    
    return ctx;
 }
@@ -162,6 +162,8 @@ void register(ValidateExecution ve)
 private class SeedeHandler implements MintHandler {
    
    @Override public void receive(MintMessage msg,MintArguments args) {
+      RoseLog.logD("VALIDATE","SEEDE message: " + msg.getText());
+      
       String typ = args.getArgument(0);
       String id = args.getArgument(1);
       Element xml = msg.getXml();
@@ -170,8 +172,6 @@ private class SeedeHandler implements MintHandler {
          msg.replyTo();
          return;
        }
-      
-      RoseLog.logD("VALIDATE","SEEDE message: " + msg.getText());
       
       String rslt = null;
       switch (typ) {

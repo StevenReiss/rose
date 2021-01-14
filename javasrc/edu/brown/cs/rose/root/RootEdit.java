@@ -1,34 +1,34 @@
 /********************************************************************************/
-/*                                                                              */
-/*              RootEdit.java                                                   */
-/*                                                                              */
-/*      Representation of a text edit                                           */
-/*                                                                              */
+/*										*/
+/*		RootEdit.java							*/
+/*										*/
+/*	Representation of a text edit						*/
+/*										*/
 /********************************************************************************/
-/*      Copyright 2011 Brown University -- Steven P. Reiss                    */
+/*	Copyright 2011 Brown University -- Steven P. Reiss		      */
 /*********************************************************************************
- *  Copyright 2011, Brown University, Providence, RI.                            *
- *                                                                               *
- *                        All Rights Reserved                                    *
- *                                                                               *
- *  Permission to use, copy, modify, and distribute this software and its        *
- *  documentation for any purpose other than its incorporation into a            *
- *  commercial product is hereby granted without fee, provided that the          *
- *  above copyright notice appear in all copies and that both that               *
- *  copyright notice and this permission notice appear in supporting             *
- *  documentation, and that the name of Brown University not be used in          *
- *  advertising or publicity pertaining to distribution of the software          *
- *  without specific, written prior permission.                                  *
- *                                                                               *
- *  BROWN UNIVERSITY DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS                *
- *  SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND            *
- *  FITNESS FOR ANY PARTICULAR PURPOSE.  IN NO EVENT SHALL BROWN UNIVERSITY      *
- *  BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY          *
- *  DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,              *
- *  WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS               *
- *  ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE          *
- *  OF THIS SOFTWARE.                                                            *
- *                                                                               *
+ *  Copyright 2011, Brown University, Providence, RI.				 *
+ *										 *
+ *			  All Rights Reserved					 *
+ *										 *
+ *  Permission to use, copy, modify, and distribute this software and its	 *
+ *  documentation for any purpose other than its incorporation into a		 *
+ *  commercial product is hereby granted without fee, provided that the 	 *
+ *  above copyright notice appear in all copies and that both that		 *
+ *  copyright notice and this permission notice appear in supporting		 *
+ *  documentation, and that the name of Brown University not be used in 	 *
+ *  advertising or publicity pertaining to distribution of the software 	 *
+ *  without specific, written prior permission. 				 *
+ *										 *
+ *  BROWN UNIVERSITY DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS		 *
+ *  SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND		 *
+ *  FITNESS FOR ANY PARTICULAR PURPOSE.  IN NO EVENT SHALL BROWN UNIVERSITY	 *
+ *  BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY 	 *
+ *  DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,		 *
+ *  WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS		 *
+ *  ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE 	 *
+ *  OF THIS SOFTWARE.								 *
+ *										 *
  ********************************************************************************/
 
 
@@ -60,22 +60,22 @@ public class RootEdit implements RootConstants
 
 
 /********************************************************************************/
-/*                                                                              */
-/*      Private Storage                                                         */
-/*                                                                              */
+/*										*/
+/*	Private Storage 							*/
+/*										*/
 /********************************************************************************/
 
-private Element         complete_edit;
-private File            base_file;
-private TextEdit        text_edit;
+private Element 	complete_edit;
+private File		base_file;
+private TextEdit	text_edit;
 
 private static AtomicInteger edit_counter = new AtomicInteger(1);
 
 
 /********************************************************************************/
-/*                                                                              */
-/*      Constructors                                                            */
-/*                                                                              */
+/*										*/
+/*	Constructors								*/
+/*										*/
 /********************************************************************************/
 
 public RootEdit(Element xml)
@@ -88,18 +88,18 @@ public RootEdit(Element xml)
 
 
 public RootEdit(File f,TextEdit te)
-{ 
+{
    complete_edit = null;
    base_file = f;
    text_edit = te;
 }
-   
+
 
 
 /********************************************************************************/
-/*                                                                              */
-/*      Output methods                                                          */
-/*                                                                              */
+/*										*/
+/*	Output methods								*/
+/*										*/
 /********************************************************************************/
 
 public void outputXml(IvyXmlWriter xw)
@@ -126,9 +126,9 @@ private static void outputTextEdit(TextEdit te,IvyXmlWriter xw)
    xw.field("EXCEND",te.getExclusiveEnd());
    xw.field("ID",te.hashCode());
    xw.field("COUNTER",edit_counter.incrementAndGet());
-   
+
    if (te instanceof CopyingRangeMarker) {
-      xw.field("TYPE","COPYRANGE"); 
+      xw.field("TYPE","COPYRANGE");
     }
    else if (te instanceof CopySourceEdit) {
       CopySourceEdit cse = (CopySourceEdit) te;
@@ -136,7 +136,9 @@ private static void outputTextEdit(TextEdit te,IvyXmlWriter xw)
       xw.field("TARGET",cse.getTargetEdit().hashCode());
     }
    else if (te instanceof CopyTargetEdit) {
+      CopyTargetEdit cte = (CopyTargetEdit) te;
       xw.field("TYPE","COPYTARGET");
+      xw.field("SOURCE",cte.getSourceEdit().hashCode());
     }
    else if (te instanceof DeleteEdit) {
       xw.field("TYPE","DELETE");
@@ -168,7 +170,7 @@ private static void outputTextEdit(TextEdit te,IvyXmlWriter xw)
    else if (te instanceof UndoEdit) {
       xw.field("TYPE","UNDO");
     }
-   
+
    if (te.hasChildren()) {
       for (TextEdit cte : te.getChildren()) {
 	 outputTextEdit(cte,xw);
@@ -177,7 +179,7 @@ private static void outputTextEdit(TextEdit te,IvyXmlWriter xw)
    xw.end("EDIT");
 }
 
-}       // end of class RootEdit
+}	// end of class RootEdit
 
 
 

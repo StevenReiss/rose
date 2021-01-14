@@ -1,8 +1,8 @@
 /********************************************************************************/
 /*                                                                              */
-/*              RootValidate.java                                               */
+/*              BudLocalVariable.java                                           */
 /*                                                                              */
-/*      Information for doing a validation                                      */
+/*      Representation of a stack variable                                      */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
@@ -33,11 +33,43 @@
 
 
 
-package edu.brown.cs.rose.root;
+package edu.brown.cs.rose.bud;
 
+import org.w3c.dom.Element;
 
-public interface RootValidate extends RootConstants
+import edu.brown.cs.ivy.xml.IvyXml;
+
+public class BudLocalVariable
 {
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Private Storage                                                         */
+/*                                                                              */
+/********************************************************************************/
+
+private String var_kind;
+private String var_type;
+private String var_value;
+private String var_name;
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Constructors                                                            */
+/*                                                                              */
+/********************************************************************************/
+
+BudLocalVariable(Element xml)
+{
+   var_name = IvyXml.getAttrString(xml,"NAME");
+   var_kind = IvyXml.getAttrString(xml,"KIND");
+   var_type = IvyXml.getAttrString(xml,"TYPE");
+   var_value = IvyXml.getTextElement(xml,"DESCRIPTION");
+}
+
 
 
 /********************************************************************************/
@@ -46,23 +78,21 @@ public interface RootValidate extends RootConstants
 /*                                                                              */
 /********************************************************************************/
 
-RootProblem getProblem();
+public String getName()                         { return var_name; }
 
+public String getType()                         { return var_type; }
 
-/********************************************************************************/
-/*                                                                              */
-/*      Processing methods                                                      */
-/*                                                                              */
-/********************************************************************************/
+public String getKind()                         { return var_kind; }
 
-void validateAndSend(RootProcessor rp,RootRepair rr);
-
-
-
-}       // end of class RootValidate
+public String getValue()                        { return var_value; }
 
 
 
 
-/* end of RootValidate.java */
+}       // end of class BudLocalVariable
+
+
+
+
+/* end of BudLocalVariable.java */
 

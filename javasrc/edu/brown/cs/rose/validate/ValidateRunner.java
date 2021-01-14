@@ -1,8 +1,8 @@
 /********************************************************************************/
 /*                                                                              */
-/*              RootValidate.java                                               */
+/*              ValidateRunner.java                                             */
 /*                                                                              */
-/*      Information for doing a validation                                      */
+/*      Do a validation for a potential repair                                  */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
@@ -33,36 +33,103 @@
 
 
 
-package edu.brown.cs.rose.root;
+package edu.brown.cs.rose.validate;
 
+import edu.brown.cs.ivy.xml.IvyXmlWriter;
+import edu.brown.cs.rose.root.RootProcessor;
+import edu.brown.cs.rose.root.RootRepair;
+import edu.brown.cs.rose.root.RoseLog;
 
-public interface RootValidate extends RootConstants
+class ValidateRunner implements Runnable, ValidateConstants
 {
 
 
 /********************************************************************************/
 /*                                                                              */
-/*      Access methods                                                          */
+/*      Private Storage                                                         */
 /*                                                                              */
 /********************************************************************************/
 
-RootProblem getProblem();
+private ValidateContext         base_context;
+private RootProcessor           root_processor;
+private RootRepair              for_repair;
+
 
 
 /********************************************************************************/
 /*                                                                              */
-/*      Processing methods                                                      */
+/*      Constructors                                                            */
 /*                                                                              */
 /********************************************************************************/
 
-void validateAndSend(RootProcessor rp,RootRepair rr);
+ValidateRunner(ValidateContext ctx,RootProcessor rp,RootRepair rr)
+{
+   base_context = ctx;
+   root_processor = rp;
+   for_repair = rr;
+}
 
 
 
-}       // end of class RootValidate
+/********************************************************************************/
+/*                                                                              */
+/*      Do the validation                                                       */
+/*                                                                              */
+/********************************************************************************/
+
+@Override public void run()
+{
+   ValidateExecution ve = base_context.getSubsession();
+   if (ve == null) {
+      sendRepair();
+      return;
+    }
+   
+   String ssid = ve.getSessionId();
+   try { 
+      IvyXmlWriter xw = new IvyXmlWriter();
+      for_repair.getEdit().outputXml(xw);
+      String cnts = xw.toString();
+      xw.close();
+      
+      String sts = base_context.handleEdits(ssid,cnts);
+      switch (sts) {
+         case "OK" :
+            break;
+         case "FAIL" :
+         case "ERROR" :
+            return;
+         case "WARNING" :
+            break;
+         default :
+            RoseLog.logE("VALIDATE","Unknown status from edit: " + sts);
+            break; 
+       }
+      
+      ve.start(root_processor.getController());
+      
+      if (base_context.checkValidResult(ve)) {
+         sendRepair();
+       }
+    }
+   finally {
+      base_context.removeSubsession(ssid);
+    }
+}
+
+
+
+private void sendRepair()
+{
+   root_processor.sendRepair(for_repair);
+}
+
+
+
+}       // end of class ValidateRunner
 
 
 
 
-/* end of RootValidate.java */
+/* end of ValidateRunner.java */
 
