@@ -47,6 +47,9 @@ import edu.brown.cs.rose.bud.BudLaunch;
 import edu.brown.cs.rose.bud.BudLocalVariable;
 import edu.brown.cs.rose.bud.BudStack;
 import edu.brown.cs.rose.bud.BudStackFrame;
+import edu.brown.cs.rose.bud.BudType;
+import edu.brown.cs.rose.bud.BudValue;
+import edu.brown.cs.rose.root.RoseException;
 
 public class ValidateTrace
 {
@@ -78,6 +81,32 @@ ValidateTrace(Element rslt)
    problem_time = -1;
    problem_context = null;
    setupIdMap();
+}
+
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Access methods                                                          */
+/*                                                                              */
+/********************************************************************************/
+
+long getProblemTime()   
+{
+   return problem_time;
+}
+
+
+Element getProblemContext()
+{
+   return problem_context;
+}
+
+
+Element getRootContext()
+{
+   return IvyXml.getChild(seede_result,"CONTEXT");
 }
 
 
@@ -204,7 +233,7 @@ private void findContextTime(Element ctx,BudLaunch launch,long from,long to)
                long time = IvyXml.getAttrLong(valelt,"TIME");
                if (prev > 0) {
                   if (time >= from && prev <= to) {
-                     Boolean fg = compareVariable(local,prevval,launch);
+                     Boolean fg = compareVariable(local,prevval,launch,from,to);
                      if (fg != null) {
                         ++foundct;
                         found |= fg;
@@ -217,7 +246,7 @@ private void findContextTime(Element ctx,BudLaunch launch,long from,long to)
             if (prev > 0) {
                long time = IvyXml.getAttrLong(ctx,"END");
                if (time >= from && prev <= to) {
-                  Boolean fg = compareVariable(local,prevval,launch);
+                  Boolean fg = compareVariable(local,prevval,launch,from,to);
                   if (fg != null) {
                      ++foundct;
                      found |= fg;
@@ -225,7 +254,7 @@ private void findContextTime(Element ctx,BudLaunch launch,long from,long to)
                 }
              }
             else if (prev == -1) {
-               Boolean fg = compareVariable(local,prevval,launch);
+               Boolean fg = compareVariable(local,prevval,launch,from,to);
                if (fg != null) {
                   ++foundct;
                   found |= fg;
@@ -253,7 +282,7 @@ private void findContextTime(Element ctx,BudLaunch launch,long from,long to)
 /*                                                                              */
 /********************************************************************************/
 
-private Boolean compareVariable(BudLocalVariable local,Element valelt,BudLaunch launch)
+private Boolean compareVariable(BudLocalVariable local,Element valelt,BudLaunch launch,long from,long to)
 {
    switch (local.getKind()) {
       case "PRIMITIVE" :
@@ -261,25 +290,168 @@ private Boolean compareVariable(BudLocalVariable local,Element valelt,BudLaunch 
          String valtxt = IvyXml.getText(valelt);
          return local.getValue().equals(valtxt);
       case "ARRAY" :
-         valelt = dereference(valelt);
-         // use launch to get value of variable -> BudValue
-         // then compare that with the local indexed values and length
-         break;
+         if (local.getType().equals("null")) {
+            if (IvyXml.getAttrBool(valelt,"NULL")) return true;
+            return false;
+          }   
+         return compareArray(local,valelt,launch,from,to);
       case "OBJECT" :
          if (local.getType().equals("null")) {
             if (IvyXml.getAttrBool(valelt,"NULL")) return true;
             return false;
           }
-         valelt = dereference(valelt);
-         // use launch to get value of variable -> BudValue
-         // then compare that with the local fields
-         break;
+         return compareObject(local,valelt,launch,from,to);
       default :
          break;
     }
    
    return null;
 }
+
+
+
+private Boolean compareObject(BudLocalVariable local,Element valelt0,BudLaunch launch,long from,long to)
+{
+   Element valelt = dereference(valelt0);
+   if (local.getType().equals("null")) {
+      if (IvyXml.getAttrBool(valelt,"NULL")) return true;
+      return false;
+    }
+   
+   if (!local.getType().equals(IvyXml.getAttrString(valelt,"TYPE"))) return false;
+   
+   BudValue localval = launch.evaluate(local.getName());
+   
+   int ct = 0;
+   for (Element fldelt : IvyXml.children(valelt,"FIELD")) {
+      String nm = IvyXml.getAttrString(fldelt,"NAME");
+      try {
+         BudValue fldval = localval.getFieldValue(nm);
+         if (fldval == null) continue;
+         Boolean fg = checkValueAtTime(fldval,fldelt,launch,from,to);
+         if (fg == null) continue;
+         if (!fg) return false;
+         ++ct;  // if matched
+       }
+      catch (RoseException e) { }
+    }
+   
+   if (ct > 0) return true;
+   
+   return null;
+}
+
+
+
+private Boolean compareArray(BudLocalVariable local,Element valelt0,BudLaunch launch,long from,long to)
+{
+   Element valelt = dereference(valelt0);
+   if (local.getType().equals("null")) {
+      if (IvyXml.getAttrBool(valelt,"NULL")) return true;
+      return false;
+    }
+   
+   if (!local.getType().equals(IvyXml.getAttrString(valelt,"TYPE"))) return false;
+
+// BudValue localval = launch.evaluate(local.getName());
+// int ctxsz = IvyXml.getAttrInt(valelt,"SIZE");
+   
+   // check number of elements
+   // loop for each element
+   
+   return null;
+}
+
+
+
+private Boolean checkValueAtTime(BudValue actval,Element valctx,BudLaunch launch,long from,long to)
+{
+   long prev = -1;
+   Element prevval = null;
+   int foundct = 0;
+   boolean found = false;
+   for (Element valelt : IvyXml.children(valctx,"VALUE")) {
+      long time = IvyXml.getAttrLong(valelt,"TIME");
+      if (prev > 0) {
+         if (time >= from && prev <= to) {
+            Boolean fg = compareValueAtTime(actval,prevval,launch,from,to);
+            if (fg != null) {
+               ++foundct;
+               found |= fg;
+             }
+          }
+       }
+      prev = time;
+      prevval = valelt;
+    }
+   if (prev > 0 && prev <= to) {
+      if (prev <= to) {
+         Boolean fg = compareValueAtTime(actval,prevval,launch,from,to);
+         if (fg != null) {
+            ++foundct;
+            found |= fg;
+          }
+       }
+    }
+   else if (prev == -1) {
+      Boolean fg = compareValueAtTime(actval,prevval,launch,from,to);
+      if (fg != null) {
+         ++foundct;
+         found |= fg;
+       }   
+    }
+   
+   if (foundct > 0 && !found) return false;
+   if (found) return true;
+   
+   return null;
+}
+
+
+
+private Boolean compareValueAtTime(BudValue actval,Element valctx,BudLaunch launch,long from,long to)
+{
+   String ctxval = IvyXml.getText(valctx);
+   String ctxtyp = IvyXml.getAttrString(valctx,"TYPE");
+   BudType typ = actval.getDataType();
+  
+   if (actval.isNull()) {
+      return IvyXml.getAttrBool(valctx,"NULL");
+    }
+   
+   // handle primitive types
+   switch (typ.getName()) {
+      case "boolean" :
+         if (actval.getBoolean()) return ctxval.equals("1");
+         else return ctxval.equals("0");
+      case "int" :
+      case "long" :
+      case "short" :
+      case "byte" :
+      case "char" :
+         try {
+            long l = Long.parseLong(ctxval);
+            return l == actval.getInt();
+          }
+         catch (NumberFormatException e) { }
+         return null;
+      case "double" :
+      case "float" :
+         return null;
+      case "java.lang.String" :
+         if (ctxtyp.equals("java.lang.String")) {
+            return actval.getString().equals(ctxval);
+          }
+         break;
+    }
+   
+   if (!typ.getName().equals(ctxtyp)) return false;
+   
+   // handle objects and arrays when nested -- ignore for now
+   
+   return null;
+} 
+
 
 
 /********************************************************************************/

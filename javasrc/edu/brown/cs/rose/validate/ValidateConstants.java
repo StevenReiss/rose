@@ -36,7 +36,6 @@
 package edu.brown.cs.rose.validate;
 
 
-
 public interface ValidateConstants
 {
 

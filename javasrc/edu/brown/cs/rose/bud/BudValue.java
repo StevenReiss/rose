@@ -148,7 +148,7 @@ void setFieldValue(String name,BudValue value) throws RoseException
    throw new RoseException("Value is not an object");
 }
 
-BudValue getFieldValue(String name) throws RoseException
+public BudValue getFieldValue(String name) throws RoseException
 {
    throw new RoseException("Value is not an object");
 }
@@ -322,8 +322,14 @@ private static class ObjectValue extends BudValue {
       field_values.put(nm,val);
     }
    
-   @Override BudValue getFieldValue(String nm) {
+   @Override public BudValue getFieldValue(String nm) {
       BudGenericValue gv = field_values.get(nm);
+      if (gv == null) {
+         int idx = nm.lastIndexOf(".");
+         if (idx < 0) return null;
+         String nm1 = nm.substring(idx+1);
+         gv = field_values.get(nm1);
+       }
       if (gv == null) return null;
       if (gv instanceof BudDeferredValue) {
          BudDeferredValue dv = (BudDeferredValue) gv;
