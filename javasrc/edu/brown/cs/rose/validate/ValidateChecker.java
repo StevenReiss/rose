@@ -80,6 +80,9 @@ boolean check()
    if (original_execution == null) return true;
    if (validate_context.getProblem() == null) return false;
    
+   ValidateMatcher matcher = new ValidateMatcher(original_execution,check_execution);
+   matcher.computeMatch();
+   
    return true;
 }
 

@@ -35,6 +35,10 @@
 
 package edu.brown.cs.rose.validate;
 
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
 import org.w3c.dom.Element;
 
 import edu.brown.cs.ivy.xml.IvyXml;
@@ -86,24 +90,20 @@ ValidateMatcher(ValidateTrace orig,ValidateTrace match)
    problem_time = orig.getProblemTime();
    
    problem_after_time = 0;
-   for (Element varelt : IvyXml.children(problem_context,"VARIABLE")) {
-      if (IvyXml.getAttrString(varelt,"NAME").equals("*LINE*")) {
-         boolean fnd = false;
-         for (Element valelt : IvyXml.children(varelt,"VALUE")) {
-            Long t = IvyXml.getAttrLong(valelt,"TIME");
-            if (t == problem_time) {
-               fnd = true;
-             }
-            else if (fnd) {
-               problem_after_time = t;
-               break;
-             }
-          }
-         if (fnd && problem_after_time == 0) {
-            problem_after_time = IvyXml.getAttrLong(problem_context,"END");
-          }
+   Element varelt = findLines(problem_context);
+   boolean fnd = false;
+   for (Element valelt : IvyXml.children(varelt,"VALUE")) {
+      Long t = IvyXml.getAttrLong(valelt,"TIME");
+      if (t == problem_time) {
+         fnd = true;
        }
-
+      else if (fnd) {
+         problem_after_time = t;
+         break;
+       }
+    }
+   if (fnd && problem_after_time == 0) {
+      problem_after_time = IvyXml.getAttrLong(problem_context,"END");
     }
   
    control_change = 0;
@@ -129,10 +129,116 @@ ValidateMatcher(ValidateTrace orig,ValidateTrace match)
 
 void computeMatch()
 {
-   // walk through the contexts, checking for matches
+   Element origctx = original_trace.getRootContext();
+   Element matchctx = match_trace.getRootContext();
+   
+   matchContexts(origctx,matchctx);
 }
 
 
+
+private void matchContexts(Element origctx,Element matchctx)
+{
+   matchLines(origctx,matchctx);
+   // check other variables
+   matchInnerContexts(origctx,matchctx);
+}
+
+
+
+private void matchLines(Element origctx,Element matchctx) 
+{
+   Element origline = findLines(origctx);
+   Element matchline = findLines(matchctx);
+   
+   if (origline == null || matchline == null) return;
+   
+   long lasttime = IvyXml.getAttrLong(origctx,"START");
+   long matchtime = IvyXml.getAttrLong(matchctx,"START");
+   if (lasttime == matchtime) {
+      Iterator<Element> it1 = IvyXml.getChildren(origline,"VALUE");
+      Iterator<Element> it2 = IvyXml.getChildren(matchline,"VALUE");
+      boolean fnd = false;
+      while (it1.hasNext() && it2.hasNext()) {
+         Element origval = it1.next();
+         Element matchval = it2.next();
+         if (IvyXml.getAttrInt(origval,"TIME") != IvyXml.getAttrInt(matchval,"TIME") ||
+               !IvyXml.getText(origval).equals(IvyXml.getText(matchval))) {
+            noteChange(origctx,matchctx,lasttime);
+            fnd = true;
+            break;
+          }
+         lasttime = IvyXml.getAttrLong(origval,"TIME");
+       }
+      if (!fnd && (it1.hasNext() || it2.hasNext())) {
+         noteChange(origctx,matchctx,lasttime);
+       }
+    }
+}
+
+
+private void matchInnerContexts(Element origctx,Element matchctx)
+{
+   Iterator<Element> cit1 = IvyXml.getChildren(origctx,"CONTEXT");
+   Iterator<Element> cit2 = IvyXml.getChildren(matchctx,"CONTEXT");
+   while (cit1.hasNext() && cit2.hasNext()) {
+      Element octx = cit1.next();
+      Element mctx = cit2.next();
+      long ostart = IvyXml.getAttrLong(octx,"START");
+      long mstart = IvyXml.getAttrLong(mctx,"START");
+      if (!IvyXml.getAttrString(octx,"METHOD").equals(IvyXml.getAttrString(mctx,"METHOD")) ||
+            ostart != mstart) {
+         noteChange(origctx,matchctx,Math.min(ostart,mstart));
+       }
+      matchContexts(octx,mctx);
+      
+    }
+}
+
+
+
+private void matchVariables(Element origctx,Element matchctx)
+{
+   Map<String,Element> matchelts = new HashMap<>();
+   for (Element mval : IvyXml.children(matchctx,"VARIABLE")) {
+      String nm = IvyXml.getAttrString(mval,"NAME");
+      if (nm.equals("*LINE*")) continue;
+      matchelts.put(nm,mval);
+    }
+   for (Element oval : IvyXml.children(origctx,"VARIABLE")) {
+      String nm = IvyXml.getAttrString(oval,"NAME");
+      if (nm.equals("*LINE*")) continue;
+      Element mval = matchelts.remove(nm);
+      matchVariable(origctx,matchctx,oval,mval);
+    }
+   for (Element mval : matchelts.values()) {
+      matchVariable(origctx,matchctx,null,mval);
+    }
+}
+
+
+
+private void matchVariable(Element origctx,Element matchctx,Element oval,Element mval)
+{
+   
+}
+
+
+private void noteChange(Element origctx,Element matchctx,long when)
+{
+   
+}
+
+
+private Element findLines(Element ctx)
+{
+   for (Element varelt : IvyXml.children(ctx,"VARIABLE")) {
+      String name = IvyXml.getAttrString(varelt,"NAME");
+      if (name.equals("*LINE*")) return varelt;
+    }
+   
+   return null;
+}
 
 
 }       // end of class ValidateMatcher
