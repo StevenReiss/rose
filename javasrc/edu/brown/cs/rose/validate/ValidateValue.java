@@ -1,8 +1,8 @@
 /********************************************************************************/
 /*                                                                              */
-/*              RootThreadPool.java                                             */
+/*              ValidateValue.java                                              */
 /*                                                                              */
-/*      description of class                                                    */
+/*      Representation of a value (that can change over time)                   */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
@@ -33,15 +33,13 @@
 
 
 
-package edu.brown.cs.rose.root;
+package edu.brown.cs.rose.validate;
 
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
+import org.w3c.dom.Element;
 
-public class RootThreadPool implements RootConstants
+import edu.brown.cs.ivy.xml.IvyXml;
+
+class ValidateValue implements ValidateConstants
 {
 
 
@@ -51,15 +49,7 @@ public class RootThreadPool implements RootConstants
 /*                                                                              */
 /********************************************************************************/
 
-private ThreadPoolExecutor      thread_pool;
-
-private static RootThreadPool   the_pool = new RootThreadPool();
-
-private static AtomicInteger    thread_counter = new AtomicInteger();
-
-private boolean do_debug = true;
-
-
+private Element         value_element;
 
 
 /********************************************************************************/
@@ -68,55 +58,58 @@ private boolean do_debug = true;
 /*                                                                              */
 /********************************************************************************/
 
-private RootThreadPool()
+ValidateValue(Element v)
 {
-   if (do_debug) {
-      thread_pool = new ThreadPoolExecutor(1,1,30000,TimeUnit.MILLISECONDS,
-            new LinkedBlockingQueue<>(),new OurThreadFactory());
-    }
-   else {
-      thread_pool = new ThreadPoolExecutor(2,12,30000,TimeUnit.MILLISECONDS,
-            new LinkedBlockingQueue<>(),new OurThreadFactory());
-    }
+   value_element = v;
 }
 
 
 /********************************************************************************/
 /*                                                                              */
-/*      Static processing methods                                               */
+/*      Access methods                                                          */
 /*                                                                              */
 /********************************************************************************/
 
-public static void start(Runnable r) 
+long getStartTime()                     
 {
-   if (r != null) {
-      the_pool.thread_pool.execute(r);
+   return IvyXml.getAttrLong(value_element,"TIME");
+}
+
+boolean isNull()
+{
+   return IvyXml.getAttrBool(value_element,"NULL");
+}
+
+
+String getDataType()
+{
+   return IvyXml.getAttrString(value_element,"TYPE");
+}
+
+
+Long getNumericValue()
+{
+   try {
+      return Long.parseLong(IvyXml.getText(value_element));
     }
+   catch (NumberFormatException e) { }
+    
+   return null;
 }
 
 
 
-/********************************************************************************/
-/*                                                                              */
-/*      Factory for creating threads                                            */
-/*                                                                              */
-/********************************************************************************/
-
-private static class OurThreadFactory implements ThreadFactory {
-   
-   @Override public Thread newThread(Runnable r) {
-      Thread t = new Thread(r,"RootProcessor_" + thread_counter.incrementAndGet());
-      return t;
-    }
-   
-}       // end of inner class OurThreadFactory
+String getValue()
+{
+   return IvyXml.getText(value_element);
+}
 
 
 
-}       // end of class RootThreadPool
+}       // end of class ValidateValue
 
 
 
 
-/* end of RootThreadPool.java */
+/* end of ValidateValue.java */
 

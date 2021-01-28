@@ -108,7 +108,9 @@ ValidateRunner(ValidateContext ctx,RootProcessor rp,RootRepair rr)
       
       ve.start(root_processor.getController());
       
-      if (base_context.checkValidResult(ve)) {
+      double score = base_context.checkValidResult(ve);
+      if (score > 0) {
+         for_repair.noteValidateScore(score);
          sendRepair();
        }
     }

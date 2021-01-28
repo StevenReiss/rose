@@ -57,6 +57,7 @@ enum ExecState { INITIAL, PENDING, READY };
 private String          session_id;
 private ValidateTrace   seede_result;
 private ExecState       exec_state;
+private ValidateContext for_context;
 
 
 
@@ -69,6 +70,7 @@ private ExecState       exec_state;
 ValidateExecution(String sid,ValidateContext ctx)
 {
    session_id = sid;
+   for_context = ctx;
    seede_result = null;
    exec_state = ExecState.INITIAL;
 }
@@ -121,7 +123,7 @@ void start(RootControl rc)
 
 synchronized void handleResult(Element xml)
 {
-   seede_result = new ValidateTrace(xml);
+   seede_result = new ValidateTrace(xml,for_context.getLaunch().getThread());
    exec_state = ExecState.READY;
    notifyAll();
 }

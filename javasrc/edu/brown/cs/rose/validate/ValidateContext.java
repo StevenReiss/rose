@@ -209,7 +209,7 @@ String handleEdits(String ssid,String edits)
 /*                                                                              */
 /********************************************************************************/
 
-boolean checkValidResult(ValidateExecution ve)
+double checkValidResult(ValidateExecution ve)
 {
    ValidateTrace e2 = base_execution.getSeedeResult();
    ValidateTrace e1 = ve.getSeedeResult();

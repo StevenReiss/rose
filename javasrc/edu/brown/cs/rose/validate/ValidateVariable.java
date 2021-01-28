@@ -1,8 +1,8 @@
 /********************************************************************************/
 /*                                                                              */
-/*              RootThreadPool.java                                             */
+/*              ValidateVariable.java                                           */
 /*                                                                              */
-/*      description of class                                                    */
+/*      Representation of an execution variable                                 */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
@@ -33,15 +33,16 @@
 
 
 
-package edu.brown.cs.rose.root;
+package edu.brown.cs.rose.validate;
 
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.ArrayList;
+import java.util.List;
 
-public class RootThreadPool implements RootConstants
+import org.w3c.dom.Element;
+
+import edu.brown.cs.ivy.xml.IvyXml;
+
+class ValidateVariable implements ValidateConstants
 {
 
 
@@ -51,15 +52,7 @@ public class RootThreadPool implements RootConstants
 /*                                                                              */
 /********************************************************************************/
 
-private ThreadPoolExecutor      thread_pool;
-
-private static RootThreadPool   the_pool = new RootThreadPool();
-
-private static AtomicInteger    thread_counter = new AtomicInteger();
-
-private boolean do_debug = true;
-
-
+private Element         variable_element;
 
 
 /********************************************************************************/
@@ -68,55 +61,38 @@ private boolean do_debug = true;
 /*                                                                              */
 /********************************************************************************/
 
-private RootThreadPool()
+ValidateVariable(Element v)
 {
-   if (do_debug) {
-      thread_pool = new ThreadPoolExecutor(1,1,30000,TimeUnit.MILLISECONDS,
-            new LinkedBlockingQueue<>(),new OurThreadFactory());
-    }
-   else {
-      thread_pool = new ThreadPoolExecutor(2,12,30000,TimeUnit.MILLISECONDS,
-            new LinkedBlockingQueue<>(),new OurThreadFactory());
-    }
+   variable_element = v;
 }
 
 
 /********************************************************************************/
 /*                                                                              */
-/*      Static processing methods                                               */
+/*      Access methods                                                          */
 /*                                                                              */
 /********************************************************************************/
 
-public static void start(Runnable r) 
+String getName()                       
 {
-   if (r != null) {
-      the_pool.thread_pool.execute(r);
-    }
+   return IvyXml.getAttrString(variable_element,"NAME");
 }
 
-
-
-/********************************************************************************/
-/*                                                                              */
-/*      Factory for creating threads                                            */
-/*                                                                              */
-/********************************************************************************/
-
-private static class OurThreadFactory implements ThreadFactory {
-   
-   @Override public Thread newThread(Runnable r) {
-      Thread t = new Thread(r,"RootProcessor_" + thread_counter.incrementAndGet());
-      return t;
+List<ValidateValue> getValues(ValidateTrace trace)
+{
+   List<ValidateValue> rslt = new ArrayList<>();
+   for (Element e : IvyXml.children(variable_element,"VALUE")) {
+      Element v1 = trace.dereference(e);
+      rslt.add(new ValidateValue(v1));
     }
    
-}       // end of inner class OurThreadFactory
+   return rslt;
+}
+
+}       // end of class ValidateVariable
 
 
 
-}       // end of class RootThreadPool
 
-
-
-
-/* end of RootThreadPool.java */
+/* end of ValidateVariable.java */
 

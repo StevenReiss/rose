@@ -1,8 +1,8 @@
 /********************************************************************************/
 /*                                                                              */
-/*              RootThreadPool.java                                             */
+/*              ValidateCall.java                                               */
 /*                                                                              */
-/*      description of class                                                    */
+/*      Representation of a call in an execution trace                          */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
@@ -33,15 +33,18 @@
 
 
 
-package edu.brown.cs.rose.root;
+package edu.brown.cs.rose.validate;
 
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
-public class RootThreadPool implements RootConstants
+import org.w3c.dom.Element;
+
+import edu.brown.cs.ivy.xml.IvyXml;
+
+class ValidateCall implements ValidateConstants
 {
 
 
@@ -51,14 +54,8 @@ public class RootThreadPool implements RootConstants
 /*                                                                              */
 /********************************************************************************/
 
-private ThreadPoolExecutor      thread_pool;
-
-private static RootThreadPool   the_pool = new RootThreadPool();
-
-private static AtomicInteger    thread_counter = new AtomicInteger();
-
-private boolean do_debug = true;
-
+private Element         context_element;
+private ValidateTrace   for_trace;
 
 
 
@@ -68,55 +65,90 @@ private boolean do_debug = true;
 /*                                                                              */
 /********************************************************************************/
 
-private RootThreadPool()
+ValidateCall(ValidateTrace vt,Element ctx)
 {
-   if (do_debug) {
-      thread_pool = new ThreadPoolExecutor(1,1,30000,TimeUnit.MILLISECONDS,
-            new LinkedBlockingQueue<>(),new OurThreadFactory());
-    }
-   else {
-      thread_pool = new ThreadPoolExecutor(2,12,30000,TimeUnit.MILLISECONDS,
-            new LinkedBlockingQueue<>(),new OurThreadFactory());
-    }
-}
-
-
-/********************************************************************************/
-/*                                                                              */
-/*      Static processing methods                                               */
-/*                                                                              */
-/********************************************************************************/
-
-public static void start(Runnable r) 
-{
-   if (r != null) {
-      the_pool.thread_pool.execute(r);
-    }
+   for_trace = vt;
+   context_element = ctx;
 }
 
 
 
 /********************************************************************************/
 /*                                                                              */
-/*      Factory for creating threads                                            */
+/*      Access methods                                                          */
 /*                                                                              */
 /********************************************************************************/
 
-private static class OurThreadFactory implements ThreadFactory {
-   
-   @Override public Thread newThread(Runnable r) {
-      Thread t = new Thread(r,"RootProcessor_" + thread_counter.incrementAndGet());
-      return t;
+String getMethod()
+{
+   return IvyXml.getAttrString(context_element,"METHOD");
+}
+
+
+long getStartTime()
+{
+   return IvyXml.getAttrLong(context_element,"START");
+}
+
+
+long getEndTime()
+{
+   return IvyXml.getAttrLong(context_element,"END");
+}
+
+int getContextId()
+{
+   return IvyXml.getAttrInt(context_element,"ID");
+}
+
+boolean sameAs(ValidateCall call) 
+{
+   return getContextId() == call.getContextId();
+}
+
+
+ValidateTrace getTrace()
+{
+   return for_trace;
+}
+
+List<ValidateCall> getInnerCalls()
+{
+   List<ValidateCall> rslt = new ArrayList<>();
+   for (Element c : IvyXml.children(context_element,"CONTEXT")) {
+      rslt.add(new ValidateCall(for_trace,c));
+    }
+   return rslt;
+}
+
+
+ValidateVariable getLineNumbers()
+{
+   for (Element e : IvyXml.children(context_element,"VARIABLE")) {
+      String nm = IvyXml.getAttrString(e,"NAME");
+      if (nm.equals("*LINE*")) return new ValidateVariable(e);
     }
    
-}       // end of inner class OurThreadFactory
+   return null;
+}
+
+
+Map<String,ValidateVariable> getVariables()
+{
+   Map<String,ValidateVariable> rslt = new LinkedHashMap<>();
+   for (Element e : IvyXml.children(context_element,"VARIABLE")) {
+      String nm = IvyXml.getAttrString(e,"NAME");
+      if (nm.equals("*LINE*")) continue;
+      rslt.put(nm,new ValidateVariable(e));
+    }
+   return rslt;
+}
+
+
+}       // end of class ValidateCall
 
 
 
-}       // end of class RootThreadPool
 
-
-
-
-/* end of RootThreadPool.java */
+/* end of ValidateCall.java */
 

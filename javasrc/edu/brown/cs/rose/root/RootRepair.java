@@ -54,6 +54,7 @@ abstract public class RootRepair implements RootConstants
 private String          repair_finder;
 private String          repair_description;
 private double          repair_priority;
+private double          validate_score;
 private RootEdit        repair_edit;
 private RootLocation    repair_location;
 
@@ -74,6 +75,7 @@ protected RootRepair(RootRepairFinder finder,String desc,double pri,
    repair_priority = pri;
    repair_edit = edit;
    repair_location = loc;
+   validate_score = 5;
 }
 
 
@@ -84,6 +86,7 @@ protected RootRepair(Element xml,RootLocation loc)
    repair_priority = IvyXml.getAttrDouble(xml,"PRIORITY");
    repair_description = IvyXml.getTextElement(xml,"DESCRIPTION");
    repair_edit = new RootEdit(IvyXml.getChild(xml,"REPAIREDIT"));
+   validate_score = IvyXml.getAttrDouble(xml,"VALIDATE",5.0);
    repair_location = loc;
 }
 
@@ -115,6 +118,13 @@ public double getPriority()
    return repair_priority;
 }
 
+
+public void noteValidateScore(double v)
+{
+   validate_score = v;
+}
+
+
 public RootLocation getLocation()
 {
    return repair_location;
@@ -137,6 +147,7 @@ public void outputXml(IvyXmlWriter xw)
 {
    xw.begin("REPAIR");
    xw.field("PRIORITY",repair_priority);
+   if (validate_score > 0) xw.field("VALIDATE",validate_score);
    xw.field("FINDER",repair_finder);
    repair_edit.outputXml(xw);
    xw.textElement("DESCRIPTION",repair_description);

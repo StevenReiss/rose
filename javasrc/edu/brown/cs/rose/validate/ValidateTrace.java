@@ -51,7 +51,7 @@ import edu.brown.cs.rose.bud.BudType;
 import edu.brown.cs.rose.bud.BudValue;
 import edu.brown.cs.rose.root.RoseException;
 
-public class ValidateTrace
+public class ValidateTrace implements ValidateConstants
 {
 
 
@@ -63,8 +63,9 @@ public class ValidateTrace
 
 private Element         seede_result;
 private long            problem_time;
-private Element         problem_context;
+private ValidateCall    problem_context;
 private Map<Integer,Element> id_map;
+private String          thread_id;
 
 
 
@@ -75,11 +76,12 @@ private Map<Integer,Element> id_map;
 /*                                                                              */
 /********************************************************************************/
 
-ValidateTrace(Element rslt)
+ValidateTrace(Element rslt,String tid)
 {
    seede_result = IvyXml.getChild(rslt,"CONTENTS");
    problem_time = -1;
    problem_context = null;
+   thread_id = tid;
    setupIdMap();
 }
 
@@ -98,15 +100,89 @@ long getProblemTime()
 }
 
 
-Element getProblemContext()
+ValidateCall getProblemContext()
 {
    return problem_context;
 }
 
 
-Element getRootContext()
+ValidateCall getRootContext()
 {
-   return IvyXml.getChild(seede_result,"CONTEXT");
+   Element runner = getRunner();
+  
+   return new ValidateCall(this,IvyXml.getChild(runner,"CONTEXT"));
+}
+
+
+String getThread()
+{
+   return thread_id;
+}
+
+
+
+ValidateValue getException()
+{
+   ValidateCall prob = getProblemContext();
+   if (prob != null) {
+      ValidateVariable thr = prob.getVariables().get("*THROWS*");
+      if (thr != null) {
+         List<ValidateValue> vals = thr.getValues(this);
+         return vals.get(0);
+       }
+    }
+   
+   Element runner = getRunner();
+   Element ret = IvyXml.getChild(runner,"RETURN");
+   String reason = IvyXml.getAttrString(ret,"REASON");
+   if (reason == null) return null;
+   if (reason.equals("EXCEPTION")) {
+      return new ValidateValue(IvyXml.getChild(ret,"VALUE"));
+    }
+   
+   return null;
+}
+
+
+long getExceptionTime()
+{
+   ValidateCall prob = getProblemContext();
+   if (prob != null) {
+      ValidateVariable thr = prob.getVariables().get("*THROWS*");
+      if (thr != null) {
+         long when = prob.getEndTime();
+         List<ValidateValue> vals = thr.getValues(this);
+         for (ValidateValue vv : vals) {
+            if (vv.getStartTime() > 0 && vv.getStartTime() < when) when = vv.getStartTime();
+          }
+         return when;
+       }
+    }
+  
+   Element runner = getRunner();
+   Element ret = IvyXml.getChild(runner,"RETURN");
+   String reason = IvyXml.getAttrString(ret,"REASON");
+   if (reason != null && reason.equals("EXCEPTION")) {
+      ValidateCall vc = getRootContext();
+      return vc.getEndTime();
+    }
+   
+   return -1;
+}
+
+
+private Element getRunner()
+{
+   if (thread_id !=  null) {
+      for (Element runner : IvyXml.children(seede_result,"RUNNER")) {
+         String tid = IvyXml.getAttrString(runner,"THREAD");
+         if (!tid.equals(thread_id)) continue;
+         return runner;
+       }
+    }
+   
+   Element runner = IvyXml.getChild(seede_result,"RUNNER");
+   return runner;
 }
 
 
@@ -120,11 +196,12 @@ Element getRootContext()
 void setupForLaunch(BudLaunch launch)
 {
    if (problem_time >= 0 || seede_result == null) return;
+   thread_id = launch.getThread();
    
    Stack<String> stack = new Stack<>();
    for (Element runner : IvyXml.children(seede_result,"RUNNER")) {
       String tid = IvyXml.getAttrString(runner,"THREAD");
-      if (!tid.equals(launch.getThread())) continue;
+      if (!tid.equals(thread_id)) continue;
       findProblemTime(IvyXml.getChild(runner,"CONTEXT"),launch,stack);
     }
 }
@@ -241,7 +318,7 @@ private void findContextTime(Element ctx,BudLaunch launch,long from,long to)
                    }
                 }
                prev = time;
-               prevval = valelt;
+               prevval = dereference(valelt);
              }
             if (prev > 0) {
                long time = IvyXml.getAttrLong(ctx,"END");
@@ -260,18 +337,18 @@ private void findContextTime(Element ctx,BudLaunch launch,long from,long to)
                   found |= fg;
                 }
              }
-            if (foundct > 0 && !found) return;
+            if (foundct > 0 && !found)
+               return;
           }
        }
     }
-   
    
    if (problem_time > 0 && problem_context !=  null) {
       // see if this context is better than saved context
     }
    
    problem_time = from;
-   problem_context = ctx;
+   problem_context = new ValidateCall(this,ctx);
 }
 
 
@@ -444,8 +521,15 @@ private Boolean compareValueAtTime(BudValue actval,Element valctx,BudLaunch laun
           }
          break;
     }
+
+   String s1 = typ.getName(); 
+   int idx1 = s1.indexOf("<");
+   if (idx1 > 0) s1 = s1.substring(0,idx1);
+   String s2 = ctxtyp;
+   int idx2 = s2.indexOf("<");
+   if (idx2 > 0) s2 = s2.substring(0,idx2);
    
-   if (!typ.getName().equals(ctxtyp)) return false;
+   if (!s1.equals(s2)) return false;
    
    // handle objects and arrays when nested -- ignore for now
    
@@ -474,7 +558,7 @@ private void setupIdMap()
 }
 
 
-private Element dereference(Element val)
+Element dereference(Element val)
 {
    if (IvyXml.getAttrBool(val,"REF")) {
       int id = IvyXml.getAttrInt(val,"ID");
