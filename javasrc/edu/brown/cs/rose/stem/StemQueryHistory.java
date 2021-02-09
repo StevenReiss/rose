@@ -157,7 +157,7 @@ private void processGraph(Element gelt,IvyXmlWriter xw)
 private static class GraphNode {
     
    private RootLocation node_location;
-   private int node_priority;
+   private double node_priority;
    private String node_reason;
    private String node_type;
    
@@ -165,7 +165,7 @@ private static class GraphNode {
       Element locelt = IvyXml.getChild(nelt,"LOCATION");
       node_location = BractFactory.getFactory().createLocation(ctrl,locelt);
       node_reason = IvyXml.getAttrString(nelt,"REASON");
-      node_priority = IvyXml.getAttrInt(nelt,"PRIORITY",5);
+      node_priority = IvyXml.getAttrDouble(nelt,"PRIORITY",0.5);
       Element point = IvyXml.getChild(nelt,"POINT");
       node_type = IvyXml.getAttrString(point,"NODETYPE");
     }
@@ -186,7 +186,7 @@ private static class GraphNode {
       return true;
     }
    
-   int getPriority()                    { return node_priority; }
+   double getPriority()                    { return node_priority; }
    
    String getLocationString() {
       String s = node_location.getFile().getPath();

@@ -264,9 +264,9 @@ private void handleSuggestion(Element xml)
    Element repairxml = IvyXml.getChild(xml,"REPAIR");
    Element locxml = IvyXml.getChild(repairxml,"LOCATION");
    BumpLocation bumploc = BumpLocation.getLocationFromXml(locxml);
-   int pri = IvyXml.getAttrInt(locxml,"PRIORITY");
-   if (pri < 0) pri = 5;
-   BushLocation bloc = new BushLocation(bumploc,IvyXml.getAttrInt(locxml,"PRIORITY"));
+   double pri = IvyXml.getAttrDouble(locxml,"PRIORITY");
+   if (pri < 0) pri = 0.5;
+   BushLocation bloc = new BushLocation(bumploc,pri);
    BushRepair br = new BushRepair(repairxml,bloc);
    ra.addRepair(br);
 }

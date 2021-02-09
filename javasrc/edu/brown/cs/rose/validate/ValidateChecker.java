@@ -35,6 +35,7 @@
 
 package edu.brown.cs.rose.validate;
 
+import edu.brown.cs.rose.root.RootProblem;
 
 class ValidateChecker implements ValidateConstants
 {
@@ -104,11 +105,30 @@ double check()
 
    if (vpc != null) return vpc.validate();
    
-   return 5;
+   return DEFAULT_SCORE;
 }
 
 
+/********************************************************************************/
+/*                                                                              */
+/*      Helper methods                                                          */
+/*                                                                              */
+/********************************************************************************/
 
+String fixValue(String val,String typ)
+{
+   if (val == null) return null;
+   String rslt = val;
+   int len = val.length();
+   if (typ != null && typ.equals("java.lang.String") && 
+         val.startsWith("\"") && val.endsWith("\"") && len >= 2) {
+      rslt = val.substring(1,len-1);
+    }
+   
+   if (val.equalsIgnoreCase("Non-Null")) return null;   // anything should work then
+   
+   return rslt;
+}
 
 /********************************************************************************/
 /*                                                                              */
@@ -134,6 +154,16 @@ private abstract class ValidateProblemChecker {
       return true;
     }
    
+   protected boolean exceptionThrown() {
+      long t0 = execution_matcher.getControlChangeTime();
+      long t2 = execution_matcher.getProblemTime();
+      long t3 = check_execution.getExceptionTime();
+      long t4 = execution_matcher.getMatchProblemTime();
+      if (t0 < t4 && t4 <= 0 && t3 > 0 && t3 < t2) return true;
+      
+      return false;
+   }
+   
 }       // end of inner class ValidateProblemChecker
 
 
@@ -152,6 +182,7 @@ private class ValidateCheckerException extends ValidateProblemChecker {
    
    @Override double validate() {
       if (!executionChanged()) return 0;
+      if (exceptionThrown()) return 0;
       
       ValidateValue origexc = original_execution.getException();
       if (origexc != null && execution_matcher.getMatchProblemContext() != null) {
@@ -193,6 +224,48 @@ private class ValidateCheckerVariable extends ValidateProblemChecker {
    
    @Override double validate() {
       if (!executionChanged()) return 0;
+      if (exceptionThrown()) return 0;
+      
+      RootProblem prob = validate_context.getProblem();
+      String var = prob.getProblemDetail();
+      String oval = prob.getOriginalValue();
+      String otyp = null;
+      int idx = oval.indexOf(" ");
+      if (idx > 0) {
+         otyp = oval.substring(0,idx);
+         oval = oval.substring(idx+1);
+       }
+      // might need to separate oval into type and value
+      String nval = prob.getTargetValue();
+      // might need to change nval to null to indicate any other value
+      oval = fixValue(oval,otyp);
+      nval = fixValue(nval,otyp);
+      
+      ValidateCall vc = execution_matcher.getMatchChangeContext();
+      if (vc == null) return 0.1;
+      ValidateVariable vv = vc.getVariables().get(var);
+      if (vv == null) return 0.5;
+      
+      long t0 = execution_matcher.getMatchProblemTime();
+      if (t0 > 0) {
+         ValidateValue vval = vv.getValueAtTime(check_execution,t0);
+         if (vval != null) {
+            String vvalstr = vval.getValue();
+            if (oval.equals(vvalstr)) return 0.0;
+            if (nval == null) return 0.9;
+            if (nval.equals(vvalstr)) return 1.0;
+          }
+       }
+      boolean haveold = false;
+      for (ValidateValue vval : vv.getValues(check_execution)) {
+         String vvalstr = vval.getValue();
+         if (oval.equals(vvalstr)) haveold = true;
+         else if (nval == null || nval.equals(vvalstr)) {
+            if (haveold) return 0.60;
+            return 0.75;
+          }
+       }
+      
       return 0.5;
     }
    
@@ -237,8 +310,23 @@ private class ValidateCheckerLocation extends ValidateProblemChecker {
    
    @Override double validate() {
       if (!executionChanged()) return 0;
+      if (exceptionThrown()) return 0.1;
+      
+      ValidateCall vc = execution_matcher.getMatchChangeContext();
+      if (vc == null) return 0.7;
+      long t0 = execution_matcher.getMatchProblemTime();
+      if (t0 < 0) return 0.7;
+      ValidateVariable vv = vc.getLineNumbers();
+      int lmatch = vv.getLineAtTime(t0);
+      if (lmatch <= 0) return 0.7;
+      
+      ValidateVariable vv1 = execution_matcher.getProblemContext().getLineNumbers();
+      int lorig = vv1.getLineAtTime(execution_matcher.getProblemTime());
+      if (lorig == lmatch) return 0;
+      
       return 0.5;
     }
+
 
 }       // end of inner class ValidateCheckerException
 

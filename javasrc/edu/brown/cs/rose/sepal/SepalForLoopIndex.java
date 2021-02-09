@@ -1,8 +1,8 @@
 /********************************************************************************/
 /*                                                                              */
-/*              ValidateExecution.java                                          */
+/*              SepalForLoopIndex.java                                          */
 /*                                                                              */
-/*      Representation of a SEEDE execution                                     */
+/*      Handle issues with a for loop index                                     */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
@@ -33,16 +33,19 @@
 
 
 
-package edu.brown.cs.rose.validate;
+package edu.brown.cs.rose.sepal;
 
-import org.w3c.dom.Element;
+import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.ForStatement;
+import org.eclipse.jdt.core.dom.InfixExpression;
+import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 
-import edu.brown.cs.ivy.mint.MintConstants.CommandArgs;
-import edu.brown.cs.ivy.xml.IvyXml;
-import edu.brown.cs.rose.root.RootControl;
-import edu.brown.cs.rose.root.RoseLog;
+import edu.brown.cs.rose.bract.BractAstPattern;
+import edu.brown.cs.rose.bract.BractConstants;
+import edu.brown.cs.rose.root.RootRepairFinderDefault;
 
-class ValidateExecution implements ValidateConstants
+public class SepalForLoopIndex extends RootRepairFinderDefault
+        implements BractConstants 
 {
 
 
@@ -52,12 +55,30 @@ class ValidateExecution implements ValidateConstants
 /*                                                                              */
 /********************************************************************************/
 
-enum ExecState { INITIAL, PENDING, READY };
+private static BractAstPattern match_pattern;
+private static BractAstPattern incr_pattern;
+private static PatternMap match_values;
+private static BractAstPattern result_pattern;
+private static BractAstPattern delta_result;
 
-private String          session_id;
-private ValidateTrace   seede_result;
-private ExecState       exec_state;
-private ValidateContext for_context;
+static {
+   incr_pattern = BractAstPattern.expression(
+         new PatternMap("delta",1),
+         "++Vi", "Vi++", "Vi = Vi+Idelta","Vi = Idelta + Vi",
+         "Vi+=Idelta");
+   match_pattern = BractAstPattern.statement( 
+         "for (int Vi = Iinit; Vi <= Varray.length; Pincr()) Sbody;",
+         "for (int Vi = Iinit; Vi <= Vcoll.size(); Pincr()) Sbody;",
+         "for (int Vi = Iinit; Vi < Varray.length; Pincr()) Sbody;",
+         "for (int Vi = Iinit; Vi < Vcoll.size(); Pincr()) Sbody;");
+   
+   match_values = new PatternMap("incr",incr_pattern);
+   
+   result_pattern = BractAstPattern.expression(
+         "Vi < Varray.length", "Vi < Vcoll.size()");
+   delta_result = BractAstPattern.expression(
+         "Vi < Varray.length - Id1", "Vi < Vcoll.size() - Id1");
+}
 
 
 
@@ -67,112 +88,56 @@ private ValidateContext for_context;
 /*                                                                              */
 /********************************************************************************/
 
-ValidateExecution(String sid,ValidateContext ctx)
+public SepalForLoopIndex()
+{ }
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Processing methods                                                      */
+/*                                                                              */
+/********************************************************************************/
+
+@Override public void process()
 {
-   session_id = sid;
-   for_context = ctx;
-   seede_result = null;
-   exec_state = ExecState.INITIAL;
-}
-
-
-
-/********************************************************************************/
-/*                                                                              */
-/*      Access methods                                                          */
-/*                                                                              */
-/********************************************************************************/
-
-String getSessionId()                   { return session_id; }
-
-
-
-/********************************************************************************/
-/*                                                                              */
-/*      Start method                                                            */
-/*                                                                              */
-/********************************************************************************/
-
-void start(RootControl rc)
-{
-   synchronized(this) {
-      seede_result = null;
-      exec_state = ExecState.PENDING;
-    }
+   ASTNode stmt = getResolvedStatementForLocation(null);
+   if (stmt == null) return;
+   if (stmt.getNodeType() != ASTNode.FOR_STATEMENT) return;
    
-   ValidateFactory vfac = ValidateFactory.getFactory(rc);
-   vfac.register(this);
-   
-   CommandArgs args = new CommandArgs("EXECID",session_id,
-         "CONTINUOUS",false,"MAXTIME",1000000,"MAXDEPTH",100);
-   Element r1 = rc.sendSeedeMessage(session_id,"EXEC",args,null);
-   if (!IvyXml.isElement(r1,"RESULT")) {
-      RoseLog.logD("VALIDATE","Exec setup returned: " + IvyXml.convertXmlToString(r1));     exec_state = ExecState.READY;
-      return;
-    }
-}
-
-
-
-
-/********************************************************************************/
-/*                                                                              */
-/*      Update methods                                                          */
-/*                                                                              */
-/********************************************************************************/
-
-synchronized void handleResult(Element xml)
-{
-   seede_result = new ValidateTrace(xml,for_context.getLaunch().getThread());
-   exec_state = ExecState.READY;
-   notifyAll();
-}
-
-
-synchronized void handleReset()
-{
-   seede_result = null;
-   exec_state = ExecState.PENDING;
-}
-
-
-synchronized String handleInput(String file)
-{
-   return null; 
-}
-
-
-synchronized String handleInitialValue(String what)
-{
-   return null;
-}
-
-
-
-/********************************************************************************/
-/*                                                                              */
-/*      Get result                                                              */
-/*                                                                              */
-/********************************************************************************/
-
-ValidateTrace getSeedeResult()
-{
-   synchronized (this) {
-      while (exec_state != ExecState.READY) {
-         try {
-            wait(3000);
-          }
-         catch (InterruptedException e) { }
+   PatternMap nmap = new PatternMap(match_values);
+   if (match_pattern.match(stmt,nmap)) {
+      ForStatement fs = (ForStatement) stmt;
+      InfixExpression ex = (InfixExpression) fs.getExpression();
+      ASTRewrite rw = null;
+      int iv = ((Integer) nmap.get("delta"));
+      if (iv > 1) {
+         nmap.put("d1",iv-1);
+         rw = delta_result.replace(ex,nmap);
        }
-      return seede_result;
+      
+      else if (ex.getOperator() == InfixExpression.Operator.LESS_EQUALS) {
+         rw = result_pattern.replace(ex,nmap);
+       }
+      if (rw != null) {
+         addRepair(rw,"Replace <= with < in FOR expression",0.75);
+       }
     }
 }
 
 
-}       // end of class ValidateExecution
+@Override protected double getFinderPriority()
+{
+   return 0.5;
+}
 
 
 
 
-/* end of ValidateExecution.java */
+}       // end of class SepalForLoopIndex
+
+
+
+
+/* end of SepalForLoopIndex.java */
 

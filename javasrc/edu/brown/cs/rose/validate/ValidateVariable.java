@@ -89,6 +89,31 @@ List<ValidateValue> getValues(ValidateTrace trace)
    return rslt;
 }
 
+
+ValidateValue getValueAtTime(ValidateTrace trace,long time)
+{
+   Element prior = null;
+   for (Element e : IvyXml.children(variable_element,"VALUE")) {
+      long t0 = IvyXml.getAttrLong(e,"TIME");
+      if (t0 > 0 && t0 > time) break;
+      prior = trace.dereference(e);
+    }
+   
+   return new ValidateValue(prior);
+}
+
+
+int getLineAtTime(long time) 
+{
+   ValidateValue vv = getValueAtTime(null,time);
+   if (vv == null) return 0;
+   Long lv = vv.getNumericValue();
+   if (lv == null) return 0;
+   return lv.intValue();
+}
+
+
+
 }       // end of class ValidateVariable
 
 

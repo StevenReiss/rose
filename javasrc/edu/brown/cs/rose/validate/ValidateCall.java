@@ -64,7 +64,6 @@ private ValidateTrace   for_trace;
 /*      Constructors                                                            */
 /*                                                                              */
 /********************************************************************************/
-
 ValidateCall(ValidateTrace vt,Element ctx)
 {
    for_trace = vt;
@@ -116,7 +115,7 @@ List<ValidateCall> getInnerCalls()
 {
    List<ValidateCall> rslt = new ArrayList<>();
    for (Element c : IvyXml.children(context_element,"CONTEXT")) {
-      rslt.add(new ValidateCall(for_trace,c));
+      rslt.add(for_trace.getCallForContext(c));
     }
    return rslt;
 }

@@ -47,6 +47,7 @@ import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
@@ -118,7 +119,7 @@ public SepalWrongVariable()
 
 @Override protected double getFinderPriority()
 {
-   return 50.0;
+   return 0.5;
 }
 
 
@@ -202,9 +203,14 @@ private int findReplacements(ASTNode base,Map<JcompType,List<UserVariable>> type
    int ct = 0;
    
    JcompScope curscp = null;
+   JcompSymbol curmthd = null;
    for (ASTNode n = base; n != null; n = n.getParent()) {
-      curscp = JcompAst.getJavaScope(n);
-      if (curscp != null) break;
+      if (curscp == null) curscp = JcompAst.getJavaScope(n);
+      if (n instanceof MethodDeclaration && curmthd == null) {
+         MethodDeclaration md = (MethodDeclaration) n;
+         curmthd = JcompAst.getDefinition(md);
+       }
+      if (curscp != null && curmthd != null) break;
     }
    if (curscp == null) return 0;
    
@@ -213,6 +219,7 @@ private int findReplacements(ASTNode base,Map<JcompType,List<UserVariable>> type
    Collection<JcompSymbol> allsyms = curscp.getAllSymbols();
    for (JcompSymbol cand : allsyms) {
       if (!isRelevant(cand)) continue;
+      if (cand == curmthd) continue;
       JcompType jt = cand.getDeclaredType(typer);
       List<UserVariable> vars = typemap.get(jt);
       if (vars == null) continue;

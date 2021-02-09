@@ -75,7 +75,7 @@ protected RootRepair(RootRepairFinder finder,String desc,double pri,
    repair_priority = pri;
    repair_edit = edit;
    repair_location = loc;
-   validate_score = 5;
+   validate_score = 0;
 }
 
 
@@ -86,7 +86,7 @@ protected RootRepair(Element xml,RootLocation loc)
    repair_priority = IvyXml.getAttrDouble(xml,"PRIORITY");
    repair_description = IvyXml.getTextElement(xml,"DESCRIPTION");
    repair_edit = new RootEdit(IvyXml.getChild(xml,"REPAIREDIT"));
-   validate_score = IvyXml.getAttrDouble(xml,"VALIDATE",5.0);
+   validate_score = IvyXml.getAttrDouble(xml,"VALIDATE",0.5);
    repair_location = loc;
 }
 

@@ -173,7 +173,6 @@ private void matchContexts(ValidateCall origctx,ValidateCall matchctx)
 {
    if (origctx.sameAs(problem_context)) { 
       match_problem_context = matchctx;
-      // compute match time and after time
     }
    
    matchLines(origctx,matchctx);
@@ -192,6 +191,7 @@ private void matchLines(ValidateCall origctx,ValidateCall matchctx)
    
    long lasttime = origctx.getStartTime();
    long matchtime = matchctx.getStartTime();
+   long lastmatch = matchtime;
    if (lasttime == matchtime) {
       Iterator<ValidateValue> it1 = origline.getValues(origctx.getTrace()).iterator();
       Iterator<ValidateValue> it2 = matchline.getValues(matchctx.getTrace()).iterator();
@@ -199,19 +199,29 @@ private void matchLines(ValidateCall origctx,ValidateCall matchctx)
       while (it1.hasNext() && it2.hasNext()) {
          ValidateValue origval = it1.next();
          ValidateValue matchval = it2.next();
-         if (origval.getStartTime() != matchval.getStartTime() ||
-               origval.getNumericValue() != matchval.getNumericValue()) {
+         long thistime = origval.getStartTime();
+         if (match_problem_context == matchctx) {
+            if (lasttime <= problem_time && thistime > problem_time) {
+               match_time = lastmatch;
+               match_after_time = matchval.getStartTime();
+             }
+          }
+         if (!fnd && 
+               (origval.getStartTime() != matchval.getStartTime() ||
+                     origval.getNumericValue() != matchval.getNumericValue())) {
             noteChange(origctx,matchctx,lasttime);
             fnd = true;
-            break;
           }
-         lasttime = origval.getStartTime();
+         lasttime = thistime;
+         lastmatch = matchval.getStartTime();
        }
       if (!fnd && (it1.hasNext() || it2.hasNext())) {
          noteChange(origctx,matchctx,lasttime);
        }
     }
 }
+
+
 
 
 private void matchInnerContexts(ValidateCall origctx,ValidateCall matchctx)

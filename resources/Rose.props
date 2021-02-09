@@ -11,6 +11,7 @@
 <entry key="Rose.seede.debug">true</entry>
 <entry key="Rose.seede.trace">true</entry>
 <entry key="Rose.processor.1">edu.brown.cs.rose.sepal.SepalWrongVariable</entry>
+<entry key="Rose.processor.2">edu.brown.cs.rose.sepal.SepalForLoopIndex</entry>
 </properties>
 
 

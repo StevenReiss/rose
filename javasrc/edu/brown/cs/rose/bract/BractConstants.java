@@ -35,11 +35,44 @@
 
 package edu.brown.cs.rose.bract;
 
+import java.util.HashMap;
+
 public interface BractConstants
 {
 
 
 
+/********************************************************************************/
+/*                                                                              */
+/*      Pattern letters                                                         */
+/*                                                                              */
+/********************************************************************************/
+
+char ANY_AST = 'A';
+char ANY_EXPR = 'E';
+char ANY_STMT = 'S';
+char ANY_VAR = 'V';
+char ANY_INT = 'I';
+char ANY_STRING = 'G';
+char ANY_PATTERN = 'P';
+char MATCH_PATTERN = 'R';
+char ESCAPE_PATTERN = 'X';
+
+
+public class PatternMap extends HashMap<String,Object> {
+   
+   public PatternMap(PatternMap omap) {
+      putAll(omap);
+    }
+   
+   public PatternMap(Object ... vals) {
+      for (int i = 0; i+1 < vals.length; i += 2) {
+         String s = vals[i].toString();
+         put(s,vals[i+1]);
+       }
+    }
+
+}       // end of inner class PatternMap
 
 
 

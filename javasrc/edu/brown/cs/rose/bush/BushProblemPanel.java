@@ -363,7 +363,7 @@ private class ShowHandler implements ActionListener, Runnable {
             if (reason != null) locs.put(loc,reason);
             loclist.add(loc);
             BoardLog.logD("BUSH","LOC " + IvyXml.convertXmlToString(nelt) + " " + loc);
-            int pri = IvyXml.getAttrInt(nelt,"PRIORITY");
+            double pri = IvyXml.getAttrDouble(nelt,"PRIORITY");
             BushLocation bloc = new BushLocation(loc,pri);
             bloclist.add(bloc);
           }       
@@ -892,7 +892,7 @@ private List<String> findObjectAlternatives(BumpRunValue rv)
 {
    List<String> rslt = new ArrayList<>();
    if (rv.getValue().equals("null")) {
-      rslt.add("Non-null");
+      rslt.add("Non-Null");
     }
    else {
       rslt.add("null");

@@ -490,7 +490,7 @@ private void handleParameterValuesCommand(MintMessage msg) throws RoseException
          Element locelt = IvyXml.getChild(n,"LOCATION");
          RootLocation loc = bf.createLocation(this,locelt);
          double p1 = loc.getPriority();
-         p1 = p1 * p / MAX_NODE_PRIORITY;
+         p1 = p1 * p;
          loc.setPriority(p1);
          String s = loc.getFile().getPath() + "@" + loc.getLineNumber();
          RootLocation oloc = done.putIfAbsent(s,loc);

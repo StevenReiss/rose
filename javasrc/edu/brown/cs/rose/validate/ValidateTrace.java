@@ -66,6 +66,7 @@ private long            problem_time;
 private ValidateCall    problem_context;
 private Map<Integer,Element> id_map;
 private String          thread_id;
+private Map<Element,ValidateCall> call_map;
 
 
 
@@ -82,6 +83,7 @@ ValidateTrace(Element rslt,String tid)
    problem_time = -1;
    problem_context = null;
    thread_id = tid;
+   call_map = new HashMap<>();
    setupIdMap();
 }
 
@@ -110,7 +112,20 @@ ValidateCall getRootContext()
 {
    Element runner = getRunner();
   
-   return new ValidateCall(this,IvyXml.getChild(runner,"CONTEXT"));
+   return getCallForContext(IvyXml.getChild(runner,"CONTEXT"));
+}
+
+
+ValidateCall getCallForContext(Element ctx)
+{
+   synchronized (call_map) {
+      ValidateCall vc = call_map.get(ctx);
+      if (vc == null) {
+         vc = new ValidateCall(this,ctx);
+         call_map.put(ctx,vc);
+       }
+      return vc;
+    }
 }
 
 
@@ -348,7 +363,7 @@ private void findContextTime(Element ctx,BudLaunch launch,long from,long to)
     }
    
    problem_time = from;
-   problem_context = new ValidateCall(this,ctx);
+   problem_context = getCallForContext(ctx);
 }
 
 

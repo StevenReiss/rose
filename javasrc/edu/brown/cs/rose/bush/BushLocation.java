@@ -59,7 +59,7 @@ private BumpLocation    bump_location;
 /*                                                                              */
 /********************************************************************************/
 
-BushLocation(BumpLocation loc,int pri) 
+BushLocation(BumpLocation loc,double pri) 
 {
    super(loc.getFile(),loc.getOffset(),loc.getEndOffset(),-1,loc.getProject(),null,pri);
    
@@ -73,7 +73,7 @@ BushLocation(BumpStackFrame frm)
    super(frm.getFile(),-1,-1,frm.getLineNumber(),
          frm.getThread().getLaunch().getConfiguration().getProject(),
          frm.getMethod() + frm.getRawSignature(),
-         0);
+         0.5);
 }
 
 

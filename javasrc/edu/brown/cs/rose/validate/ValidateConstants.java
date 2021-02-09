@@ -39,7 +39,7 @@ package edu.brown.cs.rose.validate;
 public interface ValidateConstants
 {
 
-
+double DEFAULT_SCORE = 0.25;
 
 }	// end of interface ValidateConstants
 

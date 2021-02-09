@@ -154,7 +154,7 @@ protected void addRepair(ASTRewrite rw,String desc,double priority)
    double pri = getFinderPriority();
    double p1 = getLocation().getPriority();
    if (p1 > 0) {
-      pri = (1+priority+(p1/MAX_NODE_PRIORITY))/3.0 * getFinderPriority();
+      pri = (1+priority+p1)/3.0 * getFinderPriority();
     }
    else {
       pri = (1+priority)/2.0 * getFinderPriority();

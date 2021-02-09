@@ -198,7 +198,7 @@ public void testRoseWrongVariable()
       xw.field("TYPE","VARIABLE");
       xw.textElement("ITEM","rslt");
       xw.textElement("ORIGINAL","java.lang.String \"The cow jumped over the moon.\"");
-      xw.textElement("TARGET","\"The cow jumped over the moon.\"");
+      xw.textElement("TARGET","\"The calf jumped over the moon.\"");
       fd.outputLocation(xw,project,5,mc);
       xw.end("PROBLEM");
       String cnts = xw.toString();
@@ -235,7 +235,7 @@ public void testRoseNotNull()
       xw.field("TYPE","VARIABLE");
       xw.textElement("ITEM","baby");
       xw.textElement("ORIGINAL","null");
-      xw.textElement("TARGET","Non-null");
+      xw.textElement("TARGET","Non-Null");
       fd.outputLocation(xw,project,5,mc);
       xw.end("PROBLEM");
       String cnts = xw.toString();
