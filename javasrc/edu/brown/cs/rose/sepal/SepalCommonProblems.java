@@ -74,6 +74,8 @@ private static final BractAstPattern loop_result;
 private static final BractAstPattern assign_pattern;
 private static final BractAstPattern assign_result;
 
+private static final BractAstPattern mult_pattern;
+private static final BractAstPattern mult_result;
 
 static {
    cond_pattern = BractAstPattern.expression("Ex = Ey");
@@ -96,6 +98,9 @@ static {
    
    assign_pattern = BractAstPattern.expression("Ex == Ey");
    assign_result = BractAstPattern.expression("Ex = Ey");
+   
+   mult_pattern = BractAstPattern.expression("Ex*Ey == 0","(Ex*Ey) == 0");
+   mult_result = BractAstPattern.expression("Ex == 0 || Ey == 0)");
 }
 
 
@@ -128,6 +133,7 @@ public SepalCommonProblems()
    checkStringOperations(stmt);
    checkLoopIndex(stmt);
    checkNonAssignment(stmt);
+   checkMultiplyForZero(stmt);
 }
 
 
@@ -271,6 +277,25 @@ private void checkNonAssignment(ASTNode stmt)
        }
     }
 }
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Check for x*y == 0                                                      */
+/*                                                                              */
+/********************************************************************************/
+
+private void checkMultiplyForZero(ASTNode stmt)
+{
+   Map<ASTNode,PatternMap> rslt = mult_pattern.matchAll(stmt,null);
+   if (rslt == null) return;
+   for (ASTNode n : rslt.keySet()) {
+      ASTRewrite rw = mult_result.replace(n,rslt.get(n));
+      addRepair(rw,"Use x == 0 || y == 0",0.9);
+    }
+}
+
 
 
 
