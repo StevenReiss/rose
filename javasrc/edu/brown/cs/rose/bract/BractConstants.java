@@ -62,7 +62,7 @@ char ESCAPE_PATTERN = 'X';
 public class PatternMap extends HashMap<String,Object> {
    
    public PatternMap(PatternMap omap) {
-      putAll(omap);
+      if (omap != null) putAll(omap);
     }
    
    public PatternMap(Object ... vals) {

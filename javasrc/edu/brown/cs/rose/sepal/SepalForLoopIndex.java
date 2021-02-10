@@ -55,11 +55,11 @@ public class SepalForLoopIndex extends RootRepairFinderDefault
 /*                                                                              */
 /********************************************************************************/
 
-private static BractAstPattern match_pattern;
-private static BractAstPattern incr_pattern;
-private static PatternMap match_values;
-private static BractAstPattern result_pattern;
-private static BractAstPattern delta_result;
+private static final BractAstPattern match_pattern;
+private static final BractAstPattern incr_pattern;
+private static final PatternMap match_values;
+private static final BractAstPattern result_pattern;
+private static final BractAstPattern delta_result;
 
 static {
    incr_pattern = BractAstPattern.expression(

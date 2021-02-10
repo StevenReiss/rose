@@ -36,6 +36,7 @@
 package edu.brown.cs.rose.bract;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -198,7 +199,7 @@ private class SubtreeMatcher extends ASTVisitor {
    private PatternMap orig_values;
    
    SubtreeMatcher(PatternMap values) {
-      match_results = null;
+      match_results = new HashMap<>();
       orig_values = values;
     }
    
