@@ -120,6 +120,33 @@ StemQueryExceptionHistory(StemMain ctrl,RootProblem prob)
 /*                                                                              */
 /********************************************************************************/
 
+ASTNode getExceptionNode() 
+{
+   try {
+      ASTNode stmt = getSourceStatement();
+      
+      ExceptionChecker checker = null;
+      switch (exception_type) {
+         case "java.lang.NullPointerException" :
+            checker = new NullPointerChecker();
+            break;
+         case "java.lang.ArrayIndexOutOfBoundsException" :
+            checker = new ArrayIndexOutOfBoundsChecker();
+            break;
+       }
+      
+      if (checker != null) {
+         stmt.accept(checker);
+         return checker.getResult();
+       }
+    }
+   catch (RoseException e) { }
+   
+   return null;
+}
+
+
+
 private String getExceptionCause() throws RoseException
 {
   ASTNode stmt = getSourceStatement();
@@ -166,6 +193,10 @@ private abstract class ExceptionChecker extends ASTVisitor {
       return getXmlForLocation("EXPR",use_node,true);
     }
    
+   ASTNode getResult() {
+      return use_node; 
+    }
+
 }       // end of inner class ExceptionChecker
 
 

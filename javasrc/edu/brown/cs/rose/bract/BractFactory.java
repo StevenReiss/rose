@@ -145,7 +145,7 @@ public boolean registerProcessor(String clsnm)
       boolean loc = rrf.requiresLocation();
       if (loc) location_classes.add(cls);
       else processor_classes.add(cls);
-      RoseLog.logD("BRACT","Successful load");
+      RoseLog.logD("BRACT","Successful load of " + clsnm);
       return true;
     }
    catch (ClassNotFoundException e) { }

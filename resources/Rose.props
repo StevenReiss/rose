@@ -13,6 +13,7 @@
 <entry key="Rose.processor.1">edu.brown.cs.rose.sepal.SepalWrongVariable</entry>
 <entry key="Rose.processor.2">edu.brown.cs.rose.sepal.SepalForLoopIndex</entry>
 <entry key="Rose.processor.3">edu.brown.cs.rose.sepal.SepalCommonProblems</entry>
+<entry key="Rose.processor.4">edu.brown.cs.rose.sepal.SepalClassNullCondition</entry>
 </properties>
 
 

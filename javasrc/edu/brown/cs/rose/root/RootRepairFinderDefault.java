@@ -39,6 +39,9 @@ import java.io.File;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
+import org.eclipse.jface.text.BadLocationException;
+import org.eclipse.jface.text.IDocument;
+import org.eclipse.jface.text.Position;
 import org.eclipse.text.edits.TextEdit;
 
 public abstract class RootRepairFinderDefault implements RootRepairFinder, RootConstants
@@ -162,17 +165,39 @@ protected void addRepair(ASTRewrite rw,String desc,double priority)
 
    File f = getLocation().getFile();
    String p = getLocation().getProject();
+   IDocument doc = getProcessor().getController().getSourceDocument(p,f);
+   RootLocation loc = getLocation();
+   Position pos = new Position(loc.getStartOffset());
+   int baseline = 0;
+   try {
+      doc.addPosition(pos);
+      baseline = doc.getLineOfOffset(pos.getOffset());
+    }
+   catch (BadLocationException e) {
+      pos = null;
+    }
    
    TextEdit te = null;
    try {
-      te = rw.rewriteAST(getProcessor().getController().getSourceDocument(p,f),null);
+      te = rw.rewriteAST(doc,null);
     }
    catch (Throwable e) {
       RoseLog.logE("ROOT","Problem creating text edit from rewrite",e);
     } 
    if (te == null) return;
    
-   RootRepair rr = new RootRepairDefault(this,desc,pri,getLocation(),te);
+   if (pos != null) {
+      try {
+         int newline = doc.getLineOfOffset(pos.getOffset());
+         if (newline != baseline) {
+            System.err.println("LINE NUMBER CHANGED ");
+          }
+         doc.removePosition(pos);
+       }
+      catch (BadLocationException e) { }
+    }
+   
+   RootRepair rr = new RootRepairDefault(this,desc,pri,loc,te);
    getProcessor().validateRepair(rr);
 }
 

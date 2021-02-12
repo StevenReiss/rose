@@ -508,6 +508,22 @@ private void handleParameterValuesCommand(MintMessage msg) throws RoseException
 }
 
 
+/********************************************************************************/
+/*                                                                              */
+/*      Handle finding exception cause for a problem                            */
+/*                                                                              */
+/********************************************************************************/
+
+@Override public ASTNode getExceptionNode(RootProblem rp)
+{
+   if (rp.getProblemType() != RoseProblemType.EXCEPTION) return null;
+   
+   StemQueryExceptionHistory query = new StemQueryExceptionHistory(this,rp);
+   
+   return query.getExceptionNode();
+}
+
+
 
 private void handleHistoryCommand(MintMessage msg) throws RoseException
 {

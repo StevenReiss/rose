@@ -123,6 +123,14 @@ IDocument getSourceDocument(String proj,File f);
 List<RootLocation> getLocations(RootProblem prob);
 
 
+
+/**
+ *      Return node that is the cause of an exception problem
+ **/
+
+ASTNode getExceptionNode(RootProblem prob);
+
+
 /**
  *      Find project associated with a given file
  **/

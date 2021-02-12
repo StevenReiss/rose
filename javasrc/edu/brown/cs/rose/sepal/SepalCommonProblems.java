@@ -100,7 +100,7 @@ static {
    assign_result = BractAstPattern.expression("Ex = Ey");
    
    mult_pattern = BractAstPattern.expression("Ex*Ey == 0","(Ex*Ey) == 0");
-   mult_result = BractAstPattern.expression("Ex == 0 || Ey == 0)");
+   mult_result = BractAstPattern.expression("(Ex == 0 || Ey == 0)");
 }
 
 

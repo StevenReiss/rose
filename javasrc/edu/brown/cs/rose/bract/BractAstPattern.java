@@ -54,6 +54,7 @@ import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.AST;
 
 import edu.brown.cs.ivy.jcomp.JcompAst;
+import edu.brown.cs.rose.root.RoseLog;
 
 public class BractAstPattern implements BractConstants
 {
@@ -119,16 +120,21 @@ private BractAstPattern(PatternType type,PatternMap defaults,String [] pats)
    
    for (String pat : pats) {
       ASTNode node = null;
-      switch (type) {
-         case STATEMENT :
-            node = JcompAst.parseStatement(pat);
-            break;
-         case EXPRESSION :
-            node = JcompAst.parseExpression(pat);
-            break;
-         case DECLARATION :
-            node = JcompAst.parseDeclarations(pat);
-            break;
+      try {
+         switch (type) {
+            case STATEMENT :
+               node = JcompAst.parseStatement(pat);
+               break;
+            case EXPRESSION :
+               node = JcompAst.parseExpression(pat);
+               break;
+            case DECLARATION :
+               node = JcompAst.parseDeclarations(pat);
+               break;
+          }
+       }
+      catch (Throwable t) {
+         RoseLog.logE("Problem parsing pattern " + pat,t);
        }
       if (node != null) base_nodes.add(node);
     }
