@@ -413,6 +413,7 @@ private Boolean compareObject(BudLocalVariable local,Element valelt0,BudLaunch l
    if (!local.getType().equals(IvyXml.getAttrString(valelt,"TYPE"))) return false;
    
    BudValue localval = launch.evaluate(local.getName());
+   if (localval == null) return null;
    
    int ct = 0;
    for (Element fldelt : IvyXml.children(valelt,"FIELD")) {

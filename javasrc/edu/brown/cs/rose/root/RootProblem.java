@@ -150,6 +150,8 @@ public String getTargetValue()
    return target_value;
 }
 
+public void setOriginalValue(String v)          { original_value = v; }
+public void setTargetValue(String v)            { target_value = v; }
 
 public String getLaunchId()                     { return launch_id; }
 

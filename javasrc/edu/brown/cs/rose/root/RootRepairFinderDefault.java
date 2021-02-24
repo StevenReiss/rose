@@ -40,9 +40,13 @@ import java.io.File;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jface.text.BadLocationException;
+import org.eclipse.jface.text.Document;
 import org.eclipse.jface.text.IDocument;
+import org.eclipse.jface.text.IRegion;
 import org.eclipse.jface.text.Position;
 import org.eclipse.text.edits.TextEdit;
+
+import edu.brown.cs.ivy.file.IvyStringDiff;
 
 public abstract class RootRepairFinderDefault implements RootRepairFinder, RootConstants
 {
@@ -165,13 +169,23 @@ protected void addRepair(ASTRewrite rw,String desc,double priority)
 
    File f = getLocation().getFile();
    String p = getLocation().getProject();
-   IDocument doc = getProcessor().getController().getSourceDocument(p,f);
+   IDocument doc1 = getProcessor().getController().getSourceDocument(p,f);
+   Document doc = new Document(doc1.get());
+   ASTNode stmt = getResolvedStatementForLocation(null);
    RootLocation loc = getLocation();
    Position pos = new Position(loc.getStartOffset());
+   Position pos1 = new Position(stmt.getStartPosition());
+   Position pos2 = new Position(stmt.getStartPosition() + stmt.getLength());
    int baseline = 0;
+   int baseline1 = 0;
+   int baseline2 = 0;
    try {
       doc.addPosition(pos);
+      doc.addPosition(pos1);
+      doc.addPosition(pos2);
       baseline = doc.getLineOfOffset(pos.getOffset());
+      baseline1 = doc.getLineOfOffset(pos1.getOffset());
+      baseline2 = doc.getLineOfOffset(pos2.getOffset());
     }
    catch (BadLocationException e) {
       pos = null;
@@ -186,19 +200,57 @@ protected void addRepair(ASTRewrite rw,String desc,double priority)
     } 
    if (te == null) return;
    
+   int delta = 0;
    if (pos != null) {
       try {
+         te.apply(doc);
          int newline = doc.getLineOfOffset(pos.getOffset());
-         if (newline != baseline) {
-            System.err.println("LINE NUMBER CHANGED ");
+         int newline1 = doc.getLineOfOffset(pos1.getOffset());
+         int newline2 = doc.getLineOfOffset(pos2.getOffset());
+         if (newline != baseline || newline1 != baseline1 || newline2 != baseline2) {
+            // newline :: baseline might be good enough
+            int min = Math.min(newline,Math.min(newline1,newline2));
+            int max = Math.max(newline,Math.max(newline1,newline2));
+            delta = getLineDelta(doc1,baseline1,doc,min,max);
           }
          doc.removePosition(pos);
+         doc.removePosition(pos1);
+         doc.removePosition(pos2);
        }
       catch (BadLocationException e) { }
     }
    
+   if (delta != 0) {
+      System.err.println("LINE CHANGED BY " + delta);
+    }
+   
    RootRepair rr = new RootRepairDefault(this,desc,pri,loc,te);
    getProcessor().validateRepair(rr);
+}
+
+
+
+
+private int getLineDelta(IDocument d1,int oln,IDocument d2,int sln,int eln)
+{
+   int delta = 0;
+   try {
+      IRegion rgn = d1.getLineInformation(oln);
+      String orig = d1.get(rgn.getOffset(),rgn.getLength()).trim();
+      double best = 0;
+      for (int i = sln-1; i <= eln+1; ++i) {
+         IRegion rgn1 = d2.getLineInformation(i);
+         String match = d2.get(rgn1.getOffset(),rgn1.getLength()).trim();
+         double diff = IvyStringDiff.normalizedStringDiff(orig,match);
+         if (diff > best) {
+            best = diff;
+            delta = i-oln;
+          }
+       }
+    }
+   catch (BadLocationException e) { }
+   
+   return delta;
 }
 
 }       // end of class RootRepairFinderDefault

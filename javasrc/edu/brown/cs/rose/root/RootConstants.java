@@ -53,6 +53,9 @@ enum RoseProblemType {
 }
 
 
+String ROSE_PROJECT_INDEX_TYPE = "SSFIX";
+
+
 
 /********************************************************************************/
 /*                                                                              */

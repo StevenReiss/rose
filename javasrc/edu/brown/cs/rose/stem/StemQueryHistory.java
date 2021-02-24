@@ -121,6 +121,7 @@ protected void outputGraph(Element hrslt,IvyXmlWriter xw) throws RoseException
    xw.begin("RESULT");
    Element grslt = IvyXml.getChild(hrslt,"GRAPH");
    processGraph(grslt,xw);
+   if (for_problem != null) for_problem.outputXml(xw);
    xw.end("RESULT");
 }
 

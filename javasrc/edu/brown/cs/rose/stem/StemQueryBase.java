@@ -77,6 +77,7 @@ protected String        method_name;
 protected BudLaunch     bud_launch;
 protected RootNodeContext node_context;
 protected StemMain      stem_control;
+protected RootProblem   for_problem;
 
 
 
@@ -98,6 +99,7 @@ protected StemQueryBase(StemMain ctrl,Element xml)
    line_offset = IvyXml.getAttrInt(xml,"OFFSET");
    method_name = IvyXml.getAttrString(xml,"METHOD");
    stem_control = ctrl;
+   for_problem = null;
    
    bud_launch = new BudLaunch(ctrl,launch_id,thread_id,frame_id,project_name);
 }
@@ -115,6 +117,7 @@ protected StemQueryBase(StemMain ctrl,RootProblem prob)
    line_offset = loc.getStartOffset();
    method_name = loc.getMethod();
    node_context = prob.getNodeContext();
+   for_problem = prob;
    
    bud_launch = new BudLaunch(ctrl,prob);
 }

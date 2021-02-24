@@ -62,6 +62,7 @@ import edu.brown.cs.bubbles.board.BoardImage;
 import edu.brown.cs.bubbles.board.BoardLog;
 import edu.brown.cs.bubbles.board.BoardProperties;
 import edu.brown.cs.bubbles.board.BoardSetup;
+import edu.brown.cs.bubbles.board.BoardThreadPool;
 import edu.brown.cs.bubbles.buda.BudaBubble;
 import edu.brown.cs.bubbles.buda.BudaRoot;
 import edu.brown.cs.bubbles.bump.BumpClient;
@@ -143,7 +144,8 @@ public static void setup()
 
 public static void initialize(BudaRoot root)
 {
-
+   CockerStarter cs = new CockerStarter();
+   BoardThreadPool.start(cs);
 }
 
 
@@ -956,6 +958,23 @@ private class RoseHandler implements MintHandler {
    
 }       // end of inner class RoseHandler
 
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Background task to start up cocker                                      */
+/*                                                                              */
+/********************************************************************************/
+
+private static class CockerStarter implements Runnable {
+   
+   @Override public void run() {
+      BushIndex idx = new BushIndex();
+      idx.start();
+    }
+   
+}       // end of inner class CockerStarter
 
 
 

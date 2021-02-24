@@ -1,8 +1,8 @@
 /********************************************************************************/
 /*                                                                              */
-/*              StemQueryVariableHistory.java                                   */
+/*              BushIndex.java                                                  */
 /*                                                                              */
-/*      Variable history query                                                  */
+/*      Start and maintain cocker database during bubbles session               */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
@@ -33,19 +33,24 @@
 
 
 
-package edu.brown.cs.rose.stem;
+package edu.brown.cs.rose.bush;
+
+import java.io.File;
+import java.util.List;
 
 import org.w3c.dom.Element;
 
-import edu.brown.cs.ivy.mint.MintConstants.CommandArgs;
+import edu.brown.cs.bubbles.board.BoardLog;
+import edu.brown.cs.bubbles.board.BoardSetup;
+import edu.brown.cs.bubbles.board.BoardThreadPool;
+import edu.brown.cs.bubbles.buda.BudaConstants.BudaFileHandler;
+import edu.brown.cs.bubbles.bump.BumpClient;
+import edu.brown.cs.bubbles.buda.BudaRoot;
+import edu.brown.cs.ivy.leash.LeashIndex;
 import edu.brown.cs.ivy.xml.IvyXml;
-import edu.brown.cs.ivy.xml.IvyXmlWriter;
-import edu.brown.cs.rose.root.RootMetrics;
-import edu.brown.cs.rose.root.RootProblem;
-import edu.brown.cs.rose.root.RoseException;
-import edu.brown.cs.rose.root.RoseLog;
+import edu.brown.cs.rose.root.RootConstants;
 
-class StemQueryVariableHistory extends StemQueryHistory
+class BushIndex implements BushConstants, RootConstants 
 {
 
 
@@ -55,10 +60,8 @@ class StemQueryVariableHistory extends StemQueryHistory
 /*                                                                              */
 /********************************************************************************/
 
-private String variable_name;
-private String current_value;
-private String shouldbe_value;
-
+private boolean         did_start;
+private LeashIndex      cocker_index;
 
 
 
@@ -68,111 +71,141 @@ private String shouldbe_value;
 /*                                                                              */
 /********************************************************************************/
 
-StemQueryVariableHistory(StemMain ctrl,RootProblem prob)
+BushIndex()
 {
-   super(ctrl,prob);
-   variable_name = prob.getProblemDetail();
-   current_value = prob.getOriginalValue();
-   shouldbe_value = prob.getTargetValue();
-}
-
-
-/********************************************************************************/
-/*                                                                              */
-/*      Process the query                                                       */
-/*                                                                              */
-/********************************************************************************/
-
-@Override void process(StemMain stem,IvyXmlWriter xw) throws RoseException
-{
-   
-   Element qrslt = getVarData(stem);
-   if (qrslt == null) throw new RoseException("Can't find variable");
-   
-   Element hrslt = getHistoryData(stem,qrslt);
-   outputGraph(hrslt,xw);
-}
-
-
-
-
-/********************************************************************************/
-/*                                                                              */
-/*      Get variable and location data                                          */
-/*                                                                              */
-/********************************************************************************/
-
-private Element getVarData(StemMain stem)
-{
-   stem.waitForAnalysis();
-   
-   long start = System.currentTimeMillis();
-   
-   RoseLog.logD("START VAR Query: " + variable_name + " " + current_value + " " +
-         shouldbe_value);
-   String method = method_name;
-   CommandArgs args = new CommandArgs("FILE",for_file.getAbsolutePath(),
-         "START",-1,
-         "LINE",line_number,
-         "TOKEN",variable_name,
-         "METHOD",method);
-   Element rslt = stem.sendFaitMessage("VARQUERY",args,null);
-   RoseLog.logD("VAR Data: " + IvyXml.convertXmlToString(rslt));
-   Element vset = IvyXml.getChild(rslt,"VALUESET");
-   
-   Element refelt = IvyXml.getChild(vset,"REFERENCE");
-   Element refval = IvyXml.getChild(refelt,"VALUE");
-   
-   RootMetrics.noteCommand("STEM","VARDATA",IvyXml.getAttrInt(refval,"LOCAL"),
-         IvyXml.getAttrInt(refval,"STACK"),IvyXml.getAttrInt(refval,"BASELOCAL"),
-         IvyXml.getAttrInt(refval,"BASESTACK"),
-         System.currentTimeMillis() - start);
-
-   return vset;
+   did_start = false;
+   cocker_index = null;
 }
 
 
 
 /********************************************************************************/
 /*                                                                              */
-/*      Get history data                                                        */
+/*      Start the database if necessary                                         */
 /*                                                                              */
 /********************************************************************************/
 
-private Element getHistoryData(StemMain stem,Element vdata) throws RoseException
+void start()
 {
-   CommandArgs args = new CommandArgs("FILE",for_file.getAbsolutePath(),
-         "QTYPE","VARIABLE",
-         "CURRENT",current_value,
-         "LINE",line_number,
-         "TOKEN",variable_name,
-         "METHOD",method_name);
+   File bdir = BoardSetup.getBubblesWorkingDirectory();
+   File cdir = new File(bdir,"CockerIndex");
+   if (!cdir.exists()) cdir.mkdirs();
+   if (!cdir.exists()) return;
    
-   StringBuffer buf = new StringBuffer();
-   Element reference = null;
-   for (Element refval : IvyXml.children(vdata,"REFVALUE")) {
-      Element loc = IvyXml.getChild(refval,"LOCATION");
-      Element ref = IvyXml.getChild(refval,"REFERENCE");
-      if (loc == null || ref == null) continue;
-      if (reference == null) reference = IvyXml.getChild(ref,"VALUE");
-      buf.append(IvyXml.convertXmlToString(loc));
-      buf.append("\n");
+   cocker_index = new LeashIndex(ROSE_PROJECT_INDEX_TYPE,cdir);
+   if (cocker_index.isActive()) did_start = false;
+   else did_start = cocker_index.start();
+   
+   if (!cocker_index.isActive()) return;
+   
+   if (did_start) {
+      Runtime.getRuntime().addShutdownHook(new StopOnExit());
+      addInitialComponents();
     }
-   if (reference == null) throw new RoseException("No reference for variable");
-   buf.append(IvyXml.convertXmlToString(reference));
-   String qxml = buf.toString();
-   String sxml = getXmlForStack();
-   if (sxml != null) qxml += sxml;
-   Element rslt = stem.sendFaitMessage("FLOWQUERY",args,qxml);
-   
-   return rslt;
+   BudaRoot.addFileHandler(new FileHandler());
 }
 
 
-}       // end of class StemQueryVariableHistory
+
+/********************************************************************************/
+/*                                                                              */
+/*      Setup initial paths                                                     */
+/*                                                                              */
+/*************`*******************************************************************/
+
+private void addInitialComponents()
+{
+   List<File> active = cocker_index.getTopFiles();
+   
+   BumpClient bc = BumpClient.getBump();
+   Element xml = bc.getAllProjects();
+   if (xml == null) return;
+   for (Element pe : IvyXml.children(xml,"PROJECT")) {
+      String pnm = IvyXml.getAttrString(pe,"NAME");
+      Element pxml = bc.getProjectData(pnm,false,true,false,false,false);
+      if (pxml == null) continue;
+      Element cpxml = IvyXml.getChild(pxml,"CLASSPATH");
+      for (Element rpe : IvyXml.children(cpxml,"PATH")) {
+         String ptyp = IvyXml.getAttrString(rpe,"TYPE");
+         if (ptyp.equals("SOURCE")) {
+            String path = IvyXml.getTextElement(rpe,"SOURCE");
+            File pfile = new File(path);
+            pfile = pfile.getAbsoluteFile();
+            if (active.contains(pfile)) {
+               active.remove(pfile);
+             }
+            else {
+               if (pfile.exists()) {
+                  BoardLog.logI("BUSH","Monitor " + pfile);
+                  cocker_index.monitor(pfile);
+                }
+             }
+          }
+       }
+    }
+   for (File f : active) {
+      BoardLog.logI("BUSH","Unmonitor " + f);
+      cocker_index.unmonitor(f);
+    }
+}
 
 
 
 
-/* end of StemQueryVariableHistory.java */
+/********************************************************************************/
+/*                                                                              */
+/*      Handle file updates                                                     */
+/*                                                                              */
+/********************************************************************************/
+
+
+private class FileHandler implements BudaFileHandler {
+   
+   public void handleSaveRequest()                      { }
+   public void handleCommitRequest()                    { }
+   public void handlePropertyChange()                   { }
+   public void handleCheckpointRequest()                { }
+   public boolean handleQuitRequest()                   { return true; }
+   
+   public void handleSaveDone() {
+      CockerUpdater upd = new CockerUpdater();
+      BoardThreadPool.start(upd);
+    }
+   
+   
+}       // end of inner class FileHandler
+
+
+
+private class CockerUpdater implements Runnable {
+   
+   @Override public void run() {
+      cocker_index.update();
+    }
+}
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Hanldle exit                                                            */
+/*                                                                              */
+/********************************************************************************/
+
+private class StopOnExit extends Thread {
+   
+   @Override public void run() {
+      cocker_index.stop();
+    }
+   
+}       // end of inner class StopOnExit
+
+
+
+
+}       // end of class BushIndex
+
+
+
+
+/* end of BushIndex.java */
 

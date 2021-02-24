@@ -56,6 +56,7 @@ import edu.brown.cs.bubbles.board.BoardSetup;
 import edu.brown.cs.ivy.exec.IvyExec;
 import edu.brown.cs.ivy.exec.IvyExecQuery;
 import edu.brown.cs.ivy.file.IvyFile;
+import edu.brown.cs.ivy.leash.LeashIndex;
 import edu.brown.cs.ivy.mint.MintArguments;
 import edu.brown.cs.ivy.mint.MintConstants;
 import edu.brown.cs.ivy.mint.MintControl;
@@ -118,6 +119,8 @@ private Map<String,EvalData> eval_handlers;
 private StemCompiler    stem_compiler;
 private Map<File,String> project_map;
 private String          default_project;
+private LeashIndex      project_index;
+private LeashIndex      global_index;
 
 
 private static boolean	use_all_files = true;
@@ -884,6 +887,33 @@ private boolean startSeede()
    return rslt;
 }
 
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Handle COCKER databases                                                 */
+/*                                                                              */
+/********************************************************************************/
+
+@Override public LeashIndex getProjectIndex()
+{
+   if (project_index == null) {
+      File bdir = new File(workspace_path);
+      File bbdir = new File(bdir,".bubbles");
+      File cdir = new File(bbdir,"CockerIndex");
+      LeashIndex idx = new LeashIndex(ROSE_PROJECT_INDEX_TYPE,cdir);
+      idx.start();
+      if (idx.isActive()) project_index = idx;
+    }
+   return project_index;
+}
+
+
+
+@Override public LeashIndex getGlobalIndex()
+{
+   return global_index;
+}
 
 
 

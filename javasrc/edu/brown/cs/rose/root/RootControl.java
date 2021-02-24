@@ -42,6 +42,7 @@ import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jface.text.IDocument;
 import org.w3c.dom.Element;
 
+import edu.brown.cs.ivy.leash.LeashIndex;
 import edu.brown.cs.ivy.mint.MintControl;
 import edu.brown.cs.ivy.mint.MintConstants.CommandArgs;
 
@@ -145,6 +146,18 @@ String getProjectForFile(File f);
 MintControl getMintControl();
 
 
+/**
+ *      Return index to project database for cocker
+ ***/
+
+LeashIndex getProjectIndex();
+
+
+/**
+ *      Return index to global database for cocker
+ ***/
+
+LeashIndex getGlobalIndex();
 
 }       // end of interface RoseControl
 

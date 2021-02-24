@@ -38,6 +38,7 @@ package edu.brown.cs.rose.stem;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.ArrayAccess;
+import org.eclipse.jdt.core.dom.AssertStatement;
 import org.eclipse.jdt.core.dom.ConditionalExpression;
 import org.eclipse.jdt.core.dom.DoStatement;
 import org.eclipse.jdt.core.dom.EnhancedForStatement;
@@ -51,6 +52,8 @@ import org.eclipse.jdt.core.dom.SwitchStatement;
 import org.eclipse.jdt.core.dom.WhileStatement;
 import org.w3c.dom.Element;
 
+import edu.brown.cs.ivy.jcomp.JcompAst;
+import edu.brown.cs.ivy.jcomp.JcompType;
 import edu.brown.cs.ivy.mint.MintConstants.CommandArgs;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
 import edu.brown.cs.rose.bud.BudValue;
@@ -159,6 +162,9 @@ private String getExceptionCause() throws RoseException
      case "java.lang.ArrayIndexOutOfBoundsException" :
         checker = new ArrayIndexOutOfBoundsChecker();
         break;
+     case "java.lang.AssertionError" :
+        checker = new AssertionChecker();
+        break;
    }
   
   if (checker != null) {
@@ -175,13 +181,21 @@ private String getExceptionCause() throws RoseException
 private abstract class ExceptionChecker extends ASTVisitor {
    
    private ASTNode use_node;
+   private String orig_value;
+   private String target_value;
    
    ExceptionChecker() {
       use_node = null;
+      orig_value = null;
+      target_value = null;
     }
    
-   protected void useNode(ASTNode n) {
-      if (use_node == null) use_node = n;
+   protected void useNode(ASTNode n,String orig,String tgt) {
+      if (use_node == null) {
+         use_node = n;
+         orig_value = orig;
+         target_value = tgt;
+       }
     }
    
    protected boolean haveNode() {
@@ -190,6 +204,8 @@ private abstract class ExceptionChecker extends ASTVisitor {
    
    String generateResult() {
       if (use_node == null) return null;
+      if (orig_value != null) for_problem.setOriginalValue(orig_value);
+      if (target_value != null) for_problem.setTargetValue(target_value);
       return getXmlForLocation("EXPR",use_node,true);
     }
    
@@ -331,7 +347,7 @@ private class NullPointerChecker extends ExceptionChecker {
       if (haveNode()) return false;
       BudValue bv = evaluate(ex.toString());
       if (bv.isNull()) {
-         useNode(ex);
+         useNode(ex,"null","Non-Null");
          return false;
        }
       
@@ -342,11 +358,11 @@ private class NullPointerChecker extends ExceptionChecker {
       if (ex == null || haveNode()) return;
       BudValue bv = evaluate(ex.toString());
       if (bv != null && bv.isNull()) {
-         useNode(ex);
+         useNode(ex,"null","Non-Null");
        }
     }
    
-}       // end of inner class NullPointerChecker
+}       // end of inner class NullPointerChecker dc
 
 
 
@@ -366,13 +382,119 @@ private class ArrayIndexOutOfBoundsChecker extends ExceptionChecker {
       BudValue abv = evaluate(aa.getIndex().toString());
       if (abv == null) return;
       long idx = abv.getInt();
-      if (idx < 0 || idx >= bnd) useNode(aa);
+      if (idx < 0 || idx >= bnd) useNode(aa,Long.toString(idx),null);
     }
    
 }       // end of inner class IndexOutOfBoundsChecker
 
 
 
+
+/********************************************************************************/
+/*                                                                              */
+/*      Assertion checker                                                       */
+/*                                                                              */
+/********************************************************************************/
+
+private class AssertionChecker extends ExceptionChecker {
+   
+   @Override public boolean visit(MethodInvocation mi) {
+      String nm = mi.getName().getIdentifier();
+      int ct = mi.arguments().size();
+      int givenidx = -1;
+      int targetidx = -1;
+      switch (nm) {
+         case "assertArrayEquals" :
+            break;
+         case "assertEquals" :
+         case "assertSame" :
+         case "assertNotEquals" :
+         case "assertNotSame" :
+            if (ct == 2) { 
+               givenidx = 0;
+               targetidx = 1;
+             }
+            else if (ct == 3) {
+               ASTNode arg1 = (ASTNode) mi.arguments().get(1);
+               JcompType t1 = JcompAst.getExprType(arg1);
+               if (t1.isFloatingType()) {
+                  givenidx = 0;
+                  targetidx = 1;
+                }
+               else {
+                  givenidx = 1;
+                  targetidx = 2;
+                }
+             }
+            else if (ct == 4) {
+               givenidx = 1;
+               targetidx = 2;
+             }
+            break;
+         case "assertNull" :
+         case "assertNotNull" :
+         case "assertTrue" :
+         case "assertFalse" :
+         case "assertThrows" :
+            if (ct == 1) givenidx = 0;
+            else givenidx = 1;
+            break;
+         case "assertThat" :
+            if (ct == 2) {
+               ASTNode arg1 = (ASTNode) mi.arguments().get(1);
+               JcompType t1 = JcompAst.getExprType(arg1);
+               if (t1.isBooleanType()) givenidx = 1;
+               else givenidx = 0;
+             }
+            else givenidx = 1;
+            break;
+         case "fail" :
+            break;
+         default :
+            return false;
+       }
+      
+      if (givenidx >= 0 && targetidx >= 0) {
+         ASTNode ng = (ASTNode) mi.arguments().get(givenidx);
+         switch (ng.getNodeType()) {
+            case ASTNode.NUMBER_LITERAL :
+            case ASTNode.STRING_LITERAL :
+            case ASTNode.NULL_LITERAL :
+               int idx = givenidx;
+               givenidx = targetidx;
+               targetidx = idx;
+               break;
+          }
+       }
+      
+      switch (nm) {
+         case "assertArrayEquals" :
+            break;
+         case "assertEquals" :
+         case "assertSame" :
+         case "assertNotEquals" :
+         case "assertNull" :
+         case "assertNotNull" :
+         case "assertNotSame" :
+         case "assertThat" :
+         case "assertThrows" :
+         case "assertTrue" :
+         case "assertFalse" :
+         case "fail" :
+            break;
+         default :
+            break;
+       }
+      
+      return false;
+    }
+   
+   @Override public boolean visit(AssertStatement stmt) {
+      useNode(stmt.getExpression(),"false","true");
+      return false;
+    }
+   
+}
 
 /********************************************************************************/
 /*                                                                              */

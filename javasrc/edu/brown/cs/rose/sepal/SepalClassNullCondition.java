@@ -107,12 +107,20 @@ public SepalClassNullCondition()
 {
    RootProblem rp = getProblem();
    if (rp.getProblemType() != RoseProblemType.EXCEPTION ||
-         !rp.getProblemDetail().equals("java.lang.NullPointerException")) return;
+         !rp.getProblemDetail().equals("java.lang.NullPointerException")) {
+      if (rp.getProblemType() != RoseProblemType.LOCATION)
+         return;
+    }
+   // might also want to handle location errors where there is an exception node
    
    Statement stmt = (Statement) getResolvedStatementForLocation(null);
    RootLocation ploc = rp.getBugLocation();
    ASTNode bstmt = getResolvedStatementForLocation(ploc);
-   if (stmt != bstmt) return;
+   if (stmt != bstmt) {
+      // if the erroreous value is a variable computed here, then can add check afterwards
+      // If this is a call passing in the erroreous value, skip the call
+      return;
+    }   
    
    ASTNode n = getProcessor().getController().getExceptionNode(rp);
    if (n == null) return;
@@ -222,8 +230,8 @@ private ASTRewrite addToConditional(Expression base,Expression cond,Expression b
    
    InfixExpression inf = ast.newInfixExpression();
    inf.setOperator(InfixExpression.Operator.CONDITIONAL_AND);
-   inf.setRightOperand(nbase);
-   inf.setLeftOperand((Expression) ASTNode.copySubtree(ast,cond));
+   inf.setLeftOperand(nbase);
+   inf.setRightOperand((Expression) ASTNode.copySubtree(ast,cond));
    
    rw.replace(cond,inf,null);
    
