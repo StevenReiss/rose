@@ -90,12 +90,15 @@ void start()
    File bdir = BoardSetup.getBubblesWorkingDirectory();
    File cdir = new File(bdir,"CockerIndex");
    if (!cdir.exists()) cdir.mkdirs();
+   BoardLog.logD("BUSH","Start COCKER with " + cdir);
+   
    if (!cdir.exists()) return;
    
    cocker_index = new LeashIndex(ROSE_PROJECT_INDEX_TYPE,cdir);
    if (cocker_index.isActive()) did_start = false;
    else did_start = cocker_index.start();
    
+   BoardLog.logD("BUSH","Cocker started " + did_start + " " + cocker_index.isActive());
    if (!cocker_index.isActive()) return;
    
    if (did_start) {
