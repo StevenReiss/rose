@@ -94,9 +94,6 @@ public SepalValueFixer()
 
 @Override public void process()
 {
-   // test cocker
-   getProcessor().getController().getProjectIndex();
-   
    RootProblem rp = getProblem();
    if (rp.getProblemType() != RoseProblemType.VARIABLE) return;
    

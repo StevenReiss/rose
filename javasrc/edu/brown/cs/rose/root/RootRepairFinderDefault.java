@@ -89,7 +89,11 @@ protected RootRepairFinderDefault()
    bract_control = ctrl;
    for_problem = prob;
    at_location = at;
+   localSetup();
 }
+
+
+protected void localSetup()                     { }
 
 
 

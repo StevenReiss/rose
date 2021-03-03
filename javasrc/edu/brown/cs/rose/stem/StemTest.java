@@ -48,6 +48,7 @@ import org.junit.Assert;
 import org.w3c.dom.Element;
 
 import edu.brown.cs.ivy.exec.IvyExec;
+import edu.brown.cs.ivy.leash.LeashIndex;
 import edu.brown.cs.ivy.mint.MintArguments;
 import edu.brown.cs.ivy.mint.MintConstants;
 import edu.brown.cs.ivy.mint.MintControl;
@@ -626,7 +627,7 @@ private MintControl setupBedrock(String dir,String proj)
 
 
 
-private static void shutdownBedrock(String dir)
+private void shutdownBedrock(String dir)
 {
    MintControl mc = mint_map.get(dir);
    if (mc == null) return;
@@ -641,6 +642,12 @@ private static void shutdownBedrock(String dir)
     }
    RoseLog.logI("STEM","Shut down bedrock");
    sendBubblesMessage(mc,"EXIT");
+   
+   File bdir = new File(workspace_path);
+   File bbdir = new File(bdir,".bubbles");
+   File cdir = new File(bbdir,"CockerIndex");
+   LeashIndex idx = new LeashIndex(ROSE_PROJECT_INDEX_TYPE,cdir);
+   idx.stop();
 }
 
 

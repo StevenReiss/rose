@@ -1,0 +1,6 @@
+Things that we might be able to use FAIT to check for (and we should think about
+when developing user interfaces for FAIT):
+
+1)  For all Sepal instances, setup must be called before process
+2)  Property file for cocker not removed after it is written
+3)  is_active in LEASH is true if either cocker is active or activity of cocker is unknown

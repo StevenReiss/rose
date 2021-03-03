@@ -77,6 +77,11 @@ public class PatternMap extends HashMap<String,Object> {
 }	// end of inner class PatternMap
 
 
+public interface BractSearchResult {
+   
+}
+
+
 
 }	// end of interface BractConstants
 

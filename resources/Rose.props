@@ -15,6 +15,7 @@
 <entry key="Rose.processor.3">edu.brown.cs.rose.sepal.SepalCommonProblems</entry>
 <entry key="Rose.processor.4">edu.brown.cs.rose.sepal.SepalClassNullCondition</entry>
 <entry key="Rose.processor.5">edu.brown.cs.rose.sepal.SepalValueFixer</entry>
+<entry key="Rose.processor.6">edu.brown.cs.rose.sepal.SepalLocalSearch</entry>
 </properties>
 
 
