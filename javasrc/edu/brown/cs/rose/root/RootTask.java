@@ -1,8 +1,8 @@
 /********************************************************************************/
 /*                                                                              */
-/*              RootConstants.java                                              */
+/*              RootTask.java                                                   */
 /*                                                                              */
-/*      Global constants for ROOT and ROSE                                      */
+/*      Task that we can wait for while doing suggestions                       */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
@@ -37,44 +37,60 @@ package edu.brown.cs.rose.root;
 
 
 
-public interface RootConstants
+public abstract class RootTask implements Runnable
 {
 
-enum RoseValueKind {
-   UNKNOWN, PRIMITIVE, STRING, CLASS, OBJECT, ARRAY
-}
 
-enum RoseProblemType {
-   EXCEPTION,
-      ASSERTION,
-      VARIABLE,
-      EXPRESSION,
-      LOCATION,
-      OTHER
-}
+/********************************************************************************/
+/*                                                                              */
+/*      Private Storage                                                         */
+/*                                                                              */
+/********************************************************************************/
 
-
-String ROSE_PROJECT_INDEX_TYPE = "STMTSEARCHLOCAL";
-String ROSE_GLOBAL_INDEX_TYPE = "STMTSEARCHGLOBAL";
-
+private boolean         is_done;
 
 
 
 /********************************************************************************/
 /*                                                                              */
-/*      Priorities                                                              */
+/*      Constructors                                                            */
 /*                                                                              */
 /********************************************************************************/
 
-double DEFAULT_PRIORITY = 0.5;
+protected RootTask()
+{
+   is_done = false;
+}
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Handle done                                                             */
+/*                                                                              */
+/********************************************************************************/
+
+protected synchronized void noteDone() 
+{
+   is_done = true;
+   notifyAll();
+}
+
+
+public synchronized void waitForDone() 
+{
+   while (!is_done) {
+      try {
+         wait(4000);
+       }
+      catch (InterruptedException e) { }
+    }
+}
+
+
+}       // end of class RootTask
 
 
 
 
-}       // end of interface RootConstants
-
-
-
-
-/* end of RootConstants.java */
+/* end of RootTask.java */
 

@@ -122,6 +122,7 @@ public void validateAndSend(RootProcessor rp,RootRepair rr)
 {
    ValidateRunner vr = new ValidateRunner(this,rp,rr);
    RootThreadPool.start(vr);
+   rp.addSubtask(vr);
 }
 
 
@@ -162,7 +163,7 @@ void setupBaseExecution()
    xw.close();
    root_control.sendSeedeMessage(base_session,"ADDFILE",null,cnts);
    
-   base_execution = new ValidateExecution(base_session,this);
+   base_execution = new ValidateExecution(base_session,this,null);
    base_execution.start(root_control);
    
    // for debugging
@@ -170,7 +171,7 @@ void setupBaseExecution()
 }
 
 
-ValidateExecution getSubsession() 
+ValidateExecution getSubsession(RootRepair repair) 
 {
    if (base_session == null) return null;
    
@@ -180,7 +181,7 @@ ValidateExecution getSubsession()
    String ssid = IvyXml.getAttrString(sessxml,"ID");
    if (ssid == null) return null;
    
-   ValidateExecution ve = new ValidateExecution(ssid,this);
+   ValidateExecution ve = new ValidateExecution(ssid,this,repair);
    
    return ve;
 }
@@ -214,7 +215,7 @@ double checkValidResult(ValidateExecution ve)
    ValidateTrace e2 = base_execution.getSeedeResult();
    ValidateTrace e1 = ve.getSeedeResult();
    
-   ValidateChecker checker = new ValidateChecker(this,e2,e1);
+   ValidateChecker checker = new ValidateChecker(this,e2,e1,ve.getRepair());
    
    return checker.check();
 }

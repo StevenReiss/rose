@@ -111,16 +111,18 @@ public SepalForLoopIndex()
       InfixExpression ex = (InfixExpression) fs.getExpression();
       ASTRewrite rw = null;
       int iv = ((Integer) nmap.get("delta"));
+      String desc = null;
       if (iv > 1) {
          nmap.put("d1",iv-1);
          rw = delta_result.replace(ex,nmap);
+         desc = "Replace for condition with " + ex + "-" + (iv-1);
        }
-      
       else if (ex.getOperator() == InfixExpression.Operator.LESS_EQUALS) {
+         desc = "Replace <= with < in for condition " + ex;
          rw = result_pattern.replace(ex,nmap);
        }
       if (rw != null) {
-         addRepair(rw,"Replace <= with < in FOR expression",0.75);
+         addRepair(rw,desc,0.75);
        }
     }
 }

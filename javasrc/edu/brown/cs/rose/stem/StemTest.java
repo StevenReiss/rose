@@ -58,6 +58,9 @@ import edu.brown.cs.ivy.mint.MintMessage;
 import edu.brown.cs.ivy.mint.MintReply;
 import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
+import edu.brown.cs.rose.bract.BractFactory;
+import edu.brown.cs.rose.root.RootProblem;
+import edu.brown.cs.rose.root.RootTestCase;
 import edu.brown.cs.rose.root.RoseLog;
 
 public class StemTest implements StemConstants, MintConstants 
@@ -375,10 +378,10 @@ private FrameData setupTest(MintControl ctrl,String project,String launch)
 
 
 
-private void runTest(MintControl ctrl,FrameData fd,String prob)
+private void runTest(MintControl ctrl,FrameData fd,String oprob)
 {
    getChangedVariables(ctrl,fd);
-   
+   String prob = getStartFrame(ctrl,oprob);
    getSuggestionsFor(ctrl,fd,prob,null);
    
    Element locs = getHistory(ctrl,fd,prob);
@@ -460,6 +463,26 @@ private void getChangedVariables(MintControl ctrl,FrameData fd)
       Element pxml = sendStemReply(ctrl,"PARAMETERVALUES",args,pvals);
       Assert.assertTrue(IvyXml.isElement(pxml,"RESULT"));
     }
+}
+
+
+private String getStartFrame(MintControl ctrl,String prob)
+{
+   CommandArgs args = new CommandArgs();
+   Element rslt = sendStemReply(ctrl,"STARTFRAME",args,prob);
+   String startframe = IvyXml.getAttrString(rslt,"STARTFRAME");
+   String startrtn = IvyXml.getAttrString(rslt,"CLASS");
+   startrtn += "." + IvyXml.getAttrString(rslt,"METHOD");
+   startrtn += IvyXml.getAttrString(rslt,"SIGNATURE");
+   RootTestCase rtc = new RootTestCase(startframe,startrtn);
+   Element xml = IvyXml.convertStringToXml(prob);
+   RootProblem rp = BractFactory.getFactory().createProblemDescription(null,xml);
+   rp.setCurrentTest(rtc);
+   IvyXmlWriter xw = new IvyXmlWriter();
+   rp.outputXml(xw);
+   String nprob = xw.toString();
+   xw.close();
+   return nprob;
 }
 
 

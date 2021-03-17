@@ -35,6 +35,7 @@
 
 package edu.brown.cs.rose.validate;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -81,6 +82,12 @@ ValidateCall(ValidateTrace vt,Element ctx)
 String getMethod()
 {
    return IvyXml.getAttrString(context_element,"METHOD");
+}
+
+
+File getFile()
+{
+   return new File(IvyXml.getAttrString(context_element,"FILE"));
 }
 
 

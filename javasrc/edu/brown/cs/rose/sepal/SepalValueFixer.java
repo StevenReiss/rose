@@ -46,6 +46,7 @@ import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.ExpressionStatement;
 import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.MethodInvocation;
+import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.NumberLiteral;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.Statement;
@@ -56,6 +57,7 @@ import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 import edu.brown.cs.ivy.jcomp.JcompAst;
 import edu.brown.cs.rose.root.RootProblem;
 import edu.brown.cs.rose.root.RootRepairFinderDefault;
+import edu.brown.cs.rose.root.RootControl.AssertionData;
 
 public class SepalValueFixer extends RootRepairFinderDefault
 {
@@ -95,12 +97,25 @@ public SepalValueFixer()
 @Override public void process()
 {
    RootProblem rp = getProblem();
-   if (rp.getProblemType() != RoseProblemType.VARIABLE) return;
+   String nval = null;
+   String oval = null;
+   String var = rp.getProblemDetail();
    
-   String nval = rp.getTargetValue();
+   if (rp.getProblemType() == RoseProblemType.VARIABLE) {
+      nval = rp.getTargetValue();
+      oval = rp.getOriginalValue();
+    }
+   else if (rp.getProblemType() == RoseProblemType.ASSERTION) {
+      AssertionData ad = getProcessor().getController().getAssertionData(rp);
+      ASTNode an = ad.getExpression();
+      if (an instanceof Name) {
+         var = an.toString();
+         nval = ad.getTargetValue();
+         oval = ad.getOriginalValue();
+       }
+    }
    if (nval == null) return;
    
-   String var = rp.getProblemDetail();
    Assignment assign = null;
    Statement stmt = (Statement) getResolvedStatementForLocation(null);
    if (stmt instanceof ExpressionStatement) {
@@ -117,7 +132,7 @@ public SepalValueFixer()
     }
    if (assign == null) return;
    
-   List<ValueFix> rslt = computeDifference(stmt.getAST(),rp.getOriginalValue(),nval);
+   List<ValueFix> rslt = computeDifference(stmt.getAST(),oval,nval);
    if (rslt == null || rslt.isEmpty()) return;
    
    for (ValueFix vf : rslt) {
@@ -357,7 +372,8 @@ private abstract class ValueFix {
          rw.replace(stmt,blk,null);
        }
       if (rw != null) {
-         addRepair(rw,"Use computed difference",0.5);
+         String desc = "Add " + newstmt + " to change computed value";
+         addRepair(rw,desc,0.5);
        }
     }
    
@@ -381,7 +397,8 @@ private class ValueFixOp extends ValueFix {
       if (asg1 != null) {
          ASTRewrite rw = ASTRewrite.create(ast);
          rw.replace(asgn,asg1,null);
-         addRepair(rw,"Use computed difference",0.5);
+         String desc = "Use " + asg1 + " instead of " + asgn;
+         addRepair(rw,desc,0.5);
        }
       else {
          addToBlock(stmt,asgn,use_operator,rhs_value,false);
@@ -407,7 +424,8 @@ private class ValueFixLeftOp extends ValueFix {
       if (asg1 != null) {
          ASTRewrite rw = ASTRewrite.create(rhs_value.getAST());
          rw.replace(asgn,asg1,null);
-         addRepair(rw,"Use computed difference",0.5);
+         String desc = "Use " + asg1 + " instead of " + asgn;
+         addRepair(rw,desc,0.5);
        }
       else {
          addToBlock(stmt,asgn,use_operator,rhs_value,true);
@@ -442,7 +460,8 @@ private class ValueFixMethod extends ValueFix {
       if (asg1 != null) {
          ASTRewrite rw = ASTRewrite.create(ast);
          rw.replace(asgn,asg1,null);
-         addRepair(rw,"Use computed difference",0.5);
+         String desc = "Use " + asg1 + " instead of " + asgn;
+         addRepair(rw,desc,0.5);
        }
       else {
          ex = (Expression) ASTNode.copySubtree(ast,asgn.getLeftHandSide());
@@ -478,7 +497,8 @@ private class ValueFixStaticMethod extends ValueFix {
       if (asg1 != null) {
          ASTRewrite rw = ASTRewrite.create(ast);
          rw.replace(asgn,asg1,null);
-         addRepair(rw,"Use computed difference",0.5);
+         String desc = "Use " + asg1 + " instead of " + asgn;
+         addRepair(rw,desc,0.5);
        }
       else {
          ex = (Expression) ASTNode.copySubtree(ast,asgn.getLeftHandSide());

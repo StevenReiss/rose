@@ -36,6 +36,7 @@
 package edu.brown.cs.rose.validate;
 
 import edu.brown.cs.rose.root.RootProblem;
+import edu.brown.cs.rose.root.RootRepair;
 
 class ValidateChecker implements ValidateConstants
 {
@@ -50,6 +51,7 @@ class ValidateChecker implements ValidateConstants
 private ValidateContext         validate_context;
 private ValidateTrace           original_execution;
 private ValidateTrace           check_execution;
+private RootRepair              for_repair;
 
 
 
@@ -59,11 +61,12 @@ private ValidateTrace           check_execution;
 /*                                                                              */
 /********************************************************************************/
 
-ValidateChecker(ValidateContext ctx,ValidateTrace orig,ValidateTrace check)
+ValidateChecker(ValidateContext ctx,ValidateTrace orig,ValidateTrace check,RootRepair repair)
 {
    validate_context = ctx;
    original_execution = orig;
    check_execution = check;
+   for_repair = repair;
    
    original_execution.setupForLaunch(ctx.getLaunch());
 }
@@ -81,12 +84,13 @@ double check()
    if (original_execution == null) return 5;
    if (validate_context.getProblem() == null) return 5;
    
-   ValidateMatcher matcher = new ValidateMatcher(original_execution,check_execution);
+   ValidateMatcher matcher = new ValidateMatcher(original_execution,check_execution,for_repair);
    matcher.computeMatch();
    
    ValidateProblemChecker vpc = null;
    switch (validate_context.getProblem().getProblemType()) {
       case EXCEPTION :
+      case ASSERTION :
          vpc = new ValidateCheckerException(matcher);
          break;
       case EXPRESSION :

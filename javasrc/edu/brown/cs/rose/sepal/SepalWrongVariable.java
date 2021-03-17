@@ -46,7 +46,6 @@ import java.util.Set;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
-import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.jdt.core.dom.SimpleName;
@@ -272,7 +271,7 @@ private void createRepair(UserVariable uv,JcompSymbol js,ASTNode where)
       if (where instanceof SimpleName) {
          rw = ASTRewrite.create(ast);
          String nnm = js.getName();
-         RoseLog.logD("SEPAL","Use replacement name " + nnm);
+         RoseLog.logD("SEPAL","Use replacement name " + nnm + " for " + where);
          ASTNode rep = ast.newSimpleName(nnm);
          rw.replace(where,rep,null);
        }
@@ -283,12 +282,9 @@ private void createRepair(UserVariable uv,JcompSymbol js,ASTNode where)
    
    if (rw != null) {
       double pri = IvyStringDiff.normalizedStringDiff(uv.getSymbol().getName(),js.getName());
-      
-      CompilationUnit cu = (CompilationUnit) where.getRoot();
-      String desc = "Replace `" + uv.getSymbol().getName() + "' with `" + js.getName() + 
-            "' in line " + cu.getLineNumber(where.getStartPosition()) + 
-            "/" + cu.getColumnNumber(where.getStartPosition());
-      
+      String desc = "Replace `" + uv.getSymbol().getName() + "' with `" + js.getName();
+      ASTNode par = where.getParent();
+      desc += " in " + par;
       addRepair(rw,desc,pri);
     }
    

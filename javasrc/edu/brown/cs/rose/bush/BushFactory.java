@@ -78,6 +78,7 @@ import edu.brown.cs.ivy.mint.MintHandler;
 import edu.brown.cs.ivy.mint.MintMessage;
 import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
+import edu.brown.cs.rose.root.RootTestCase;
 
 
 public class BushFactory implements BushConstants, BumpConstants, BaleConstants
@@ -211,7 +212,6 @@ void addFixAnnotations(BushProblem prob,List<BushLocation> locs)
    if (uselocs.isEmpty()) return;
    
    for (BushLocation bl : uselocs) {
-      BoardLog.logD("BUSH","Add fix annotation for " + bl);
       td.addFixAnnotation(prob,bl); 
     }
 }
@@ -906,6 +906,7 @@ private static class RoseSuggestAction extends AbstractAction implements Runnabl
    private BushProblem for_problem;
    private BushLocation for_location;
    private Component from_component;
+   private boolean create_bubble;
    
    private static final long serialVersionUID = 1;
    
@@ -915,16 +916,50 @@ private static class RoseSuggestAction extends AbstractAction implements Runnabl
       for_problem = p;
       for_location = l;
       from_component = c;
+      create_bubble = false;
     }
    
    @Override public void actionPerformed(ActionEvent e) {
-      SwingUtilities.invokeLater(this);
+      if (for_problem.getCurrentTest() == null) {
+         BoardThreadPool.start(this);
+       }
+      else {
+         create_bubble = true;
+         SwingUtilities.invokeLater(this);
+       }
     }
    
    @Override public void run() {
-      BushSuggestPanel pnl = new BushSuggestPanel(from_component,for_problem,for_location);
-      pnl.createBubble();
-      BushFactory.getFactory().startRepairSuggestor(for_problem,for_location,pnl);
+      if (create_bubble) {
+         BushSuggestPanel pnl = new BushSuggestPanel(from_component,for_problem,for_location);
+         pnl.createBubble();
+         BushFactory.getFactory().startRepairSuggestor(for_problem,for_location,pnl);
+       }
+      else {
+         setupDefaultTest();
+       }
+    }
+   
+   private void setupDefaultTest() {
+      IvyXmlWriter xw = new IvyXmlWriter();
+      for_problem.outputXml(xw);
+      String body = xw.toString();
+      xw.close();  
+      if (for_location != null) {
+         xw = new IvyXmlWriter();
+         for_location.outputXml(xw);
+         body += xw.toString();
+         xw.close();
+       }
+      CommandArgs args = new CommandArgs();
+      Element rslt = BushFactory.getFactory().sendRoseMessage("STARTFRAME",args,body);
+      String startframe = IvyXml.getAttrString(rslt,"STARTFRAME");
+      String startrtn = IvyXml.getAttrString(rslt,"CLASS") + "." +
+            IvyXml.getAttrString(rslt,"METHOD") + IvyXml.getAttrString(rslt,"SIGNATURE");
+      RootTestCase rtc = new RootTestCase(startframe,startrtn);
+      for_problem.setCurrentTest(rtc); 
+      create_bubble = true;
+      SwingUtilities.invokeLater(this);
     }
    
 }       // end of inner class RoseSuggestAction

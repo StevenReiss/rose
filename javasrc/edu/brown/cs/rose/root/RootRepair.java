@@ -36,6 +36,8 @@
 package edu.brown.cs.rose.root;
 
 
+import java.io.File;
+
 import org.w3c.dom.Element;
 
 import edu.brown.cs.ivy.xml.IvyXml;
@@ -57,6 +59,7 @@ private double          repair_priority;
 private double          validate_score;
 private RootEdit        repair_edit;
 private RootLocation    repair_location;
+private RootLineMap     line_map;
 
 
 
@@ -68,14 +71,15 @@ private RootLocation    repair_location;
 
 
 protected RootRepair(RootRepairFinder finder,String desc,double pri,
-      RootLocation loc,RootEdit edit)
+      RootLocation loc,RootEdit edit,RootLineMap linemap)
 { 
    repair_finder = finder.getClass().getName();
    repair_description = desc;
    repair_priority = pri;
    repair_edit = edit;
    repair_location = loc;
-   validate_score = 0;
+   validate_score = 0.5;
+   line_map = linemap;
 }
 
 
@@ -118,6 +122,11 @@ public double getPriority()
    return repair_priority;
 }
 
+public double getValidatedPriority()
+{
+   return validate_score*repair_priority;
+}
+
 
 public void noteValidateScore(double v)
 {
@@ -136,6 +145,12 @@ public RootEdit getEdit()
    return repair_edit;
 }
 
+
+public long getMappedLine(File file,long line)
+{
+   if (line_map == null) return line;
+   return line_map.getEditedLine(file,(int) line);
+}
 
 /********************************************************************************/
 /*                                                                              */

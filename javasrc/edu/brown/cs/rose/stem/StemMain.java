@@ -66,6 +66,7 @@ import edu.brown.cs.ivy.mint.MintMessage;
 import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
 import edu.brown.cs.rose.bract.BractFactory;
+import edu.brown.cs.rose.bud.BudStackFrame;
 import edu.brown.cs.rose.root.RootMetrics;
 import edu.brown.cs.rose.root.RootProblem;
 import edu.brown.cs.rose.root.RootValidate;
@@ -527,6 +528,16 @@ private void handleParameterValuesCommand(MintMessage msg) throws RoseException
 }
 
 
+@Override public AssertionData getAssertionData(RootProblem rp)
+{
+   if (rp.getProblemType() != RoseProblemType.ASSERTION) return null;
+   
+   StemQueryAssertionHistory query = new StemQueryAssertionHistory(this,rp);
+   
+   return query.getAssertionData();
+}
+
+
 
 private void handleHistoryCommand(MintMessage msg) throws RoseException
 {
@@ -547,6 +558,30 @@ private void handleHistoryCommand(MintMessage msg) throws RoseException
       msg.replyTo();
     }
    RootMetrics.noteCommand("STEM","HISTORYTIME",System.currentTimeMillis()-start);
+}
+
+
+
+private void handleStartFrame(MintMessage msg) throws RoseException
+{
+   Element msgxml = msg.getXml();
+   Element probxml = IvyXml.getChild(msgxml,"PROBLEM");
+   RootProblem prob = BractFactory.getFactory().createProblemDescription(this,probxml);
+   Element locxml = IvyXml.getChild(msgxml,"LOCATION");
+   RootLocation loc = BractFactory.getFactory().createLocation(this,locxml);
+   BudStackFrame bsf = ValidateFactory.getFactory(this).getStartingFrame(prob,loc);
+   if (bsf != null) {
+      IvyXmlWriter xw = new IvyXmlWriter();
+      xw.begin("RESULT");
+      xw.field("STARTFRAME",bsf.getFrameId());
+      xw.field("METHOD",bsf.getMethodName());
+      xw.field("SIGNATURE",bsf.getMethodSignature());
+      xw.field("CLASS",bsf.getClassName());
+      xw.end("RESULT");
+      msg.replyTo(xw.toString());
+      xw.close();
+    }
+   else msg.replyTo();
 }
 
 
@@ -1042,6 +1077,9 @@ private class CommandHandler implements MintHandler {
             case "METRICS" :
                handleMetricsCommand(msg);
                msg.replyTo();
+               break;
+            case "STARTFRAME" :
+               handleStartFrame(msg);
                break;
             case "EXIT" :
                serverDone();

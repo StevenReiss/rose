@@ -1,8 +1,8 @@
 /********************************************************************************/
 /*                                                                              */
-/*              ValidateRunner.java                                             */
+/*              RootTestCase.java                                               */
 /*                                                                              */
-/*      Do a validation for a potential repair                                  */
+/*      Test case for validating against                                        */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
@@ -33,16 +33,17 @@
 
 
 
-package edu.brown.cs.rose.validate;
+package edu.brown.cs.rose.root;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.w3c.dom.Element;
+
+import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
-import edu.brown.cs.rose.root.RootProcessor;
-import edu.brown.cs.rose.root.RootRepair;
-import edu.brown.cs.rose.root.RootTask;
-import edu.brown.cs.rose.root.RootTestCase;
-import edu.brown.cs.rose.root.RoseLog;
 
-class ValidateRunner extends RootTask implements ValidateConstants
+public class RootTestCase implements RootConstants
 {
 
 
@@ -52,9 +53,12 @@ class ValidateRunner extends RootTask implements ValidateConstants
 /*                                                                              */
 /********************************************************************************/
 
-private ValidateContext         base_context;
-private RootProcessor           root_processor;
-private RootRepair              for_repair;
+private String          entry_frame;
+private String          entry_routine;
+private Map<String,String> initial_values;
+private boolean         is_throws;
+private String          return_value;
+private Map<String,String> check_values;
 
 
 
@@ -64,88 +68,129 @@ private RootRepair              for_repair;
 /*                                                                              */
 /********************************************************************************/
 
-ValidateRunner(ValidateContext ctx,RootProcessor rp,RootRepair rr)
+public RootTestCase(Element xml)
 {
-   base_context = ctx;
-   root_processor = rp;
-   for_repair = rr;
+   entry_frame = IvyXml.getAttrString(xml,"FRAME");
+   entry_routine = IvyXml.getAttrString(xml,"ROUTINE");
+   is_throws = IvyXml.getAttrBool(xml,"THROWS");
+   return_value = IvyXml.getTextElement(xml,"RETURNS");
+   initial_values = loadVarMap(xml,"INITIALIZE");
+   check_values = loadVarMap(xml,"CHECK");
+}
+
+
+
+public RootTestCase(String fid,String rtn)
+{
+   entry_frame = fid;
+   entry_routine = rtn;
+   initial_values = null;
+   is_throws = false;
+   return_value = null;
+   check_values = null;
+}
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Access methods                                                          */
+/*                                                                              */
+/********************************************************************************/
+
+public String getFrameId()              { return entry_frame; }
+
+public boolean getThrows()              { return is_throws; }
+
+public String getReturnValue()         
+{ 
+   if (is_throws) return null;
+   return return_value;
+}
+
+
+public String getThrowType()
+{
+   if (!is_throws) return null;
+   return return_value;
+}
+
+
+
+public void setThrows(String exc)
+{
+   is_throws = true;
+   return_value = exc;
+}
+
+
+public void setReturns(String val)
+{
+   is_throws = false;
+   return_value = val;
 }
 
 
 
 /********************************************************************************/
 /*                                                                              */
-/*      Do the validation                                                       */
+/*      Output methods                                                          */
 /*                                                                              */
 /********************************************************************************/
 
-@Override public void run()
+public void outputXml(IvyXmlWriter xw)
 {
-   ValidateExecution ve = base_context.getSubsession(for_repair);
-   if (ve == null) {
-      sendRepair();
-      noteDone();
-      return;
-    }
-   
-   String ssid = ve.getSessionId();
-   try { 
-      IvyXmlWriter xw = new IvyXmlWriter();
-      for_repair.getEdit().outputXml(xw);
-      String cnts = xw.toString();
-      xw.close();
-      RoseLog.logD("VALIDATE","VALIDATE FOR " + cnts);
-      
-      String sts = base_context.handleEdits(ssid,cnts);
-      switch (sts) {
-         case "OK" :
-            break;
-         case "FAIL" :
-         case "ERROR" :
-            return;
-         case "WARNING" :
-            break;
-         default :
-            RoseLog.logE("VALIDATE","Unknown status from edit: " + sts);
-            break; 
-       }
-      
-      ve.start(root_processor.getController());
-      
-      double score = base_context.checkValidResult(ve);
-      if (score > 0) {
-         RootTestCase tc = base_context.getProblem().getCurrentTest();
-         RoseLog.logD("VALIDATE","Use test case " + tc);
-         if (tc != null) {
-            double tscore = ve.checkTest(tc);
-            score *= tscore;
-          }
-       }
-      if (score > 0) {
-         for_repair.noteValidateScore(score);
-         sendRepair();
-       }
-    }
-   finally {
-      base_context.removeSubsession(ssid);
-      noteDone();
-    }
+   xw.begin("TESTCASE");
+   xw.field("FRAME",entry_frame);
+   xw.field("ROUTINE",entry_routine);
+   xw.field("THROWS",is_throws);
+   if (return_value != null) xw.textElement("RETURNS",return_value);
+   outputVarMap(xw,"INITIALIZE",initial_values);
+   outputVarMap(xw,"CHECK",check_values);
+   xw.end("TESTCASE");
 }
 
 
 
-private void sendRepair()
+private void outputVarMap(IvyXmlWriter xw,String nm,Map<String,String> map)
 {
-   root_processor.sendRepair(for_repair);
+   if (map != null) {
+      xw.begin(nm);
+      for (Map.Entry<String,String> ent : map.entrySet()) {
+         xw.begin("VALUE");
+         xw.field("VARIABLE",ent.getKey());
+         xw.text(ent.getValue());
+         xw.end("VALUE");
+       }
+      xw.end(nm);
+    }
+}
+
+
+private Map<String,String> loadVarMap(Element xml,String nm)
+{
+   Element celt = IvyXml.getChild(xml,nm);
+   if (celt == null) return null;
+   Map<String,String> rslt = new HashMap<>();
+   for (Element velt : IvyXml.children(celt,"VALUE")) {
+      String key = IvyXml.getAttrString(velt,"VARIABLE");
+      String val = IvyXml.getText(velt);
+      rslt.put(key,val);
+    }
+   return rslt;
 }
 
 
 
 
-}       // end of class ValidateRunner
 
 
 
 
-/* end of ValidateRunner.java */
+
+}       // end of class RootTestCase
+
+
+
+
+/* end of RootTestCase.java */
 

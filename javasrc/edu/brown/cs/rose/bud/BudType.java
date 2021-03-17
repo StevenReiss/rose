@@ -145,11 +145,16 @@ boolean isStringType()
 }
 
 
-boolean isArrayType()
+public boolean isArrayType()
 {
    return false; 
 }
 
+
+boolean isObjectType()
+{ 
+   return false;
+}
 
 boolean isParameterizedType()
 {
@@ -248,7 +253,7 @@ private static class ArrayType extends BudType {
        }
     }
    
-   @Override boolean isArrayType()                      { return true; }
+   @Override public boolean isArrayType()               { return true; }
    @Override BudType getBaseType()                      { return base_type; }
    
 }       // end of inner class ArrayType
@@ -311,6 +316,8 @@ private static class ObjectType extends BudType {
    
       return field_map;
     }
+   
+   @Override public boolean isObjectType()              { return true; }
 
 }       // end of inner class ObjectType
 

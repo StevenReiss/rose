@@ -35,11 +35,13 @@
 
 package edu.brown.cs.rose.validate;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import edu.brown.cs.rose.root.RootRepair;
 import edu.brown.cs.rose.root.RoseLog;
 
 class ValidateMatcher implements ValidateConstants
@@ -54,6 +56,7 @@ class ValidateMatcher implements ValidateConstants
 
 private ValidateTrace original_trace;
 private ValidateTrace match_trace;
+private RootRepair for_repair;
 
 private ValidateCall problem_context;        // context of problem
 private long problem_time;                   // time of problem in original context
@@ -80,10 +83,11 @@ private long match_after_time;               // matching time at end of statemen
 /*                                                                              */
 /********************************************************************************/
 
-ValidateMatcher(ValidateTrace orig,ValidateTrace match)
+ValidateMatcher(ValidateTrace orig,ValidateTrace match,RootRepair repair)
 {
    original_trace = orig;
    match_trace = match;
+   for_repair = repair;
    
    problem_context = orig.getProblemContext();
    problem_time = orig.getProblemTime();
@@ -186,6 +190,7 @@ private void matchLines(ValidateCall origctx,ValidateCall matchctx)
 {
    ValidateVariable origline = origctx.getLineNumbers();
    ValidateVariable matchline = matchctx.getLineNumbers();
+   File file = matchctx.getFile();
    
    if (origline == null || matchline == null) return;
    
@@ -200,15 +205,19 @@ private void matchLines(ValidateCall origctx,ValidateCall matchctx)
          ValidateValue origval = it1.next();
          ValidateValue matchval = it2.next();
          long thistime = origval.getStartTime();
+         long trytime = matchval.getStartTime();
+         long mappedline = origval.getNumericValue();
+         mappedline = for_repair.getMappedLine(file,mappedline);
+         
          if (match_problem_context == matchctx) {
             if (lasttime <= problem_time && thistime > problem_time) {
                match_time = lastmatch;
-               match_after_time = matchval.getStartTime();
+               match_after_time = trytime;
              }
           }
          if (!fnd && 
                (origval.getStartTime() != matchval.getStartTime() ||
-                     origval.getNumericValue() != matchval.getNumericValue())) {
+                     mappedline != matchval.getNumericValue())) {
             noteChange(origctx,matchctx,lasttime);
             fnd = true;
           }

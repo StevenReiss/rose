@@ -108,7 +108,8 @@ public SepalClassNullCondition()
    RootProblem rp = getProblem();
    if (rp.getProblemType() != RoseProblemType.EXCEPTION ||
          !rp.getProblemDetail().equals("java.lang.NullPointerException")) {
-      if (rp.getProblemType() != RoseProblemType.LOCATION)
+      if (rp.getProblemType() != RoseProblemType.LOCATION && 
+            rp.getProblemType() != RoseProblemType.ASSERTION)
          return;
     }
    // might also want to handle location errors where there is an exception node
@@ -130,14 +131,38 @@ public SepalClassNullCondition()
    blk.accept(cond);
    Statement endstmt = cond.getEndStatement();
    
+   String stmtdesc = stmt.toString();
+   if (stmtdesc.length() > 23) {
+      stmtdesc = stmtdesc.substring(0,20) + "...";
+    }
+   
    ASTRewrite rw1 = skipStatements(base,stmt,endstmt);
-   if (rw1 != null) addRepair(rw1,"Avoid using null value",0.75);
+   if (rw1 != null) {
+      String desc = "Add 'if (" + base + " != null) { ' ";
+      if (stmt == endstmt) desc += "around " + stmtdesc;
+      else desc += "around next and subsequent affected statements";
+      addRepair(rw1,desc,0.75);
+    }
    ASTRewrite rw2 = loopContine(base,stmt);
-   if (rw2 != null) addRepair(rw2,"Continue on null value",0.5);
+   if (rw2 != null) {
+      String desc = "Add 'if (" + base + " == null) continue;' before " + stmtdesc;
+      addRepair(rw2,desc,0.5);
+    }
    ASTRewrite rw3 = condReturn(base,stmt);
-   if (rw3 != null) addRepair(rw3,"Return on null value",0.5);
+   if (rw3 != null) {
+      String desc = "Add 'if (" + base + " == null) return;' before " + stmtdesc;
+      addRepair(rw3,desc,0.5);
+    }
    ASTRewrite rw4 = ifcondRepair(base,stmt);
-   if (rw4 != null) addRepair(rw4,"Add null check in condition",0.7);
+   if (rw4 != null) {
+      String desc = "Add '(" + base + " != null) &&' to " + stmtdesc;
+      addRepair(rw4,desc,0.7);
+    }
+   ASTRewrite rw5 = nullReturn(base,stmt);
+   if (rw5 != null) {
+      String desc = "Add '(" + base + " == null) ||' to " + stmtdesc;
+      addRepair(rw5,desc,0.5);
+    }
 }
 
 
@@ -157,17 +182,17 @@ private ASTRewrite skipStatements(Expression base,Statement start,Statement end)
    else if (par instanceof IfStatement) {
       IfStatement s = (IfStatement) par;
       if (start.getLocationInParent() == IfStatement.ELSE_STATEMENT_PROPERTY) return null;
-      return addToConditional(base,s.getExpression(),null);
+      return addToConditionalAnd(base,s.getExpression(),null);
     }
    else if (par instanceof WhileStatement) {
       WhileStatement s = (WhileStatement) par;
-      return addToConditional(base,s.getExpression(),null);
+      return addToConditionalAnd(base,s.getExpression(),null);
     }
    else if (par instanceof ForStatement) {
       ForStatement f = (ForStatement) par;
       if (start.getLocationInParent() == ForStatement.BODY_PROPERTY) {
          if (f.getExpression() != null) {
-            return addToConditional(base,f.getExpression(),null);
+            return addToConditionalAnd(base,f.getExpression(),null);
           }
          else {
             return createForCondition(base,f);
@@ -177,6 +202,17 @@ private ASTRewrite skipStatements(Expression base,Statement start,Statement end)
    
    return null;
 }
+
+
+private ASTRewrite nullReturn(Expression base,Statement stmt)
+{
+   if (!(stmt instanceof IfStatement)) return null;
+   IfStatement ifstmt = (IfStatement) stmt;
+   if (!(ifstmt.getThenStatement() instanceof ReturnStatement)) return null;
+    
+   return addToConditionalOr(base,ifstmt.getExpression(),base);
+}  
+
 
 
 
@@ -212,7 +248,7 @@ private ASTRewrite skipBlock(Expression base,Statement start,Statement end)
 }
 
 
-private ASTRewrite addToConditional(Expression base,Expression cond,Expression before)
+private ASTRewrite addToConditionalAnd(Expression base,Expression cond,Expression before)
 {
    AST ast = cond.getAST();
    ASTRewrite rw = ASTRewrite.create(ast);
@@ -239,6 +275,33 @@ private ASTRewrite addToConditional(Expression base,Expression cond,Expression b
 }
 
 
+private ASTRewrite addToConditionalOr(Expression base,Expression cond,Expression before)
+{
+   AST ast = cond.getAST();
+   ASTRewrite rw = ASTRewrite.create(ast);
+   Expression nbase = getCheckExpr(ast,base,false);
+   
+   if (cond instanceof InfixExpression) {
+      InfixExpression inf = (InfixExpression) cond;
+      if (inf.getOperator() == InfixExpression.Operator.CONDITIONAL_OR) {
+         ListRewrite lrw = rw.getListRewrite(cond,InfixExpression.EXTENDED_OPERANDS_PROPERTY);
+         if (before == null) lrw.insertLast(nbase,null);
+         else lrw.insertBefore(nbase,before,null);
+         return rw;
+       }
+    }
+   
+   InfixExpression inf = ast.newInfixExpression();
+   inf.setOperator(InfixExpression.Operator.CONDITIONAL_OR);
+   inf.setLeftOperand(nbase);
+   inf.setRightOperand((Expression) ASTNode.copySubtree(ast,cond));
+   
+   rw.replace(cond,inf,null);
+   
+   return rw;
+}
+
+
 
 private ASTRewrite ifcondRepair(Expression base,Statement s)
 {
@@ -253,7 +316,7 @@ private ASTRewrite ifcondRepair(Expression base,Statement s)
     }
    if (cond.getLocationInParent() != IfStatement.EXPRESSION_PROPERTY) return null;
    
-   return addToConditional(base,(Expression) cond,(Expression) elt);
+   return addToConditionalAnd(base,(Expression) cond,(Expression) elt);
 }
 
 
@@ -368,7 +431,7 @@ private ASTRewrite condReturn(Expression base,Statement start)
    
    AST ast = start.getAST();
    
-   JcompType typ = mthd.getType();
+   JcompType typ = mthd.getType().getBaseType();
    Expression rslt = null;
    if (typ.isBooleanType()) rslt = ast.newBooleanLiteral(false);
    else if (typ.isNumericType()) rslt = ast.newNumberLiteral("0");

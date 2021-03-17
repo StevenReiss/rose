@@ -42,11 +42,8 @@ import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
 import org.eclipse.jface.text.IDocument;
-import org.eclipse.jface.text.IRegion;
 import org.eclipse.jface.text.Position;
 import org.eclipse.text.edits.TextEdit;
-
-import edu.brown.cs.ivy.file.IvyStringDiff;
 
 public abstract class RootRepairFinderDefault implements RootRepairFinder, RootConstants
 {
@@ -203,19 +200,19 @@ protected void addRepair(ASTRewrite rw,String desc,double priority)
       RoseLog.logE("ROOT","Problem creating text edit from rewrite",e);
     } 
    if (te == null) return;
+   RoseLog.logD("ROOT","Edit to apply: " + te);
    
-   int delta = 0;
+   RootLineMap vlm = null;
    if (pos != null) {
       try {
-         te.apply(doc);
+         TextEdit te1 = te.copy();
+         te1.apply(doc);
          int newline = doc.getLineOfOffset(pos.getOffset());
          int newline1 = doc.getLineOfOffset(pos1.getOffset());
          int newline2 = doc.getLineOfOffset(pos2.getOffset());
-         if (newline != baseline || newline1 != baseline1 || newline2 != baseline2) {
-            // newline :: baseline might be good enough
-            int min = Math.min(newline,Math.min(newline1,newline2));
-            int max = Math.max(newline,Math.max(newline1,newline2));
-            delta = getLineDelta(doc1,baseline1,doc,min,max);
+         if (baseline != newline || baseline1 != newline1 || baseline2 != newline2) {
+            vlm = new RootLineMap(f,baseline1,newline1,
+                  baseline,newline,baseline2,newline2);
           }
          doc.removePosition(pos);
          doc.removePosition(pos1);
@@ -224,38 +221,14 @@ protected void addRepair(ASTRewrite rw,String desc,double priority)
       catch (BadLocationException e) { }
     }
    
-   if (delta != 0) {
-      System.err.println("LINE CHANGED BY " + delta);
-    }
-   
-   RootRepair rr = new RootRepairDefault(this,desc,pri,loc,te);
+   RootRepair rr = new RootRepairDefault(this,desc,pri,loc,te,vlm);
    getProcessor().validateRepair(rr);
 }
 
 
 
 
-private int getLineDelta(IDocument d1,int oln,IDocument d2,int sln,int eln)
-{
-   int delta = 0;
-   try {
-      IRegion rgn = d1.getLineInformation(oln);
-      String orig = d1.get(rgn.getOffset(),rgn.getLength()).trim();
-      double best = 0;
-      for (int i = sln-1; i <= eln+1; ++i) {
-         IRegion rgn1 = d2.getLineInformation(i);
-         String match = d2.get(rgn1.getOffset(),rgn1.getLength()).trim();
-         double diff = IvyStringDiff.normalizedStringDiff(orig,match);
-         if (diff > best) {
-            best = diff;
-            delta = i-oln;
-          }
-       }
-    }
-   catch (BadLocationException e) { }
-   
-   return delta;
-}
+
 
 }       // end of class RootRepairFinderDefault
 

@@ -38,6 +38,8 @@ package edu.brown.cs.rose.sepal;
 import java.util.Map;
 
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.Expression;
+import org.eclipse.jdt.core.dom.ExpressionStatement;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 
@@ -155,12 +157,16 @@ private void checkAssignInConditional(ASTNode stmt)
    if (rslt == null) return;
    for (ASTNode n : rslt.keySet()) {
       ASTNode p = n.getParent();
+      PatternMap pmap = rslt.get(n);
       switch (p.getNodeType()) {
          case ASTNode.IF_STATEMENT :
          case ASTNode.WHILE_STATEMENT :
          case ASTNode.DO_STATEMENT :
-            ASTRewrite rw = cond_result.replace(n,rslt.get(n));
-            addRepair(rw,"Use == rather than = in conditional",1.0);
+            ASTRewrite rw = cond_result.replace(n,pmap);
+            if (rw != null) {
+               String desc = "Use " + pmap.get("x") + "==" + pmap.get("y") + " instead of =";
+               addRepair(rw,desc,1.0);
+             }
             break;
        }
     }
@@ -193,8 +199,20 @@ private void stringCompare(ASTNode stmt,BractAstPattern pat,BractAstPattern repl
       JcompType lht = JcompAst.getExprType(lhs);
       JcompType rht = JcompAst.getExprType(rhs);
       if (lht.isStringType() || rht.isStringType()) {
+         if (lht.isAnyType() || rht.isAnyType()) return;
          ASTRewrite rw = repl.replace(n,vals);
-         addRepair(rw,"Use equals for string comparison",0.75);
+         if (rw != null) {
+            String desc = null;
+            if (pat == equal_pattern) {
+               desc = "Use " + vals.get("x") + ".equals(" + vals.get("y") + ")";
+               desc += " instead of ==";
+             }
+            else {
+               desc = "Use !" + vals.get("x") + ".equals(" + vals.get("y") + ")";
+               desc += " instead of !=";
+             }
+            addRepair(rw,desc,0.75);
+          }
        }
     } 
 }
@@ -210,31 +228,37 @@ private void stringCompare(ASTNode stmt,BractAstPattern pat,BractAstPattern repl
 
 private void checkStringOperations(ASTNode stmt)
 { 
+   if (!(stmt instanceof ExpressionStatement)) return;
+   
+   ExpressionStatement estmt = (ExpressionStatement) stmt;
+   Expression expr = estmt.getExpression();
+   PatternMap vals = new PatternMap();
+   if (!string_call.match(expr,vals)) return;
    Map<ASTNode,PatternMap> rslt = string_call.matchAll(stmt,null);
    if (rslt == null) return;
-   for (ASTNode n : rslt.keySet()) {
-      PatternMap vals = rslt.get(n);
-      ASTNode lhs = (ASTNode) vals.get("x");
-      JcompType lht = JcompAst.getExprType(lhs);
-      if (!lht.isStringType()) continue;
-      SimpleName mthd = (SimpleName) vals.get("m");
-      switch (mthd.getIdentifier()) {
-         case "concat" :
-         case "intern" :
-         case "replace" :
-         case "replaceAll" :
-         case "replaceFirst" :
-         case "substring" :
-         case "toLowerCase" :
-         case "toString" :
-         case "toUpperCase" :
-         case "trim" :
-            ASTRewrite rw = string_result.replace(n,vals);
-            addRepair(rw,"String functions return resultant string",0.9);
-            break;
-         default :
-            break;
-       }
+   ASTNode lhs = (ASTNode) vals.get("x");
+   JcompType lht = JcompAst.getExprType(lhs);
+   if (!lht.isStringType()) return;
+   SimpleName mthd = (SimpleName) vals.get("m");
+   switch (mthd.getIdentifier()) {
+      case "concat" :
+      case "intern" :
+      case "replace" :
+      case "replaceAll" :
+      case "replaceFirst" :
+      case "substring" :
+      case "toLowerCase" :
+      case "toString" :
+      case "toUpperCase" :
+      case "trim" :
+         ASTRewrite rw = string_result.replace(expr,vals);
+         if (rw != null) {
+            String desc = "Assign result of " + mthd + " to " + lhs;
+            addRepair(rw,desc,0.9);
+          }
+         break;
+      default :
+         break;
     }
 }
 
@@ -251,7 +275,10 @@ private void checkLoopIndex(ASTNode stmt)
    PatternMap rslt = new PatternMap();
    if (loop_pattern.match(stmt,rslt)) {
       ASTRewrite rw = loop_result.replace(stmt,rslt);
-      addRepair(rw,"Loop from 0 to n-1",0.5);
+      if (rw != null) {
+         String desc = "Change for to loop from 0 to " + rslt.get("max") + "-1";
+         addRepair(rw,desc,0.5);
+       }
     }
 }
 
@@ -271,8 +298,12 @@ private void checkNonAssignment(ASTNode stmt)
       ASTNode p = n.getParent();
       switch (p.getNodeType()) {
          case ASTNode.EXPRESSION_STATEMENT :
-            ASTRewrite rw = assign_result.replace(n,rslt.get(n));
-            addRepair(rw,"Use = rather than == in assignment",0.9);
+            PatternMap pmap = rslt.get(n);
+            ASTRewrite rw = assign_result.replace(n,pmap);
+            if (rw != null) {
+               String desc = "Use " + pmap.get("x") + " = ... rather than ==";
+               addRepair(rw,desc,0.9);
+             }
             break;
        }
     }
@@ -291,8 +322,13 @@ private void checkMultiplyForZero(ASTNode stmt)
    Map<ASTNode,PatternMap> rslt = mult_pattern.matchAll(stmt,null);
    if (rslt == null) return;
    for (ASTNode n : rslt.keySet()) {
-      ASTRewrite rw = mult_result.replace(n,rslt.get(n));
-      addRepair(rw,"Use x == 0 || y == 0",0.9);
+      PatternMap pmap = rslt.get(n);
+      ASTRewrite rw = mult_result.replace(n,pmap);
+      if (rw != null) {
+         String desc = "Use " + pmap.get("x") + " == 0 || " + pmap.get("y") + " == 0";
+         desc += " instead of multiplication";   
+         addRepair(rw,desc,0.9);
+       }
     }
 }
 

@@ -133,6 +133,23 @@ ASTNode getExceptionNode(RootProblem prob);
 
 
 /**
+ *      Return information about an assertion problem
+ **/
+
+AssertionData getAssertionData(RootProblem prob);
+
+
+interface AssertionData {
+   ASTNode getExpression();
+   String getOriginalValue();
+   String getTargetValue();
+   boolean isLocation();
+}
+
+
+
+
+/**
  *      Find project associated with a given file
  **/
 

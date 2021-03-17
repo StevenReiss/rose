@@ -218,6 +218,8 @@ private static class NullValue extends BudValue {
       xw.field("NULL",true);
     }
    
+   @Override public String toString()          { return "null"; }
+   
 }       // end of inner class NullValue
 
 
@@ -241,6 +243,10 @@ private static class BooleanValue extends BudValue {
    
    @Override protected void localOutputXml(IvyXmlWriter xw) {
       xw.field("BOOLEAN",cur_value);
+    }
+   
+   @Override public String toString() {
+      return Boolean.toString(cur_value);
     }
    
 }       // end of inner class BooleanValue
@@ -270,6 +276,8 @@ private static class NumericValue extends BudValue {
       xw.field("NUMBER",cur_value);
     }
    
+   @Override public String toString()           { return cur_value.toString(); }
+   
 }       // end of inner class IntegerValue
 
 
@@ -297,6 +305,8 @@ private static class StringValue extends BudValue {
       xw.field("STRING",true);
       xw.cdataElement("CONTENTS",cur_value);
     }
+   
+   @Override public String toString()           { return "\"" + cur_value + "\""; }
    
 }       // end of inner class StringValue
 
@@ -355,6 +365,26 @@ private static class ObjectValue extends BudValue {
          xw.end("FIELD");
        }
     }
+   
+   @Override public String toString() {
+      StringBuffer buf = new StringBuffer();
+      buf.append("{ ");
+      int ct = 0;
+      for (Map.Entry<String,BudGenericValue> ent : field_values.entrySet()) {
+         BudGenericValue gv = ent.getValue();
+         if (gv instanceof BudValue) {
+            BudValue bv = (BudValue) gv;
+            if (bv.getDataType().isArrayType() || bv.getDataType().isObjectType()) continue;
+            if (ct++ > 0) buf.append(",");
+            buf.append(ent.getKey());
+            buf.append(":");
+            buf.append(bv.toString());
+          }
+       }
+      buf.append("}");
+      return buf.toString();
+    }
+   
 }       // end of inner class ObjectValue
 
 

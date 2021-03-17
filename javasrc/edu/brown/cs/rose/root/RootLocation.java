@@ -88,7 +88,7 @@ protected RootLocation(RootControl ctrl,Element xml)
       else end_offset = start_offset+1;
     }
    project_name = IvyXml.getAttrString(xml,"PROJECT");
-   if (project_name == null) {
+   if (project_name == null && ctrl != null) {
       project_name = ctrl.getProjectForFile(for_file);
     }
     
@@ -98,18 +98,16 @@ protected RootLocation(RootControl ctrl,Element xml)
    method_offset = 0;
    method_length = 0;
    in_method = IvyXml.getAttrString(xml,"METHOD");
-   if (in_method == null) {
-      Element itm = IvyXml.getChild(xml,"ITEM");
-      if (itm != null) {
-         String typ = IvyXml.getAttrString(itm,"TYPE");
-         if (typ.equals("Function")) {
-            in_method = IvyXml.getAttrString(itm,"QNAME");
-          }
-         full_method = IvyXml.getAttrString(itm,"HANDLE");
-         if (full_method == null) full_method = IvyXml.getAttrString(itm,"KEY");
-         method_offset = IvyXml.getAttrInt(itm,"STARTOFFSET");
-         method_length = IvyXml.getAttrInt(itm,"LENGTH");
+   Element itm = IvyXml.getChild(xml,"ITEM");
+   if (itm != null) {
+      String typ = IvyXml.getAttrString(itm,"TYPE");
+      if (typ.equals("Function") && in_method == null) {
+         in_method = IvyXml.getAttrString(itm,"QNAME");
        }
+      full_method = IvyXml.getAttrString(itm,"HANDLE");
+      if (full_method == null) full_method = IvyXml.getAttrString(itm,"KEY");
+      method_offset = IvyXml.getAttrInt(itm,"STARTOFFSET");
+      method_length = IvyXml.getAttrInt(itm,"LENGTH");
     }
 }
 
@@ -123,7 +121,12 @@ protected RootLocation(File f,int start,int end,int line,String proj,String meth
    project_name = proj;
    if (pri <= 0) pri = DEFAULT_PRIORITY;
    location_priority = pri;
+   full_method = method;
    in_method = method;
+   if (method != null) {
+      int idx = method.indexOf("(");
+      if (idx > 0) in_method = method.substring(0,idx);
+    }
 }
 
 
@@ -142,11 +145,22 @@ public String getProject()                      { return project_name; }
 public double getPriority()                     { return location_priority; }
 public void setPriority(double v)               { location_priority = v; }
 
-public String getMethod()                       { return in_method; }
+public String getMethod()    
+{
+   if (in_method != null) return in_method;
+   if (full_method != null) return full_method;
+   
+   return in_method; 
+}
 
 protected void setMethodData(String full,int off,int len)
 {
    full_method = full;
+   if (in_method == null) {
+      int idx = full.indexOf("(");
+      if (idx > 0) in_method = full.substring(0,idx);
+      else in_method = full;
+    }
    method_offset = off;
    method_length = len;
 }
@@ -183,7 +197,7 @@ public void outputXml(IvyXmlWriter xw)
       xw.field("ENDOFFSET",end_offset);
       xw.field("LENGTH",end_offset - start_offset);
     }
-   else {
+   else if (start_offset > 0) {
       xw.field("LENGTH",1);
       xw.field("ENDOFFSET",start_offset+1);
     }
@@ -193,12 +207,23 @@ public void outputXml(IvyXmlWriter xw)
       xw.field("TYPE","Function");
       xw.field("METHOD",in_method);
       xw.begin("ITEM");
+      int idx1 = in_method.lastIndexOf(".");
+      if (idx1 > 0) xw.field("NAME",in_method.substring(idx1+1));
+      else xw.field("NAME",in_method);
       xw.field("QNAME",in_method);
       xw.field("TYPE","Function");
-      xw.field("STARTOFFSET",method_offset);
-      xw.field("LENGTH",method_length);
-      xw.field("KEY",full_method);
-      xw.field("HANDLE",full_method);
+      if (method_offset > 0) {
+         xw.field("STARTOFFSET",method_offset);
+         xw.field("LENGTH",method_length);
+       }
+      if (full_method != null) {
+         xw.field("KEY",full_method);
+         xw.field("HANDLE",full_method);
+       }
+      else {
+         xw.field("KEY",in_method);
+         xw.field("HANDLE",in_method);
+       }
       xw.field("PROJECT",project_name);
       xw.end("ITEM");
     }

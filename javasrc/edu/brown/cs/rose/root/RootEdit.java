@@ -97,6 +97,30 @@ public RootEdit(File f,TextEdit te)
 
 
 /********************************************************************************/
+/*                                                                              */
+/*      Access methods                                                          */
+/*                                                                              */
+/********************************************************************************/
+
+public File getFile()                           { return base_file; }
+
+public Element getTextEdit()
+{
+   if (complete_edit != null) return complete_edit;
+   
+   IvyXmlWriter xw = new IvyXmlWriter();
+   xw.begin("EDIT");
+   xw.field("FILE",base_file);
+   outputTextEdit(text_edit,xw);
+   xw.end("EDIT");
+   Element rslt = IvyXml.convertStringToXml(xw.toString());
+   xw.close();
+   return rslt;
+}
+
+
+
+/********************************************************************************/
 /*										*/
 /*	Output methods								*/
 /*										*/

@@ -40,6 +40,8 @@ import org.w3c.dom.Element;
 import edu.brown.cs.ivy.mint.MintConstants.CommandArgs;
 import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.rose.root.RootControl;
+import edu.brown.cs.rose.root.RootRepair;
+import edu.brown.cs.rose.root.RootTestCase;
 import edu.brown.cs.rose.root.RoseLog;
 
 class ValidateExecution implements ValidateConstants
@@ -58,6 +60,7 @@ private String          session_id;
 private ValidateTrace   seede_result;
 private ExecState       exec_state;
 private ValidateContext for_context;
+private RootRepair      for_repair;
 
 
 
@@ -67,12 +70,13 @@ private ValidateContext for_context;
 /*                                                                              */
 /********************************************************************************/
 
-ValidateExecution(String sid,ValidateContext ctx)
+ValidateExecution(String sid,ValidateContext ctx,RootRepair repair)
 {
    session_id = sid;
    for_context = ctx;
    seede_result = null;
    exec_state = ExecState.INITIAL;
+   for_repair = repair;
 }
 
 
@@ -84,6 +88,8 @@ ValidateExecution(String sid,ValidateContext ctx)
 /********************************************************************************/
 
 String getSessionId()                   { return session_id; }
+
+RootRepair getRepair()                  { return for_repair; }
 
 
 
@@ -167,6 +173,22 @@ ValidateTrace getSeedeResult()
       return seede_result;
     }
 }
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Handle test cases                                                       */
+/*                                                                              */
+/********************************************************************************/
+
+double checkTest(RootTestCase rtc)
+{
+   if (rtc == null) return 1;
+   
+   return seede_result.checkTest(rtc);
+}
+
 
 
 }       // end of class ValidateExecution

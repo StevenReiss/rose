@@ -47,9 +47,11 @@ import edu.brown.cs.ivy.mint.MintHandler;
 import edu.brown.cs.ivy.mint.MintMessage;
 import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.rose.bud.BudLaunch;
+import edu.brown.cs.rose.bud.BudStackFrame;
 import edu.brown.cs.rose.root.RootControl;
 import edu.brown.cs.rose.root.RootLocation;
 import edu.brown.cs.rose.root.RootProblem;
+import edu.brown.cs.rose.root.RootTestCase;
 import edu.brown.cs.rose.root.RootValidate;
 import edu.brown.cs.rose.root.RoseLog;
 public class ValidateFactory implements ValidateConstants
@@ -127,8 +129,17 @@ public RootControl getControl()                 { return root_control; }
 public RootValidate createValidate(RootProblem prob,String frameid,RootLocation atloc)
 {
    BudLaunch bl = new BudLaunch(root_control,prob);
+   
+   if (frameid == null) {
+      RootTestCase rtc = prob.getCurrentTest();
+      if (rtc != null) {
+         frameid = rtc.getFrameId();
+       }
+      RoseLog.logD("VALIDATE","Use start from test case " + frameid);
+    }
 
    if (frameid == null) {
+      RoseLog.logD("VALIDATE","Create start location");
       ValidateStartLocator ssl = new ValidateStartLocator(prob,bl,atloc);
       frameid = ssl.getStartingFrame();
     }
@@ -142,6 +153,24 @@ public RootValidate createValidate(RootProblem prob,String frameid,RootLocation 
    ctx.setupBaseExecution();
    
    return ctx;
+}
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Just compute the starting point                                         */
+/*                                                                              */
+/********************************************************************************/
+
+public BudStackFrame getStartingFrame(RootProblem prob,RootLocation atloc)
+{
+   BudLaunch bl = new BudLaunch(root_control,prob);
+   ValidateStartLocator ssl = new ValidateStartLocator(prob,bl,atloc);
+   String frameid = ssl.getStartingFrame();
+   for (BudStackFrame bsf : bl.getStack().getFrames()) {
+      if (bsf.getFrameId().equals(frameid)) return bsf;
+    }
+   return null;
 }
 
 

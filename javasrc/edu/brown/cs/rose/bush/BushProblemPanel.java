@@ -35,6 +35,7 @@
 
 package edu.brown.cs.rose.bush;
 
+import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Point;
@@ -54,6 +55,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
 import org.w3c.dom.Element;
@@ -72,12 +74,15 @@ import edu.brown.cs.bubbles.buda.BudaConstants.BudaLinkStyle;
 import edu.brown.cs.bubbles.bump.BumpConstants.BumpRunValue;
 import edu.brown.cs.bubbles.bump.BumpConstants.BumpStackFrame;
 import edu.brown.cs.bubbles.bump.BumpConstants.BumpThread;
+import edu.brown.cs.bubbles.bump.BumpConstants.BumpThreadStack;
 import edu.brown.cs.bubbles.bump.BumpLocation;
 import edu.brown.cs.bubbles.buss.BussBubble;
 import edu.brown.cs.bubbles.bump.BumpConstants.BumpEvaluationHandler;
 import edu.brown.cs.ivy.mint.MintConstants.CommandArgs;
+import edu.brown.cs.ivy.swing.SwingColors;
 import edu.brown.cs.ivy.swing.SwingComboBox;
 import edu.brown.cs.ivy.swing.SwingGridPanel;
+import edu.brown.cs.ivy.swing.SwingText;
 import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
 import edu.brown.cs.rose.root.RootNodeContext;
@@ -99,6 +104,7 @@ private BaleFileOverview bale_file;
 private VariablePanel	variable_panel;
 private ExpressionPanel  expression_panel;
 private DataPanel       exception_panel;
+private DataPanel       assertion_panel;
 private DataPanel       location_panel;
 private DataPanel       other_panel;
 private JPanel		content_panel;
@@ -106,6 +112,7 @@ private JButton         show_button;
 private JButton         suggest_button;
 private JComboBox<?>    problem_panel;
 private DataPanel       active_panel;    
+private AdvancedPanel   advanced_panel;
 private BushUsageMonitor usage_monitor;
 private Map<String,Element> expression_data;
 private boolean         rose_ready;
@@ -175,6 +182,8 @@ private JPanel createDisplay()
    expression_panel.setVisible(false);
    exception_panel = new ExceptionPanel();
    exception_panel.setVisible(false);
+   assertion_panel = new AssertionPanel();
+   assertion_panel.setVisible(false);
    location_panel = new LocationPanel();
    location_panel.setVisible(false);
    other_panel = new OtherPanel();
@@ -195,8 +204,14 @@ private JPanel createDisplay()
          for_frame.getLevel());
    if (for_thread.getExceptionType() != null &&
 	 for_thread.getStack().getFrame(0) == for_frame) {
-      choices.add("Exception should not be thrown");
-      active_panel = exception_panel;
+      if (for_thread.getExceptionType().equals("java.lang.AssertionError")) {
+         choices.add("Assertion should not have failed");
+         active_panel = assertion_panel;
+       }
+      else {
+         choices.add("Exception should not be thrown");
+         active_panel = exception_panel;
+       }
     }
    choices.add("Should not be here");
    choices.add("Variable value incorrect");
@@ -205,7 +220,7 @@ private JPanel createDisplay()
    problem_panel = pnl.addChoice("Problem",choices,0,false,new PanelSelector());
    problem_panel.setEnabled(false);
    
-   show_button = pnl.addBottomButton("Show History","HISTORY",new ShowHandler());
+   show_button = pnl.addBottomButton("Show Locations","HISTORY",new ShowHandler());
    show_button.setEnabled(false);
    suggest_button = pnl.addBottomButton("Suggest Repairs","SUGGEST",new SuggestHandler());
    EnableWhenReady ewr = new EnableWhenReady();
@@ -215,7 +230,25 @@ private JPanel createDisplay()
    pnl.addLabellessRawComponent("EXPRSSIONS",expression_panel);
    pnl.addLabellessRawComponent("OTHER",other_panel);
    
+   BorderLayout blay = new BorderLayout();
+   JPanel advpnl = new JPanel(blay);
+   advpnl.setOpaque(false);
+   advpnl.setBackground(SwingColors.SWING_TRANSPARENT);
+   JButton btn = new JButton("advanced");
+   btn.setFont(SwingText.deriveSmaller(btn.getFont()));
+   btn.setHorizontalTextPosition(SwingConstants.RIGHT);
+   btn.addActionListener(new AdvancedButton());
+   btn.setBorderPainted(false);
+   btn.setContentAreaFilled(false);
+   advpnl.add(btn,BorderLayout.EAST);
+   pnl.addRawComponent(null,advpnl);
+   
    pnl.addSeparator();
+   advanced_panel = new AdvancedPanel();
+   advanced_panel.setVisible(false);
+   advanced_panel.setOpaque(false);
+   advanced_panel.setBackground(SwingColors.SWING_TRANSPARENT);
+   pnl.addLabellessRawComponent("ADVANCED",advanced_panel);
    
    pnl.addBottomButtons();
    
@@ -267,6 +300,9 @@ private class PanelSelector implements ActionListener {
       switch (v) {
          case "Exception should not be thrown" :
             active_panel = exception_panel;
+            break;
+         case "Assertion should not have failed" :
+            active_panel = assertion_panel;
             break;
          case "Should not be here" :
             active_panel = location_panel;
@@ -362,7 +398,6 @@ private class ShowHandler implements ActionListener, Runnable {
          if (loc != null) {
             if (reason != null) locs.put(loc,reason);
             loclist.add(loc);
-            BoardLog.logD("BUSH","LOC " + IvyXml.convertXmlToString(nelt) + " " + loc);
             double pri = IvyXml.getAttrDouble(nelt,"PRIORITY");
             BushLocation bloc = new BushLocation(loc,pri);
             bloclist.add(bloc);
@@ -507,6 +542,19 @@ private class ExceptionPanel extends DataPanel {
     }
 
 }       // end of inner class ExceptionPanel
+
+
+private class AssertionPanel extends DataPanel {
+
+   private static final long serialVersionUID = 1;
+   
+   @Override public boolean isReady()                           { return true; }
+   
+   @Override public BushProblem getProblem() {
+      return new BushProblem(for_frame,RoseProblemType.ASSERTION,for_thread.getExceptionType(),null,null,null);
+    }
+   
+}       // end of inner class AssertionPanel
 
 
 
@@ -1080,6 +1128,50 @@ private class EnableWhenReady extends Thread {
    
 }       // end of inner class EnableWhenReady
 
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Advanced panel                                                          */
+/*                                                                              */
+/********************************************************************************/
+
+private class AdvancedButton implements ActionListener {
+  
+   @Override public void actionPerformed(ActionEvent evt) {
+      BoardLog.logD("BUSH","Enable advanced panel");
+      if (advanced_panel != null) {
+         if (advanced_panel.isVisible()) advanced_panel.setVisible(false);
+         else advanced_panel.setVisible(true);
+       }
+      updateSize();
+    }
+   
+}       // end of inner class AdvancedButton
+
+
+private class AdvancedPanel extends SwingGridPanel {
+   
+   AdvancedPanel() {
+      beginLayout();
+      List<String> frames = new ArrayList<>();
+      BumpThreadStack bts = for_thread.getStack();
+      int idx = 0;
+      for (int i = 0; i < bts.getNumFrames(); ++i) {
+         BumpStackFrame frm = bts.getFrame(i);
+         if (frm.isSystem() || frm.isSynthetic()) continue;
+         frames.add(frm.getDisplayString());
+         if (frm == for_frame) idx = i;
+       }
+      addChoice("Entry",frames,idx,null);
+      String [] alts = new String [] { "Return", "Throw" };
+      addChoice("Should",alts,0,null);
+      addTextField("Return Value",null,32,null,null);
+      addTextField("Exception Type",null,32,null,null);
+      // add list box for other values
+    };
+  
+}       // end of inner class AdvancedPanel
 
 
 }	// end of class BushProblemPanel

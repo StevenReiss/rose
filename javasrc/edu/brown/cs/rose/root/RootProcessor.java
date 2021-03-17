@@ -58,7 +58,11 @@ void sendRepair(RootRepair repair);
 
 void validateRepair(RootRepair repair);
 
+/**
+ *      Note subtask to be completed
+ **/
 
+void addSubtask(RootTask task);
 
 }       // end of interface RootProcessor
 

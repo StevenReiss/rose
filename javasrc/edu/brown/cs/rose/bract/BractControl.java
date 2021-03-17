@@ -50,6 +50,7 @@ import edu.brown.cs.rose.root.RootThreadPool;
 import edu.brown.cs.rose.root.RootValidate;
 import edu.brown.cs.rose.root.RoseLog;
 import edu.brown.cs.rose.root.RootRepairFinder;
+import edu.brown.cs.rose.root.RootTask;
 
 public class BractControl extends Thread implements RootProcessor, BractConstants
 {
@@ -68,6 +69,7 @@ private RootLocation at_location;
 private List<Class<?>> processor_classes;
 private List<Class<?>> location_classes;
 private RootValidate base_validator;
+private List<RootTask> sub_tasks;
 
 
 
@@ -88,6 +90,7 @@ BractControl(RootControl ctrl,String id,RootProblem prob,RootLocation at,
    processor_classes = pclass;
    location_classes = lclass;
    base_validator = validator;
+   sub_tasks = new ArrayList<>();
 }
 
 
@@ -140,8 +143,25 @@ public RootControl getController()              { return rose_control; }
       pt.waitForDone();
     }
    
+   while (!sub_tasks.isEmpty()) {
+      List<RootTask> t = null;
+      synchronized (sub_tasks) {
+         t = new ArrayList<>(sub_tasks);
+         sub_tasks.clear();
+       }
+      for (RootTask rt : t) rt.waitForDone();
+    }
+   
    CommandArgs args = new CommandArgs("NAME",reply_id);
    rose_control.sendRoseMessage("ENDSUGGEST",args,null,-1);
+}
+
+
+@Override public void addSubtask(RootTask rt)
+{
+   synchronized (sub_tasks) {
+      sub_tasks.add(rt);
+    }
 }
 
 
@@ -164,6 +184,8 @@ private ProcessorTask startTask(Class<?> cls,RootProblem p,RootLocation l)
    RootThreadPool.start(pt);
    return pt;
 }
+
+
 
 
 private List<RootLocation> getLocations()
@@ -211,14 +233,12 @@ private List<RootLocation> getLocations()
 /*                                                                              */
 /********************************************************************************/
 
-private static class ProcessorTask implements Runnable {
+private static class ProcessorTask extends RootTask {
    
    private RootRepairFinder repair_finder;
-   private boolean is_done;
    
    ProcessorTask(RootRepairFinder brf) {
       repair_finder = brf;
-      is_done = false;
     }
    
    @Override public void run() {
@@ -231,18 +251,8 @@ private static class ProcessorTask implements Runnable {
        }
       finally {
          synchronized (this) {
-            is_done = true; 
-            notifyAll();
+            noteDone();
           }
-       }
-    }
-   
-   synchronized void waitForDone() {
-      while (!is_done) {
-         try {
-            wait(4000);
-          }
-         catch (InterruptedException e) { }
        }
     }
    

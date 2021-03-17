@@ -56,9 +56,10 @@ public class RootRepairDefault extends RootRepair
 /*                                                                              */
 /********************************************************************************/
 
-RootRepairDefault(RootRepairFinder finder,String desc,double pri,RootLocation loc,TextEdit te)
+RootRepairDefault(RootRepairFinder finder,String desc,double pri,RootLocation loc,TextEdit te,
+        RootLineMap linemap)
 {
-   super(finder,desc,pri,loc,new RootEdit(loc.getFile(),te));
+   super(finder,desc,pri,loc,new RootEdit(loc.getFile(),te),linemap);
 }
 
 

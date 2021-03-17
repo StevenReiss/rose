@@ -35,6 +35,9 @@
 
 package edu.brown.cs.rose.root;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.w3c.dom.Element;
 
 import edu.brown.cs.ivy.xml.IvyXml;
@@ -59,6 +62,8 @@ private String          thread_id;
 private String          frame_id;
 private RootLocation    bug_location;
 private RootNodeContext node_context;
+private RootTestCase    current_test;
+private List<RootTestCase> other_tests; 
 
 
 
@@ -80,6 +85,8 @@ protected RootProblem(RoseProblemType typ,String item,String orig,String tgt,
    frame_id = null;
    bug_location = null;
    node_context = ctx;
+   current_test = null;
+   other_tests = null;
 }
 
 
@@ -99,6 +106,18 @@ protected RootProblem(RootControl ctrl,Element xml)
    Element ctx = IvyXml.getChild(xml,"CONTEXT");
    if (ctx == null) ctx = IvyXml.getChild(xml,"EXPRESSION");
    if (ctx != null) node_context = new RootNodeContext(ctx);
+   
+   Element test = IvyXml.getChild(xml,"TESTCASE");
+   if (test == null) current_test = null;
+   else current_test = new RootTestCase(test);
+   Element checks = IvyXml.getChild(xml,"CHECKS");
+   if (checks == null) other_tests = null;
+   else {
+      other_tests = new ArrayList<>();
+      for (Element telt : IvyXml.children(checks,"TESTCASE")) {
+         other_tests.add(new RootTestCase(telt));
+       }
+    }
 }
 
 
@@ -163,6 +182,11 @@ public RootLocation getBugLocation()            { return bug_location; }
 
 public RootNodeContext getNodeContext()         { return node_context; }
 
+public RootTestCase getCurrentTest()            { return current_test; }
+public void setCurrentTest(RootTestCase rtc)    { current_test = rtc; }
+
+public List<RootTestCase> getOtherTests()       { return other_tests; }
+
 
 
 
@@ -177,6 +201,8 @@ public String getDescription()
    switch (problem_type) {
       case EXCEPTION :
          return problem_item + " shouldn't be thrown";
+      case ASSERTION :
+         return "Assertion should not have failed";
       case EXPRESSION :
          return "Expression " + problem_item + " has the wrong value";
       case VARIABLE :
@@ -204,6 +230,14 @@ public void outputXml(IvyXmlWriter xw)
    if (target_value != null) xw.textElement("TARGET",target_value);
    if (bug_location != null) bug_location.outputXml(xw);
    if (node_context != null) node_context.outputXml(xw);
+   if (current_test != null) current_test.outputXml(xw);
+   if (other_tests != null) {
+      xw.begin("CHECKS");
+      for (RootTestCase rtc : other_tests) {
+         rtc.outputXml(xw);
+       }
+      xw.end("CHECKS");
+    }
    xw.end("PROBLEM");
 }
 

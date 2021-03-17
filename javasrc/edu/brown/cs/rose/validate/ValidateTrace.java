@@ -49,7 +49,9 @@ import edu.brown.cs.rose.bud.BudStack;
 import edu.brown.cs.rose.bud.BudStackFrame;
 import edu.brown.cs.rose.bud.BudType;
 import edu.brown.cs.rose.bud.BudValue;
+import edu.brown.cs.rose.root.RootTestCase;
 import edu.brown.cs.rose.root.RoseException;
+import edu.brown.cs.rose.root.RoseLog;
 
 public class ValidateTrace implements ValidateConstants
 {
@@ -153,6 +155,33 @@ ValidateValue getException()
    if (reason == null) return null;
    if (reason.equals("EXCEPTION")) {
       return new ValidateValue(IvyXml.getChild(ret,"VALUE"));
+    }
+   
+   return null;
+}
+
+
+
+boolean isReturn()
+{
+   Element runner = getRunner();
+   Element ret = IvyXml.getChild(runner,"RETURN");
+   String reason = IvyXml.getAttrString(ret,"REASON");
+   return reason.equals("RETURN");
+}
+
+
+
+ValidateValue getReturnValue()
+{
+   Element runner = getRunner();
+   Element ret = IvyXml.getChild(runner,"RETURN");
+   String reason = IvyXml.getAttrString(ret,"REASON");
+   if (reason == null) return null;
+   if (reason.equals("RETURN")) {
+      Element rval = IvyXml.getChild(ret,"VALUE");
+      if (rval == null) return null;
+      return new ValidateValue(rval);
     }
    
    return null;
@@ -365,6 +394,46 @@ private void findContextTime(Element ctx,BudLaunch launch,long from,long to)
    problem_time = from;
    problem_context = getCallForContext(ctx);
 }
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Handle checking execution against a test case                           */
+/*                                                                              */
+/********************************************************************************/
+
+double checkTest(RootTestCase rtc)
+{
+   if (rtc == null) return 1.0;
+   
+   ValidateValue exv = getException();
+   double value = 1.0;
+   
+   RoseLog.logD("VALIDATE","Check test case " + rtc.getThrows() + " " + isReturn() + " " + exv);
+   
+   if (rtc.getThrows()) {
+      if (exv == null) return 0.1;
+      String etyp = rtc.getThrowType();
+      if (etyp != null) {
+         // check if etyp and exv.getDataType() are consistent
+         // and scale value accordingly
+       }
+    }
+   else {
+      if (!isReturn()) return 0.1;
+      ValidateValue rtv = getReturnValue();
+      String eval = rtc.getReturnValue();
+      if (eval != null && rtv != null) {
+         // check return value here and scale value accordingly
+       }
+    }
+   
+   // check other values at this point
+   
+   return value;
+}
+
 
 
 

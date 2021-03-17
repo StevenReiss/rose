@@ -1,8 +1,8 @@
 /********************************************************************************/
 /*                                                                              */
-/*              RootConstants.java                                              */
+/*              RootLineMap.java                                                */
 /*                                                                              */
-/*      Global constants for ROOT and ROSE                                      */
+/*      Representing of mapping of lines before and after an edit               */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
@@ -35,46 +35,83 @@
 
 package edu.brown.cs.rose.root;
 
+import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 
-
-public interface RootConstants
+public class RootLineMap implements RootConstants
 {
 
-enum RoseValueKind {
-   UNKNOWN, PRIMITIVE, STRING, CLASS, OBJECT, ARRAY
-}
 
-enum RoseProblemType {
-   EXCEPTION,
-      ASSERTION,
-      VARIABLE,
-      EXPRESSION,
-      LOCATION,
-      OTHER
-}
+/********************************************************************************/
+/*                                                                              */
+/*      Private Storage                                                         */
+/*                                                                              */
+/********************************************************************************/
 
-
-String ROSE_PROJECT_INDEX_TYPE = "STMTSEARCHLOCAL";
-String ROSE_GLOBAL_INDEX_TYPE = "STMTSEARCHGLOBAL";
-
+private File            for_file;
+private Map<Integer,Integer> known_lines;
+private int             max_line;
 
 
 
 /********************************************************************************/
 /*                                                                              */
-/*      Priorities                                                              */
+/*      Constructors                                                            */
 /*                                                                              */
 /********************************************************************************/
 
-double DEFAULT_PRIORITY = 0.5;
+RootLineMap(File file,int ... pos)
+{
+   for_file = file;
+   known_lines = new HashMap<>();
+   max_line = -1;
+   for (int i = 0; i < pos.length-1; ++i) {
+      addMap(pos[i],pos[i+1]);
+    }
+}
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Add to mapping                                                          */
+/*                                                                              */
+/********************************************************************************/
+
+void addMap(int orig,int after) 
+{
+   Integer ivl = known_lines.get(orig);
+   if (ivl != null) after = Math.min(ivl,after);
+   known_lines.put(orig,after);
+   if (orig > max_line) max_line = orig;
+}
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Get edited line nubmer                                                  */
+/*                                                                              */
+/********************************************************************************/
+
+int getEditedLine(File f,int orig)
+{
+   if (!f.equals(for_file)) return orig;
+   Integer v = known_lines.get(orig);
+   if (v != null) return v;
+   if (orig > max_line && max_line > 0) {
+      Integer dv = known_lines.get(max_line);
+      return orig + (dv-max_line);
+    }
+   return orig;
+}
+
+
+
+}       // end of class RootLineMap
 
 
 
 
-}       // end of interface RootConstants
-
-
-
-
-/* end of RootConstants.java */
+/* end of RootLineMap.java */
 
