@@ -53,10 +53,12 @@ public class RootTestCase implements RootConstants
 /*                                                                              */
 /********************************************************************************/
 
+enum TestType { RETURNS, THROWS, LOOPS }
+
 private String          entry_frame;
 private String          entry_routine;
 private Map<String,String> initial_values;
-private boolean         is_throws;
+private TestType        test_type;
 private String          return_value;
 private Map<String,String> check_values;
 
@@ -72,7 +74,7 @@ public RootTestCase(Element xml)
 {
    entry_frame = IvyXml.getAttrString(xml,"FRAME");
    entry_routine = IvyXml.getAttrString(xml,"ROUTINE");
-   is_throws = IvyXml.getAttrBool(xml,"THROWS");
+   test_type = IvyXml.getAttrEnum(xml,"ACTION",TestType.RETURNS);
    return_value = IvyXml.getTextElement(xml,"RETURNS");
    initial_values = loadVarMap(xml,"INITIALIZE");
    check_values = loadVarMap(xml,"CHECK");
@@ -85,7 +87,7 @@ public RootTestCase(String fid,String rtn)
    entry_frame = fid;
    entry_routine = rtn;
    initial_values = null;
-   is_throws = false;
+   test_type = TestType.RETURNS;
    return_value = null;
    check_values = null;
 }
@@ -99,18 +101,18 @@ public RootTestCase(String fid,String rtn)
 
 public String getFrameId()              { return entry_frame; }
 
-public boolean getThrows()              { return is_throws; }
+public boolean getThrows()              { return test_type == TestType.THROWS; }
 
 public String getReturnValue()         
 { 
-   if (is_throws) return null;
+   if (test_type != TestType.RETURNS) return null;
    return return_value;
 }
 
 
 public String getThrowType()
 {
-   if (!is_throws) return null;
+   if (test_type != TestType.THROWS) return null;
    return return_value;
 }
 
@@ -118,15 +120,31 @@ public String getThrowType()
 
 public void setThrows(String exc)
 {
-   is_throws = true;
+   test_type = TestType.THROWS;
+   if (exc != null && exc.trim().length() == 0) exc = null;
    return_value = exc;
 }
 
 
 public void setReturns(String val)
 {
-   is_throws = false;
+   test_type = TestType.RETURNS;
+   if (val != null && val.trim().length() == 0) val = null;
    return_value = val;
+}
+
+
+public void addCheckValue(String nm,String val)
+{
+   if (nm == null || val == null) return;
+   if (check_values == null) check_values = new HashMap<>();
+   check_values.put(nm,val);
+}
+
+public void setLoops()
+{
+   test_type = TestType.LOOPS;
+   return_value = null;
 }
 
 
@@ -142,7 +160,7 @@ public void outputXml(IvyXmlWriter xw)
    xw.begin("TESTCASE");
    xw.field("FRAME",entry_frame);
    xw.field("ROUTINE",entry_routine);
-   xw.field("THROWS",is_throws);
+   xw.field("ACTION",test_type);
    if (return_value != null) xw.textElement("RETURNS",return_value);
    outputVarMap(xw,"INITIALIZE",initial_values);
    outputVarMap(xw,"CHECK",check_values);

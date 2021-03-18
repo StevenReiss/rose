@@ -1,5 +1,5 @@
 <project name='rose' default='jar' >
-			
+		
    <property file='build.properties' />
    <property name='PRO' value='/pro' />
    <property name='IVYBIN' value='${PRO}/ivy/java' />
@@ -23,6 +23,7 @@
    </target>
 
    <target name='all' depends='setup'>
+      <mkdir dir='./java' />
       <ant antfile="build.xml" dir="javasrc" />
    </target>
 

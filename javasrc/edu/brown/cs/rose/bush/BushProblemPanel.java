@@ -52,6 +52,7 @@ import javax.swing.AbstractAction;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
@@ -82,10 +83,13 @@ import edu.brown.cs.ivy.mint.MintConstants.CommandArgs;
 import edu.brown.cs.ivy.swing.SwingColors;
 import edu.brown.cs.ivy.swing.SwingComboBox;
 import edu.brown.cs.ivy.swing.SwingGridPanel;
+import edu.brown.cs.ivy.swing.SwingListPanel;
+import edu.brown.cs.ivy.swing.SwingListSet;
 import edu.brown.cs.ivy.swing.SwingText;
 import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
 import edu.brown.cs.rose.root.RootNodeContext;
+import edu.brown.cs.rose.root.RootTestCase;
 
 class BushProblemPanel implements BushConstants
 {
@@ -331,6 +335,23 @@ private class PanelSelector implements ActionListener {
 
 /********************************************************************************/
 /*                                                                              */
+/*      Helper methods                                                          */
+/*                                                                              */
+/********************************************************************************/
+
+private BushProblem getActiveProblem()
+{
+   BushProblem bp = active_panel.getProblem();
+   if (bp == null) return null;
+   bp.setCurrentTest(advanced_panel.getDefaultTest());
+   return bp;
+}
+
+
+
+
+/********************************************************************************/
+/*                                                                              */
 /*      Handle Show action                                                      */
 /*                                                                              */
 /********************************************************************************/
@@ -408,7 +429,7 @@ private class ShowHandler implements ActionListener, Runnable {
       if (locs.size() == 0) return;
       // if all the locs are in the same method, then create a different display
       
-      BushProblem bp = active_panel.getProblem();
+      BushProblem bp = getActiveProblem();
       if (bp != null) {
          BushFactory.getFactory().addFixAnnotations(bp,bloclist);
        }
@@ -430,7 +451,7 @@ private class SuggestHandler implements ActionListener {
    SuggestHandler() { }
    
    @Override public void actionPerformed(ActionEvent evt) {
-      BushProblem problem = active_panel.getProblem();
+      BushProblem problem = getActiveProblem();
       if (problem != null) {
          BushFactory bf = BushFactory.getFactory();
          AbstractAction rsa =  bf.getSuggestAction(problem,null,content_panel);
@@ -1150,28 +1171,175 @@ private class AdvancedButton implements ActionListener {
 }       // end of inner class AdvancedButton
 
 
-private class AdvancedPanel extends SwingGridPanel {
+private class AdvancedPanel extends SwingGridPanel implements ActionListener {
+   
+   private JComboBox<String> entry_box;
+   private JComboBox<String> should_box;
+   private JTextField return_field;
+   private JTextField except_field;
+   private VariableValuePanel check_panel;
+   private RootTestCase default_test;
+   
+   private static final long serialVersionUID = 1;
    
    AdvancedPanel() {
+      default_test = null;
       beginLayout();
       List<String> frames = new ArrayList<>();
       BumpThreadStack bts = for_thread.getStack();
       int idx = 0;
       for (int i = 0; i < bts.getNumFrames(); ++i) {
          BumpStackFrame frm = bts.getFrame(i);
-         if (frm.isSystem() || frm.isSynthetic()) continue;
+         if (frm.isSystem() || frm.isSynthetic() || frm.getFile() == null) continue;
          frames.add(frm.getDisplayString());
          if (frm == for_frame) idx = i;
        }
-      addChoice("Entry",frames,idx,null);
-      String [] alts = new String [] { "Return", "Throw" };
-      addChoice("Should",alts,0,null);
-      addTextField("Return Value",null,32,null,null);
-      addTextField("Exception Type",null,32,null,null);
-      // add list box for other values
+      entry_box = addChoice("Entry",frames,idx,this);
+      String [] alts = new String [] { "Return", "Throw", "Loop" };
+      should_box = addChoice("Should",alts,0,this);
+      return_field = addTextField("Return Value",null,32,this,null);
+      except_field = addTextField("Exception Type",null,32,this,null);
+      except_field.setVisible(false);
+      check_panel = new VariableValuePanel();
+      addRawComponent("Checks",check_panel);
     };
   
+    RootTestCase getDefaultTest() {
+       if (!isVisible()) return null;
+       return default_test;
+     }
+    
+    @Override public void actionPerformed(ActionEvent evt) {
+       switch (evt.getActionCommand()) {
+          case "Entry" :
+             break;
+          case "Should" :
+             String what = (String) should_box.getSelectedItem();
+             switch (what) {
+                case "Return" :
+                   return_field.setVisible(true);
+                   except_field.setVisible(false);
+                   break;
+                case "Throw" :
+                   return_field.setVisible(false);
+                   except_field.setVisible(true);
+                   break;
+                case "Loop" :
+                   return_field.setVisible(false);
+                   except_field.setVisible(false);
+                   break;
+              }
+             break;
+          case "Return Value" :
+             break;
+          case "Exception Value" :
+             break;
+          default :
+             BoardLog.logE("BUSH","Unknown action command for advanced panel " + 
+                   evt.getActionCommand());
+             return;
+        }
+       
+       int idx = entry_box.getSelectedIndex();
+       BumpThreadStack bts = for_thread.getStack();
+       BumpStackFrame frm = bts.getFrame(idx);
+       String mthd = frm.getFrameClass() + "." + frm.getMethod() + frm.getSignature();
+       default_test = new RootTestCase(frm.getId(),mthd);
+       if (return_field.isVisible()) default_test.setReturns(return_field.getText());
+       else if (except_field.isVisible()) default_test.setThrows(except_field.getText());
+       else default_test.setLoops();
+       VariableValueSet vset = (VariableValueSet) check_panel.getListModel();
+       for (int i = 0; i < vset.getSize(); ++i) {
+          VariableValue vv = vset.getElementAt(i);
+          default_test.addCheckValue(vv.getVariable(),vv.getValue());
+        }
+       
+       // add other tests
+     }
+    
 }       // end of inner class AdvancedPanel
+
+
+
+private static class VariableValue {
+   
+   private String variable_name;
+   private String variable_value;
+   
+   VariableValue() {
+      variable_name = null;
+      variable_value = null;
+    }
+   
+   void setVariableValue(String var,String val) {
+      variable_name = var;
+      variable_value = val;
+    }
+   
+   String getVariable()                 { return variable_name; }
+   String getValue()                    { return variable_value; }
+   
+   @Override public String toString() {
+      return variable_name + " = " + variable_value;
+    }
+   
+}       // end of inner class VariableValue
+
+
+
+private static class VariableValueSet extends SwingListSet<VariableValue> {
+   
+   private static final long serialVersionUID = 1;
+   
+}       // end of inner class VariableValueSet
+
+
+
+private class VariableValuePanel extends SwingListPanel<VariableValue> {
+   
+   private static final long serialVersionUID = 1;
+   
+   VariableValuePanel() {
+      super(new VariableValueSet());
+      setVisibleRowCount(2);
+    }
+   
+   @Override protected VariableValue createNewItem() {
+      return new VariableValue();
+    }
+   
+   @Override protected VariableValue editItem(Object itm) {
+      VariableValue vv = (VariableValue) itm;
+      editVariableValue(vv);
+      if (vv.getVariable() == null || vv.getValue() == null) return null;
+      return vv;
+    }
+   
+   @Override protected VariableValue deleteItem(Object itm) {
+      return (VariableValue) itm;
+    }
+   
+}       // end of inner class VariableValuePanel
+
+
+private boolean editVariableValue(VariableValue vv) 
+{
+   SwingGridPanel pnl = new SwingGridPanel();
+   pnl.beginLayout();
+   pnl.addBannerLabel("Edit Variable = Value Check");
+   JTextField vnm = pnl.addTextField("Variable/Expression",vv.getVariable(),null,null);
+   JTextField vvl = pnl.addTextField("Should Equal",vv.getValue(),null,null);
+   int fg = JOptionPane.showOptionDialog(content_panel,pnl,"Edit Variable = Value Check",
+         JOptionPane.OK_CANCEL_OPTION,
+         JOptionPane.PLAIN_MESSAGE,
+         null,null,null);
+
+   if (fg != 0) return false;
+   String nm = vnm.getText();
+   String vl = vvl.getText();
+   vv.setVariableValue(nm,vl);
+   return true;
+}
 
 
 }	// end of class BushProblemPanel

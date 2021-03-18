@@ -55,6 +55,8 @@ import javax.swing.ListCellRenderer;
 import javax.swing.ListModel;
 import javax.swing.SwingUtilities;
 
+import org.w3c.dom.Element;
+
 import edu.brown.cs.bubbles.bale.BaleFactory;
 import edu.brown.cs.bubbles.board.BoardColors;
 import edu.brown.cs.bubbles.board.BoardLog;
@@ -66,6 +68,7 @@ import edu.brown.cs.bubbles.buda.BudaRoot;
 import edu.brown.cs.bubbles.bump.BumpLocation;
 import edu.brown.cs.ivy.file.IvyFormat;
 import edu.brown.cs.ivy.swing.SwingGridPanel;
+import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.rose.bush.BushConstants.BushRepairAdder;
 import edu.brown.cs.rose.root.RootEdit;
 import edu.brown.cs.rose.root.RootLocation;
@@ -400,13 +403,13 @@ private class RepairAction extends AbstractAction {
    @Override public void actionPerformed(ActionEvent e) {
       // BushFactory.metrics("REPAIR",...
       RootEdit redit = for_repair.getEdit();
-      BoardLog.logD("BUSH","MAKE REPAIR " + for_repair.getDescription() + " " + redit.getFile() + " " + redit.getTextEdit());
-      boolean fg = BaleFactory.getFactory().applyEdits(redit.getFile(),redit.getTextEdit());
-      if (!fg) {
-         BoardLog.logD("BUSH","EDIT WITH FILE FAILED");
-         BaleFactory.getFactory().applyEdits(redit.getTextEdit());
-       }
-    }
+      Element tedit = redit.getTextEdit();
+      
+      BoardLog.logD("BUSH","MAKE REPAIR " + for_repair.getDescription() + " " + redit.getFile() + " " + IvyXml.convertXmlToString(redit.getTextEdit()));
+      
+      if (IvyXml.isElement(tedit,"REPAIREDIT")) tedit = IvyXml.getChild(tedit,"EDIT");
+      BaleFactory.getFactory().applyEdits(redit.getFile(),tedit);
+   }
    
 }       // end of inner class RepairAction
 
