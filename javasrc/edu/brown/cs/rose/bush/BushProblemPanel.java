@@ -51,6 +51,7 @@ import java.util.Map;
 import javax.swing.AbstractAction;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -140,6 +141,8 @@ BushProblemPanel(BumpThread th,BumpStackFrame frm,Component base,BaleFileOvervie
    usage_monitor = null;
    expression_data = null;
    rose_ready = false;
+   
+   BushFactory.metrics("START",getMetricId());
 }
 
 
@@ -205,7 +208,7 @@ private JPanel createDisplay()
    pnl.addSeparator();
    List<String> choices = new ArrayList<>();
    BoardLog.logD("BUSH","Choices " + for_thread.getExceptionType() + " " +
-         for_frame.getLevel());
+         for_frame.getLevel() + " " + for_thread.getStack().getFrame(0) + " " + for_frame);
    if (for_thread.getExceptionType() != null &&
 	 for_thread.getStack().getFrame(0) == for_frame) {
       if (for_thread.getExceptionType().equals("java.lang.AssertionError")) {
@@ -349,7 +352,7 @@ private BushProblem getActiveProblem()
 
 
 
-
+ 
 /********************************************************************************/
 /*                                                                              */
 /*      Handle Show action                                                      */
@@ -387,7 +390,16 @@ private class ShowHandler implements ActionListener, Runnable {
                "OFFSET",off,
                "PROJECT",for_thread.getLaunch().getConfiguration().getProject(),
                "LINE",for_frame.getLineNumber());
-         String body = active_panel.addShowData(args);
+         
+         BushProblem bp = active_panel.getProblem();
+         IvyXmlWriter xw = new IvyXmlWriter();
+         bp.outputXml(xw);
+         String body = xw.toString();
+         xw.close();
+         
+         BushFactory.metrics("SHOW",getMetricId(),bp.getProblemType(),bp.getProblemDetail(),
+               bp.getOriginalValue(),bp.getTargetValue());
+         
          BushFactory bush = BushFactory.getFactory();
          Element rslt = bush.sendRoseMessage("HISTORY",args,body);
          if (IvyXml.isElement(rslt,"RESULT")) {
@@ -431,7 +443,7 @@ private class ShowHandler implements ActionListener, Runnable {
       
       BushProblem bp = getActiveProblem();
       if (bp != null) {
-         BushFactory.getFactory().addFixAnnotations(bp,bloclist);
+         BushFactory.getFactory().addFixAnnotations(bp,bloclist,getMetricId());
        }
       
       Rectangle ploc = content_panel.getBounds();
@@ -454,7 +466,7 @@ private class SuggestHandler implements ActionListener {
       BushProblem problem = getActiveProblem();
       if (problem != null) {
          BushFactory bf = BushFactory.getFactory();
-         AbstractAction rsa =  bf.getSuggestAction(problem,null,content_panel);
+         AbstractAction rsa =  bf.getSuggestAction(problem,null,content_panel,getMetricId());
          rsa.actionPerformed(evt);
        }
     }
@@ -496,21 +508,9 @@ private abstract static class DataPanel extends SwingGridPanel {
    
    abstract boolean isReady();
    
-   String addShowData(CommandArgs args) {
-      BushProblem bp = getProblem();
-      IvyXmlWriter xw = new IvyXmlWriter();
-      bp.outputXml(xw);
-      String body = xw.toString();
-      xw.close();
-      
-      BushFactory.metrics("SHOW",bp.getProblemType(),bp.getProblemDetail(),
-            bp.getOriginalValue(),bp.getTargetValue());
-      localMetrics();
-    
-      return body;
-   }
    
-   protected void localMetrics()                                   { }
+   
+   
    
    abstract BushProblem getProblem();
    
@@ -688,7 +688,7 @@ private abstract class VarExprPanel extends DataPanel implements ActionListener,
        }
       else {
          current_value.setForeground(BoardColors.getColor("Rose.value.color"));
-         String val = value.getType() + " " + value.getValue();
+         String val = "(" + value.getType() + ") " + value.getValue();
          if (value.getType().equals("null")) val = "null";
          current_value.setText(val);
          setupShouldBe(value);
@@ -705,11 +705,9 @@ private abstract class VarExprPanel extends DataPanel implements ActionListener,
    
    protected String getShouldBeValue() {
       String shd = (String) should_be.getSelectedItem();
-      if (shd.startsWith("Other")) {
+      if (shd.startsWith("Other") || shd.startsWith("A different value")) {
          shd = other_value.getText();
-       }
-      else if (shd.startsWith("A different value")) {
-         shd = null;
+         if (shd.equals("")) shd = null;
        }
       return shd;
     }
@@ -727,7 +725,7 @@ private abstract class VarExprPanel extends DataPanel implements ActionListener,
          should_be.setVisible(false);
        }
       else {
-         alternatives.add(0,"A different value");
+        // alternatives.add(0,"A different value");
          BoardLog.logD("BUSH","Should be contents: " + alternatives.size());
          should_be.setContents(alternatives);
          should_be.setSelectedIndex(0);
@@ -736,13 +734,7 @@ private abstract class VarExprPanel extends DataPanel implements ActionListener,
       setReady(true);
     }
    
-   @Override protected void localMetrics() {
-      String shd = (String) should_be.getSelectedItem();
-      if (shd.startsWith("Other")) {
-         shd = other_value.getText();
-         BushFactory.metrics("OTHERVALUE",getCurrentItem(),getCurrentValue(),shd);
-       }
-    }
+   
 }       // end of inner class VarExprPanel
 
 
@@ -951,8 +943,8 @@ private List<String> findBooleanAlternatives(BumpRunValue rv)
 private List<String> findStringAlterantives(BumpRunValue rv)
 {
    List<String> rslt = new ArrayList<>();
-   rslt.add("null");
    rslt.add("Other ...");
+   rslt.add("null");
    return rslt;
 }
 
@@ -1080,7 +1072,7 @@ private class OtherPanel extends DataPanel {
       setBackground(BoardColors.getColor("Rose.background.color"));
       setOpaque(false);
       beginLayout();
-      other_description = addTextArea("Describe Problem",null,32,4,null);
+      other_description = addTextArea("Describe Problem",null,4,32,null);
     }
    
    @Override public boolean isReady() {
@@ -1199,9 +1191,10 @@ private class AdvancedPanel extends SwingGridPanel implements ActionListener {
       should_box = addChoice("Should",alts,0,this);
       return_field = addTextField("Return Value",null,32,this,null);
       except_field = addTextField("Exception Type",null,32,this,null);
-      except_field.setVisible(false);
+      showField(except_field,false);
       check_panel = new VariableValuePanel();
       addRawComponent("Checks",check_panel);
+      showField(check_panel,false);
     };
   
     RootTestCase getDefaultTest() {
@@ -1217,16 +1210,16 @@ private class AdvancedPanel extends SwingGridPanel implements ActionListener {
              String what = (String) should_box.getSelectedItem();
              switch (what) {
                 case "Return" :
-                   return_field.setVisible(true);
-                   except_field.setVisible(false);
+                   showField(return_field,true);
+                   showField(except_field,false);
                    break;
                 case "Throw" :
-                   return_field.setVisible(false);
-                   except_field.setVisible(true);
+                   showField(return_field,false);
+                   showField(except_field,true);
                    break;
                 case "Loop" :
-                   return_field.setVisible(false);
-                   except_field.setVisible(false);
+                   showField(return_field,false);
+                   showField(except_field,false);
                    break;
               }
              break;
@@ -1255,6 +1248,12 @@ private class AdvancedPanel extends SwingGridPanel implements ActionListener {
         }
        
        // add other tests
+     }
+    
+    private void showField(JComponent field,boolean vis) {
+       JLabel lbl = getJLabelForComponent(field);
+       if (lbl != null) lbl.setVisible(vis);
+       field.setVisible(vis);
      }
     
 }       // end of inner class AdvancedPanel

@@ -37,6 +37,7 @@ package edu.brown.cs.rose.root;
 
 import java.io.File;
 import java.util.List;
+import java.util.Set;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jface.text.IDocument;
@@ -175,6 +176,9 @@ LeashIndex getProjectIndex();
  ***/
 
 LeashIndex getGlobalIndex();
+
+Set<File> getLoadedFiles();
+
 
 }       // end of interface RoseControl
 

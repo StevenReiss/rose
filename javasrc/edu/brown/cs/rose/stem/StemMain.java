@@ -122,6 +122,7 @@ private Map<File,String> project_map;
 private String          default_project;
 private LeashIndex      project_index;
 private LeashIndex      global_index;
+private Set<File>       loaded_files;
 
 
 private static boolean	use_all_files = true;
@@ -157,6 +158,7 @@ private StemMain(String [] args)
    analysis_state = AnalysisState.NONE;
    eval_handlers = new HashMap<>();
    stem_compiler = null;
+   loaded_files = new HashSet<>();
    scanArgs(args);
 }
 
@@ -530,11 +532,14 @@ private void handleParameterValuesCommand(MintMessage msg) throws RoseException
 
 @Override public AssertionData getAssertionData(RootProblem rp)
 {
-   if (rp.getProblemType() != RoseProblemType.ASSERTION) return null;
-   
-   StemQueryAssertionHistory query = new StemQueryAssertionHistory(this,rp);
-   
-   return query.getAssertionData();
+   if (rp.getProblemType() == RoseProblemType.ASSERTION) {
+      StemQueryAssertionHistory query = new StemQueryAssertionHistory(this,rp);
+      return query.getAssertionData();
+    }
+   else if (rp.getProblemType() == RoseProblemType.LOCATION) {
+      // check if previous statement is if (x == y) or (x.equals(y))
+    }
+   return null;
 }
 
 
@@ -1259,6 +1264,13 @@ private class WaitForExit extends Thread {
 /*										*/
 /********************************************************************************/
 
+@Override public Set<File> getLoadedFiles()
+{
+   return loaded_files;
+}
+
+
+
 private void loadFilesIntoFait(String tid)
 {
    Set<File> files = new HashSet<>();
@@ -1276,6 +1288,7 @@ private void loadFilesIntoFait(String tid)
        }
     }
    if (ct > 0) {
+      loaded_files.addAll(files);
       Element xw = sendFaitMessage("ADDFILE",null,buf.toString());
       if (IvyXml.isElement(xw,"RESULT")) {
 	 if (IvyXml.getAttrBool(xw,"ADDED")) {

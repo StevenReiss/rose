@@ -13,10 +13,12 @@
 <entry key="Rose.processor.1">edu.brown.cs.rose.sepal.SepalWrongVariable</entry>
 <entry key="Rose.processor.2">edu.brown.cs.rose.sepal.SepalForLoopIndex</entry>
 <entry key="Rose.processor.3">edu.brown.cs.rose.sepal.SepalCommonProblems</entry>
-<entry key="Rose.processor.4">edu.brown.cs.rose.sepal.SepalClassNullCondition</entry>
+<entry key="Rose.processor.4">edu.brown.cs.rose.sepal.SepalAvoidException</entry>
 <entry key="Rose.processor.5">edu.brown.cs.rose.sepal.SepalValueFixer</entry>
 <entry key="Rose.processor.6">edu.brown.cs.rose.sepal.SepalLocalSearch</entry>
 <entry key="Rose.processor.7">edu.brown.cs.rose.sepal.SepalIfCondition</entry>
+<entry key="Rose.processor.8">edu.brown.cs.rose.sepal.SepalIndexFixer</entry>
+<entry key="Rose.processor.9">edu.brown.cs.rose.sepal.SepalArgOrder</entry>
 </properties>
 
 

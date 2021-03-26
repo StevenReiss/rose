@@ -185,7 +185,7 @@ static void metrics(String cmd,Object ... args)
 /*                                                                              */
 /********************************************************************************/
 
-void addFixAnnotations(BushProblem prob,List<BushLocation> locs)
+void addFixAnnotations(BushProblem prob,List<BushLocation> locs,String mid)
 {
    BumpThread bt = prob.getThread();
    if (bt == null) return;
@@ -212,7 +212,7 @@ void addFixAnnotations(BushProblem prob,List<BushLocation> locs)
    if (uselocs.isEmpty()) return;
    
    for (BushLocation bl : uselocs) {
-      td.addFixAnnotation(prob,bl); 
+      td.addFixAnnotation(prob,bl,mid); 
     }
 }
 
@@ -251,9 +251,9 @@ void startRepairSuggestor(BushProblem prob,BushLocation loc,BushRepairAdder adde
 }
 
 
-AbstractAction getSuggestAction(BushProblem p,BushLocation l,Component c) 
+AbstractAction getSuggestAction(BushProblem p,BushLocation l,Component c,String mid) 
 {
-   return new RoseSuggestAction(p,l,c);
+   return new RoseSuggestAction(p,l,c,mid);
 }
 
 
@@ -317,7 +317,6 @@ private class RoseStarter extends Thread {
             catch (InterruptedException e) { }
           }
        }
-      metrics("START",panel_id);
     }
    
    synchronized void setPanelId(String id) {
@@ -711,8 +710,8 @@ private class ThreadData {
       fix_annots = new ArrayList<>();
     }
 
-   synchronized void addFixAnnotation(BushProblem bp,BushLocation loc) {
-      RoseFixAnnotation rfa = new RoseFixAnnotation(bp,loc);
+   synchronized void addFixAnnotation(BushProblem bp,BushLocation loc,String mid) {
+      RoseFixAnnotation rfa = new RoseFixAnnotation(bp,loc,mid);
       fix_annots.add(rfa);
       BaleFactory.getFactory().addAnnotation(rfa);
     }
@@ -817,10 +816,12 @@ private class RoseFixAnnotation implements BaleAnnotation {
   
    private BushProblem for_problem;
    private BushLocation for_location;
+   private String metric_id;
    
-   RoseFixAnnotation(BushProblem bp,BushLocation loc) {
+   RoseFixAnnotation(BushProblem bp,BushLocation loc,String mid) {
       for_problem = bp;
       for_location = loc;
+      metric_id = mid;
     }
    
    @Override public File getFile() { 
@@ -846,7 +847,7 @@ private class RoseFixAnnotation implements BaleAnnotation {
    @Override public int getPriority()	                        { return 10; }
    
    @Override public void addPopupButtons(Component base,JPopupMenu menu) {
-      menu.add(new RoseSuggestAction(for_problem,for_location,base));
+      menu.add(new RoseSuggestAction(for_problem,for_location,base,metric_id));
     }
    
 }       // end of inner class RoseFixAnnotation
@@ -887,7 +888,7 @@ private class AskRoseAction extends AbstractAction implements Runnable {
       
       BushProblemPanel pnl = new BushProblemPanel(for_thread,for_frame,base_editor,bale_file);
       starter.setPanelId(pnl.getMetricId());
-    
+      
       pnl.createBubble(base_editor);
    }
 
@@ -906,16 +907,18 @@ private static class RoseSuggestAction extends AbstractAction implements Runnabl
    private BushProblem for_problem;
    private BushLocation for_location;
    private Component from_component;
+   private String metric_id;
    private boolean create_bubble;
    
    private static final long serialVersionUID = 1;
    
-   RoseSuggestAction(BushProblem p,BushLocation l,Component c) {
+   RoseSuggestAction(BushProblem p,BushLocation l,Component c,String mid) {
       super("Suggest Repairs for " + p.getDescription() +
             (l != null ? " here" : ""));
       for_problem = p;
       for_location = l;
       from_component = c;
+      metric_id = mid;
       create_bubble = false;
     }
    
@@ -931,7 +934,10 @@ private static class RoseSuggestAction extends AbstractAction implements Runnabl
    
    @Override public void run() {
       if (create_bubble) {
-         BushSuggestPanel pnl = new BushSuggestPanel(from_component,for_problem,for_location);
+         metrics("SUGGEST",metric_id,for_problem.getProblemType(),for_problem.getProblemDetail(),
+               for_problem.getOriginalValue(),for_problem.getTargetValue());
+         // add metrics here
+         BushSuggestPanel pnl = new BushSuggestPanel(from_component,for_problem,for_location,metric_id);
          pnl.createBubble();
          BushFactory.getFactory().startRepairSuggestor(for_problem,for_location,pnl);
        }

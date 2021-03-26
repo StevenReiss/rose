@@ -119,6 +119,46 @@ public Element getTextEdit()
 }
 
 
+public int getEditStartOffset()
+{
+   if (text_edit != null) {
+      return text_edit.getOffset();
+    }
+   else if (complete_edit != null) {
+      int off = -1;
+      for (Element ed : IvyXml.elementsByTag(complete_edit,"EDIT")) {
+         int o = IvyXml.getAttrInt(ed,"OFFSET");
+         if (o >= 0) {
+            if (off < 0 || off > o) off = o;
+          }
+       }
+      if (off > 0) return off;
+    }
+   
+   return 0;
+}
+
+
+public int getEditEndOffset()
+{
+   if (text_edit != null) {
+      return text_edit.getExclusiveEnd();
+    }
+   else if (complete_edit != null) {
+      int off = -1;
+      for (Element ed : IvyXml.elementsByTag(complete_edit,"EDIT")) {
+         int o = IvyXml.getAttrInt(ed,"EXCEND");
+         if (o >= 0) {
+            if (off < 0 || off < o) off = o;
+          }
+       }
+      if (off > 0) return off;
+    }
+   
+   return 0;
+}
+
+
 
 /********************************************************************************/
 /*										*/

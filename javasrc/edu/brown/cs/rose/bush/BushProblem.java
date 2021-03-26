@@ -65,6 +65,13 @@ BushProblem(BumpStackFrame frame,RoseProblemType typ,String item,String orig,Str
 {
    super(typ,item,orig,tgt,ctx);
    setBugFrame(frame.getThread().getLaunch().getId(),frame.getThread().getId(),frame.getId());  
+   if (orig != null && orig.startsWith("(")) {
+      int idx = orig.indexOf(") ");
+      String vtyp = orig.substring(1,idx);
+      String val = orig.substring(idx+2);
+      orig = vtyp + " " + val;
+      setOriginalValue(orig);
+    }
    stack_frame = frame;
    RootLocation floc = new BushLocation(frame);
    setBugLocation(floc);

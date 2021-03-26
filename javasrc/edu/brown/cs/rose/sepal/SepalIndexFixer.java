@@ -1,8 +1,8 @@
 /********************************************************************************/
 /*                                                                              */
-/*              SepalForLoopIndex.java                                          */
+/*              SepalIndexFixer.java                                            */
 /*                                                                              */
-/*      Handle issues with a for loop index                                     */
+/*      Try different index expressoins on for with >1 increments               */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
@@ -35,17 +35,22 @@
 
 package edu.brown.cs.rose.sepal;
 
+import edu.brown.cs.rose.root.RootRepairFinderDefault;
+
+import java.util.Map;
+
+import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.ArrayAccess;
+import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.ForStatement;
 import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 
 import edu.brown.cs.rose.bract.BractAstPattern;
 import edu.brown.cs.rose.bract.BractConstants;
-import edu.brown.cs.rose.root.RootRepairFinderDefault;
 
-public class SepalForLoopIndex extends RootRepairFinderDefault
-        implements BractConstants 
+public class SepalIndexFixer extends RootRepairFinderDefault implements BractConstants, SepalConstants
 {
 
 
@@ -55,32 +60,16 @@ public class SepalForLoopIndex extends RootRepairFinderDefault
 /*                                                                              */
 /********************************************************************************/
 
-private static final BractAstPattern match_pattern;
-private static final BractAstPattern incr_pattern;
-private static final PatternMap match_values;
-private static final BractAstPattern result_pattern;
-private static final BractAstPattern delta_result;
-private static final BractAstPattern delta1_result;
+private static final BractAstPattern    for_pattern;
+private static final BractAstPattern    index_pattern;
 
 static {
-   incr_pattern = BractAstPattern.expression(
-         new PatternMap("delta",1),
-         "++Vi", "Vi++", "Vi = Vi+Idelta","Vi = Idelta + Vi",
-         "Vi+=Idelta");
-   match_pattern = BractAstPattern.statement( 
-         "for (int Vi = Iinit; Vi <= Varray.length; Pincr()) Sbody;",
-         "for (int Vi = Iinit; Vi <= Vcoll.size(); Pincr()) Sbody;",
-         "for (int Vi = Iinit; Vi < Varray.length; Pincr()) Sbody;",
-         "for (int Vi = Iinit; Vi < Vcoll.size(); Pincr()) Sbody;");
-   
-   match_values = new PatternMap("incr",incr_pattern);
-   
-   result_pattern = BractAstPattern.expression(
-         "Vi < Varray.length", "Vi < Vcoll.size()");
-   delta_result = BractAstPattern.expression(
-         "Vi < Varray.length - Id1", "Vi < Vcoll.size() - Id1");
-   delta1_result = BractAstPattern.expression(
-         "Vi <= Varray.length - Id1", "Vi <= Vcoll.size() - Id1");
+   for_pattern = BractAstPattern.statement(
+         "for (int Vi = Ey; Ex; Vi += Id) Sbody;",  
+         "for (int Vi = Ey; Ex; Vi -= Id) Sbody;"); 
+         
+   index_pattern = BractAstPattern.expression(
+         "Ea[Vi]", "Ea[Vi+Id1]", "Ea[Vi-Id1]" );
 }
 
 
@@ -91,8 +80,7 @@ static {
 /*                                                                              */
 /********************************************************************************/
 
-public SepalForLoopIndex()
-{ }
+public SepalIndexFixer()                        { }
 
 
 
@@ -106,32 +94,33 @@ public SepalForLoopIndex()
 {
    ASTNode stmt = getResolvedStatementForLocation(null);
    if (stmt == null) return;
-   if (stmt.getNodeType() != ASTNode.FOR_STATEMENT) return;
+   switch (stmt.getNodeType()) {
+      case ASTNode.EXPRESSION_STATEMENT :
+      case ASTNode.VARIABLE_DECLARATION_STATEMENT :
+         break;
+      default :
+         return;
+    }
    
-   PatternMap nmap = new PatternMap(match_values);
-   if (match_pattern.match(stmt,nmap)) {
-      ForStatement fs = (ForStatement) stmt;
-      InfixExpression ex = (InfixExpression) fs.getExpression();
-      ASTRewrite rw = null;
-      int iv = ((Integer) nmap.get("delta"));
-      String desc = null;
-      if (iv > 1) {
-         nmap.put("d1",iv-1);
-         if (ex.getOperator() == InfixExpression.Operator.LESS_EQUALS) 
-            rw = delta1_result.replace(ex,nmap);
-         else 
-            rw = delta_result.replace(ex,nmap);
-         desc = "Replace for condition with " + ex + "-" + (iv-1);
+   Map<ASTNode,PatternMap> rslt = index_pattern.matchAll(stmt,null);
+   if (rslt == null || rslt.size() == 0) return;
+   
+   boolean done = false;
+   for (ASTNode n = stmt.getParent(); n != null; n =  n.getParent()) {
+      switch (n.getNodeType()) {
+         case ASTNode.FOR_STATEMENT :
+            checkForStatement((ForStatement) n,rslt);
+            break;
+         case ASTNode.METHOD_DECLARATION :
+         case ASTNode.ANONYMOUS_CLASS_DECLARATION :
+         case ASTNode.CLASS_INSTANCE_CREATION :
+            done = true;
+            break;
        }
-      else if (ex.getOperator() == InfixExpression.Operator.LESS_EQUALS) {
-         desc = "Replace <= with < in for condition " + ex;
-         rw = result_pattern.replace(ex,nmap);
-       }
-      if (rw != null) {
-         addRepair(rw,desc,0.75);
-       }
+      if (done) break;
     }
 }
+
 
 
 @Override protected double getFinderPriority()
@@ -141,11 +130,50 @@ public SepalForLoopIndex()
 
 
 
+/********************************************************************************/
+/*                                                                              */
+/*      Check if indices are relevant to for statement                          */
+/*                                                                              */
+/********************************************************************************/
 
-}       // end of class SepalForLoopIndex
+private void checkForStatement(ForStatement fs,Map<ASTNode,PatternMap> rslt)
+{
+   for (Map.Entry<ASTNode,PatternMap> ent : rslt.entrySet()) {
+      ASTNode idxnode = ent.getKey();
+      AST ast = idxnode.getAST();
+      if (idxnode.getNodeType() != ASTNode.ARRAY_ACCESS) continue;
+      ArrayAccess accnode = (ArrayAccess) idxnode;
+      PatternMap pmap = new PatternMap(ent.getValue());
+      if (for_pattern.match(fs,pmap)) {
+         Object o2 = pmap.get("d");             // for increment
+         if (o2 == null) continue;
+         int incval = ((Integer) o2);
+         if (Math.abs(incval) < 2) continue;
+         ASTRewrite rw = ASTRewrite.create(ast);
+         InfixExpression exp = ast.newInfixExpression();
+         exp.setOperator(InfixExpression.Operator.PLUS);
+         exp.setLeftOperand((Expression) ASTNode.copySubtree(ast,accnode.getIndex()));
+         exp.setRightOperand(ast.newNumberLiteral("1"));
+         rw.replace(accnode.getIndex(),exp,null);
+         addRepair(rw,"Replace index " + accnode.getIndex() + " with " + accnode.getIndex() + "+1",0.4);
+         rw = ASTRewrite.create(ast);
+         exp = ast.newInfixExpression();
+         exp.setOperator(InfixExpression.Operator.MINUS);
+         exp.setLeftOperand((Expression) ASTNode.copySubtree(ast,accnode.getIndex()));
+         exp.setRightOperand(ast.newNumberLiteral("1"));
+         rw.replace(accnode.getIndex(),exp,null);
+         addRepair(rw,"Replace index " + accnode.getIndex() + " with " + accnode.getIndex() + "-1",0.4);
+       }
+    }
+}
 
 
 
 
-/* end of SepalForLoopIndex.java */
+}       // end of class SepalIndexFixer
+
+
+
+
+/* end of SepalIndexFixer.java */
 

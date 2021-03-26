@@ -41,6 +41,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import edu.brown.cs.ivy.file.IvyLog.LoggerThread;
+
 public class RootThreadPool implements RootConstants
 {
 
@@ -105,11 +107,24 @@ public static void start(Runnable r)
 private static class OurThreadFactory implements ThreadFactory {
    
    @Override public Thread newThread(Runnable r) {
-      Thread t = new Thread(r,"RootProcessor_" + thread_counter.incrementAndGet());
+      Thread t = new ProcThread(r,thread_counter.incrementAndGet());
       return t;
     }
    
 }       // end of inner class OurThreadFactory
+
+
+private static class ProcThread extends Thread implements LoggerThread {
+   
+   private int thread_id;
+   
+   ProcThread(Runnable r,int i) {
+      super(r,"RootProcessor_" + i);
+    }
+    
+   @Override public int getLogId()                      { return thread_id; }
+   
+}       // end of inner class ProcThread
 
 
 

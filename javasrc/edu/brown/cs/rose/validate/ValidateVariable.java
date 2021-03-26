@@ -96,7 +96,8 @@ ValidateValue getValueAtTime(ValidateTrace trace,long time)
    for (Element e : IvyXml.children(variable_element,"VALUE")) {
       long t0 = IvyXml.getAttrLong(e,"TIME");
       if (t0 > 0 && t0 > time) break;
-      prior = trace.dereference(e);
+      if (trace == null) prior = e;
+      else prior = trace.dereference(e);
     }
    
    return new ValidateValue(prior);

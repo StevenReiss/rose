@@ -81,8 +81,8 @@ ValidateChecker(ValidateContext ctx,ValidateTrace orig,ValidateTrace check,RootR
 double check()
 {
    if (check_execution == null) return 0;
-   if (original_execution == null) return 5;
-   if (validate_context.getProblem() == null) return 5;
+   if (original_execution == null) return 0.5;
+   if (validate_context.getProblem() == null) return 0.5;
    
    ValidateMatcher matcher = new ValidateMatcher(original_execution,check_execution,for_repair);
    matcher.computeMatch();
@@ -151,6 +151,8 @@ private abstract class ValidateProblemChecker {
    abstract double validate();
    
    protected boolean executionChanged() {
+      if (!execution_matcher.repairExecuted()) 
+         return false;
       long t0 = execution_matcher.getControlChangeTime();
       long t1 = execution_matcher.getDataChangeTime();
       long t2 = execution_matcher.getProblemAfterTime();
@@ -185,7 +187,7 @@ private class ValidateCheckerException extends ValidateProblemChecker {
     }
    
    @Override double validate() {
-      if (!executionChanged()) return 0;
+      if (!executionChanged()) return 0.1;
       if (exceptionThrown()) return 0;
       
       ValidateValue origexc = original_execution.getException();
@@ -227,7 +229,7 @@ private class ValidateCheckerVariable extends ValidateProblemChecker {
     }
    
    @Override double validate() {
-      if (!executionChanged()) return 0;
+      if (!executionChanged()) return 0.1;
       if (exceptionThrown()) return 0;
       
       RootProblem prob = validate_context.getProblem();
@@ -291,7 +293,7 @@ private class ValidateCheckerExpression extends ValidateProblemChecker {
     }
    
    @Override double validate() {
-      if (!executionChanged()) return 0;
+      if (!executionChanged()) return 0.1;
       return 0.5;
     }
    
@@ -313,8 +315,7 @@ private class ValidateCheckerLocation extends ValidateProblemChecker {
     }
    
    @Override double validate() {
-      if (!executionChanged()) return 0;
-      if (exceptionThrown()) return 0.1;
+      if (!executionChanged()) return 0.1;
       
       ValidateCall vc = execution_matcher.getMatchChangeContext();
       if (vc == null) return 0.7;

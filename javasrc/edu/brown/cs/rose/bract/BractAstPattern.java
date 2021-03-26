@@ -177,15 +177,27 @@ public ASTRewrite replace(ASTNode orig,PatternMap values)
 {
    AST ast = orig.getAST();
    
+   ASTNode n = getResult(orig,values);
+   if (n != null) {
+      ASTRewrite rw = ASTRewrite.create(ast);
+      rw.replace(orig,n,null);
+      return rw;
+    }
+   
+   return null;
+}
+
+
+
+public ASTNode getResult(ASTNode orig,PatternMap values)
+{
+   AST ast = orig.getAST();
+   
    for (ASTNode base : base_nodes) {
       ASTNode n = ASTNode.copySubtree(ast,base);
       SubtreeSubst ss = new SubtreeSubst(n,values);
       n.accept(ss);
-      if (ss.isValid()) {
-         ASTRewrite rw = ASTRewrite.create(orig.getAST());
-         rw.replace(orig,ss.getResult(),null);
-         return rw;
-       }
+      if (ss.isValid()) return ss.getResult();
     }
    
    return null;
@@ -574,10 +586,13 @@ private class SubtreeSubst extends ASTVisitor {
          if (rep != null) vals.set(idx,rep);
          else vals.remove(idx);
        }
-      
     }
    
 }       // end of inner class SubtreeSubst
+
+
+
+
 
 
 

@@ -74,6 +74,8 @@ private ValidateCall match_problem_context;       // matching context of problem
 private long match_time;                     // matching time of problem change
 private long match_after_time;               // matching time at end of statement
 
+private boolean repair_executed;                // detect if repair was executed
+
 
 
 
@@ -120,6 +122,8 @@ ValidateMatcher(ValidateTrace orig,ValidateTrace match,RootRepair repair)
    match_problem_context = null;
    match_time = 0;
    match_after_time = 0;
+   
+   repair_executed = false;
 }
 
 
@@ -146,6 +150,8 @@ long getControlChangeTime()             { return control_change; }
 ValidateCall getOriginalDataContext()        { return original_data_context; }
 ValidateCall getMatchDataContext()           { return match_data_context; }
 long getDataChangeTime()                { return data_change; }
+
+boolean repairExecuted()                { return repair_executed; }
 
 
 
@@ -179,9 +185,9 @@ private void matchContexts(ValidateCall origctx,ValidateCall matchctx)
       match_problem_context = matchctx;
     }
    
+   matchInnerContexts(origctx,matchctx);
    matchLines(origctx,matchctx);
    matchVariables(origctx,matchctx);
-   matchInnerContexts(origctx,matchctx);
 }
 
 
@@ -191,6 +197,11 @@ private void matchLines(ValidateCall origctx,ValidateCall matchctx)
    ValidateVariable origline = origctx.getLineNumbers();
    ValidateVariable matchline = matchctx.getLineNumbers();
    File file = matchctx.getFile();
+   
+   int checkrepair = -1;
+   if (for_repair != null && for_repair.getLocation().getFile().equals(file)) {
+      checkrepair = for_repair.getLocation().getLineNumber();
+    }
    
    if (origline == null || matchline == null) return;
    
@@ -208,6 +219,7 @@ private void matchLines(ValidateCall origctx,ValidateCall matchctx)
          long trytime = matchval.getStartTime();
          long mappedline = origval.getNumericValue();
          mappedline = for_repair.getMappedLine(file,mappedline);
+         if (checkrepair > 0 && mappedline == checkrepair) repair_executed = true;
          
          if (match_problem_context == matchctx) {
             if (lasttime <= problem_time && thistime > problem_time) {

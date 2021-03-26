@@ -35,6 +35,7 @@
 
 package edu.brown.cs.rose.validate;
 
+import java.io.File;
 import java.util.List;
 
 import org.w3c.dom.Element;
@@ -43,8 +44,6 @@ import edu.brown.cs.ivy.mint.MintConstants.CommandArgs;
 import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
 import edu.brown.cs.rose.bud.BudLaunch;
-import edu.brown.cs.rose.bud.BudStack;
-import edu.brown.cs.rose.bud.BudStackFrame;
 import edu.brown.cs.rose.root.RootControl;
 import edu.brown.cs.rose.root.RootProblem;
 import edu.brown.cs.rose.root.RootProcessor;
@@ -152,12 +151,10 @@ void setupBaseExecution()
     }
    
    IvyXmlWriter xw = new IvyXmlWriter();
-   BudStack bs = for_launch.getStack();
-   for (BudStackFrame bsf : bs.getFrames()) {
+   for (File f : root_control.getLoadedFiles()) {
       xw.begin("FILE");
-      xw.field("NAME",bsf.getSourceFile());
+      xw.field("NAME",f.getPath());
       xw.end("FILE");
-      if (bsf.getFrameId().equals(frame_id)) break;
     }
    String cnts = xw.toString();
    xw.close();

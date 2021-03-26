@@ -103,19 +103,19 @@ static void remove(BushUsageMonitor um)
 
 @Override public void entrySelected(BussEntry ent)
 {
-   handleEvent(ent,"SELECTED");
+   handleEvent(ent,"SHOW_SELECTED");
 }
 
 
 @Override public void entryExpanded(BussEntry ent)
 {
-   handleEvent(ent,"EXPANDED");
+   handleEvent(ent,"SHOW_EXPANDED");
 }
 
 
 @Override public void entryHovered(BussEntry ent)
 {
-   handleEvent(ent,"HOVERED");
+   handleEvent(ent,"SHOW_HOVERED");
 }
 
 

@@ -165,7 +165,7 @@ public void outputXml(IvyXmlWriter xw)
    if (validate_score > 0) xw.field("VALIDATE",validate_score);
    xw.field("FINDER",repair_finder);
    repair_edit.outputXml(xw);
-   xw.textElement("DESCRIPTION",repair_description);
+   xw.cdataElement("DESCRIPTION",repair_description);
    repair_location.outputXml(xw);
    xw.end("REPAIR");
 }

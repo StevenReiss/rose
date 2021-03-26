@@ -1,8 +1,8 @@
 /********************************************************************************/
 /*                                                                              */
-/*              SepalForLoopIndex.java                                          */
+/*              SepalArgOrder.java                                              */
 /*                                                                              */
-/*      Handle issues with a for loop index                                     */
+/*      Hnadle changing argument order on vulnerable calls                      */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
@@ -35,17 +35,25 @@
 
 package edu.brown.cs.rose.sepal;
 
-import org.eclipse.jdt.core.dom.ASTNode;
-import org.eclipse.jdt.core.dom.ForStatement;
-import org.eclipse.jdt.core.dom.InfixExpression;
-import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
-
-import edu.brown.cs.rose.bract.BractAstPattern;
-import edu.brown.cs.rose.bract.BractConstants;
 import edu.brown.cs.rose.root.RootRepairFinderDefault;
 
-public class SepalForLoopIndex extends RootRepairFinderDefault
-        implements BractConstants 
+import java.awt.Point;
+import java.util.List;
+import java.util.Map;
+
+import org.eclipse.jdt.core.dom.AST;
+import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.Expression;
+import org.eclipse.jdt.core.dom.MethodInvocation;
+import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
+
+import edu.brown.cs.ivy.jcomp.JcompAst;
+import edu.brown.cs.ivy.jcomp.JcompSymbol;
+import edu.brown.cs.ivy.jcomp.JcompType;
+import edu.brown.cs.rose.bract.BractAstPattern;
+import edu.brown.cs.rose.bract.BractConstants;
+
+public class SepalArgOrder extends RootRepairFinderDefault implements BractConstants
 {
 
 
@@ -55,35 +63,11 @@ public class SepalForLoopIndex extends RootRepairFinderDefault
 /*                                                                              */
 /********************************************************************************/
 
-private static final BractAstPattern match_pattern;
-private static final BractAstPattern incr_pattern;
-private static final PatternMap match_values;
-private static final BractAstPattern result_pattern;
-private static final BractAstPattern delta_result;
-private static final BractAstPattern delta1_result;
+private static final BractAstPattern call_pattern;
 
 static {
-   incr_pattern = BractAstPattern.expression(
-         new PatternMap("delta",1),
-         "++Vi", "Vi++", "Vi = Vi+Idelta","Vi = Idelta + Vi",
-         "Vi+=Idelta");
-   match_pattern = BractAstPattern.statement( 
-         "for (int Vi = Iinit; Vi <= Varray.length; Pincr()) Sbody;",
-         "for (int Vi = Iinit; Vi <= Vcoll.size(); Pincr()) Sbody;",
-         "for (int Vi = Iinit; Vi < Varray.length; Pincr()) Sbody;",
-         "for (int Vi = Iinit; Vi < Vcoll.size(); Pincr()) Sbody;");
-   
-   match_values = new PatternMap("incr",incr_pattern);
-   
-   result_pattern = BractAstPattern.expression(
-         "Vi < Varray.length", "Vi < Vcoll.size()");
-   delta_result = BractAstPattern.expression(
-         "Vi < Varray.length - Id1", "Vi < Vcoll.size() - Id1");
-   delta1_result = BractAstPattern.expression(
-         "Vi <= Varray.length - Id1", "Vi <= Vcoll.size() - Id1");
+   call_pattern = BractAstPattern.expression("Vrtn(Ea,Eb)");
 }
-
-
 
 /********************************************************************************/
 /*                                                                              */
@@ -91,9 +75,8 @@ static {
 /*                                                                              */
 /********************************************************************************/
 
-public SepalForLoopIndex()
+public SepalArgOrder()
 { }
-
 
 
 /********************************************************************************/
@@ -102,50 +85,91 @@ public SepalForLoopIndex()
 /*                                                                              */
 /********************************************************************************/
 
+@Override protected double getFinderPriority()
+{
+   return 0.33;
+}
+
+
+
+
 @Override public void process()
 {
    ASTNode stmt = getResolvedStatementForLocation(null);
    if (stmt == null) return;
-   if (stmt.getNodeType() != ASTNode.FOR_STATEMENT) return;
    
-   PatternMap nmap = new PatternMap(match_values);
-   if (match_pattern.match(stmt,nmap)) {
-      ForStatement fs = (ForStatement) stmt;
-      InfixExpression ex = (InfixExpression) fs.getExpression();
-      ASTRewrite rw = null;
-      int iv = ((Integer) nmap.get("delta"));
-      String desc = null;
-      if (iv > 1) {
-         nmap.put("d1",iv-1);
-         if (ex.getOperator() == InfixExpression.Operator.LESS_EQUALS) 
-            rw = delta1_result.replace(ex,nmap);
-         else 
-            rw = delta_result.replace(ex,nmap);
-         desc = "Replace for condition with " + ex + "-" + (iv-1);
-       }
-      else if (ex.getOperator() == InfixExpression.Operator.LESS_EQUALS) {
-         desc = "Replace <= with < in for condition " + ex;
-         rw = result_pattern.replace(ex,nmap);
-       }
-      if (rw != null) {
-         addRepair(rw,desc,0.75);
+   Map<ASTNode,PatternMap> matches = call_pattern.matchAll(stmt,null);
+   if (matches == null || matches.isEmpty()) return;
+   
+   for (ASTNode n : matches.keySet()) {
+      MethodInvocation mi = (MethodInvocation) n;
+      JcompSymbol callee = JcompAst.getReference(mi);
+      if (!isCalleeRelevant(callee)) continue;
+      for (Point p : getSwaps(mi)) {
+         flipArgs(mi,p.x,p.y);
        }
     }
 }
 
 
-@Override protected double getFinderPriority()
+
+private boolean isCalleeRelevant(JcompSymbol callee)
 {
-   return 0.5;
+   if (callee == null) return false;
+   if (callee.isBinarySymbol()) return false;
+   JcompType jt = callee.getType();
+   while (jt.isParameterizedType()) jt = jt.getBaseType();
+   JcompType t0 = null;
+   for (JcompType jt1 : jt.getComponents()) {
+      if (t0 == null) t0 = jt1;
+      else if (t0 != jt1) return false;
+    }
+   
+   return true;
+}
+
+
+private List<Point> getSwaps(MethodInvocation mi)
+{
+   Point pt = new Point(0,1);
+   return List.of(pt);
+}
+
+
+
+@SuppressWarnings("unchecked")
+private void flipArgs(MethodInvocation mi,int arg0,int arg1)
+{
+   AST ast = mi.getAST();
+   MethodInvocation rslt = ast.newMethodInvocation();
+   rslt.setName(ast.newSimpleName(mi.getName().getIdentifier()));
+   List<?> args = mi.arguments();
+   for (int i = 0; i < args.size(); ++i) {
+      Expression a = null;
+      if (i == arg0) {
+         a = (Expression) args.get(arg1);
+       }
+      else if (i == arg1) {
+         a = (Expression) args.get(arg0);
+       }
+      else a = (Expression) args.get(i);
+      rslt.arguments().set(i,ASTNode.copySubtree(ast,a));
+    }
+   ASTRewrite rw = ASTRewrite.create(ast);
+   rw.replace(mi,rslt,null);
+   addRepair(rw,"Change argument order in call to " + mi.getName(),0.5);
 }
 
 
 
 
-}       // end of class SepalForLoopIndex
+
+
+
+}       // end of class SepalArgOrder
 
 
 
 
-/* end of SepalForLoopIndex.java */
+/* end of SepalArgOrder.java */
 

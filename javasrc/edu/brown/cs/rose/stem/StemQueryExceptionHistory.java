@@ -35,6 +35,8 @@
 
 package edu.brown.cs.rose.stem;
 
+import java.util.List;
+
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.ArrayAccess;
@@ -51,6 +53,8 @@ import org.eclipse.jdt.core.dom.SwitchStatement;
 import org.eclipse.jdt.core.dom.WhileStatement;
 import org.w3c.dom.Element;
 
+import edu.brown.cs.ivy.jcomp.JcompAst;
+import edu.brown.cs.ivy.jcomp.JcompType;
 import edu.brown.cs.ivy.mint.MintConstants.CommandArgs;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
 import edu.brown.cs.rose.bud.BudValue;
@@ -133,6 +137,9 @@ ASTNode getExceptionNode()
          case "java.lang.ArrayIndexOutOfBoundsException" :
             checker = new ArrayIndexOutOfBoundsChecker();
             break;
+         case "java.lang.IndexOutOfBoundsException" :
+            checker = new IndexOutOfBoundsChecker();
+            break;
        }
       
       if (checker != null) {
@@ -158,6 +165,9 @@ private String getExceptionCause() throws RoseException
         break;
      case "java.lang.ArrayIndexOutOfBoundsException" :
         checker = new ArrayIndexOutOfBoundsChecker();
+        break;
+     case "java.lang.IndexOutOfBoundsException" :
+        checker = new IndexOutOfBoundsChecker();
         break;
    }
   
@@ -377,6 +387,51 @@ private class ArrayIndexOutOfBoundsChecker extends ExceptionChecker {
       if (abv == null) return;
       long idx = abv.getInt();
       if (idx < 0 || idx >= bnd) useNode(aa,Long.toString(idx),null);
+    }
+   
+}       // end of inner class ArrayIndexOutOfBoundsChecker
+
+
+
+private class IndexOutOfBoundsChecker extends ExceptionChecker {
+
+   @Override public void endVisit(MethodInvocation mi) {
+      if (mi.getExpression() == null) return;
+      JcompType jt = JcompAst.getExprType(mi.getExpression());
+      switch (jt.getName()) {
+         case "java.util.ArrayList" :
+         case "java.util.List" :
+         case "java.util.Vector" :
+         case "java.util.Queue" :
+         case "java.util.ArrayDeque" :
+         case "java.util.LinkedList" :
+         case "java.util.PriorityQueue" :
+            break;
+         default :
+            return;
+       }
+      switch (mi.getName().getIdentifier()) {
+         case "get" :
+         case "remove" :
+         case "removeFirst" :
+         case "removeLast" :
+            break;
+         default :
+            return;
+       }
+      
+      BudValue bv = evaluate("(" + mi.getExpression() + ").size()");
+      if (bv == null) return;
+      long bnd = bv.getInt();
+      List<?> args = mi.arguments();
+      long idx = 0;
+      if (args.size() > 0) {
+         Expression eidx = (Expression) args.get(0);
+         BudValue bidx = evaluate(eidx.toString());
+         if (bidx == null && bnd > 0) return;
+         if (bidx != null) idx = bidx.getInt();
+       }
+      if (idx < 0 || idx >= bnd) useNode(mi,Long.toString(idx),null);
     }
    
 }       // end of inner class IndexOutOfBoundsChecker

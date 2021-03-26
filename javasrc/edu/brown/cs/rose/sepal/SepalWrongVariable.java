@@ -46,15 +46,18 @@ import java.util.Set;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.jdt.core.dom.SimpleName;
+import org.eclipse.jdt.core.dom.Statement;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 
 import edu.brown.cs.ivy.file.IvyStringDiff;
 import edu.brown.cs.ivy.jcomp.JcompAst;
 import edu.brown.cs.ivy.jcomp.JcompScope;
 import edu.brown.cs.ivy.jcomp.JcompSymbol;
+import edu.brown.cs.ivy.jcomp.JcompSymbolKind;
 import edu.brown.cs.ivy.jcomp.JcompType;
 import edu.brown.cs.ivy.jcomp.JcompTyper;
 import edu.brown.cs.rose.root.RootRepairFinderDefault;
@@ -132,7 +135,7 @@ public SepalWrongVariable()
 
 private Collection<UserVariable> findVariables(ASTNode n)
 {
-   VariableFinder vf = new VariableFinder();
+   VariableFinder vf = new VariableFinder(n);
    n.accept(vf);
    return vf.getUserVariables();
 }
@@ -142,12 +145,26 @@ private Collection<UserVariable> findVariables(ASTNode n)
 private class VariableFinder extends ASTVisitor {
 
    private Map<JcompSymbol,UserVariable> symbol_map;
+   private CompilationUnit base_unit;
+   private int base_line;
    
-   VariableFinder() {
+   VariableFinder(ASTNode n) {
       symbol_map = new HashMap<>(); 
+      base_unit = (CompilationUnit) n.getRoot();
+      base_line = base_unit.getLineNumber(n.getStartPosition());
     }
    
    Collection<UserVariable> getUserVariables()          { return symbol_map.values(); }
+   
+   @Override public boolean preVisit2(ASTNode n) {
+      if (n instanceof Statement) {
+         int ln = base_unit.getLineNumber(n.getStartPosition());
+         if (ln > base_line) return false;
+       }
+
+      return true;
+    }
+   
    
    @Override public void endVisit(SimpleName n) {
       JcompSymbol js = JcompAst.getReference(n);
@@ -249,7 +266,9 @@ private boolean isRelevant(JcompSymbol rep,JcompSymbol orig,ASTNode base)
    if (rep.isFinal() != rep.isFinal()) return false;
    if (rep.getName().equals(orig.getName())) return false;
    if (rep.getSymbolKind() != orig.getSymbolKind()) return false;
-   if (rep.getDefinitionNode().getStartPosition() >= base.getStartPosition()) return false;
+   if (rep.getSymbolKind() == JcompSymbolKind.LOCAL) {
+      if (rep.getDefinitionNode().getStartPosition() >= base.getStartPosition()) return false;
+    }
    
    return true;
 }
@@ -282,7 +301,8 @@ private void createRepair(UserVariable uv,JcompSymbol js,ASTNode where)
    
    if (rw != null) {
       double pri = IvyStringDiff.normalizedStringDiff(uv.getSymbol().getName(),js.getName());
-      String desc = "Replace `" + uv.getSymbol().getName() + "' with `" + js.getName();
+      String desc = "Replace `" + uv.getSymbol().getName() + "' with `" + js.getName() + "'";
+
       ASTNode par = where.getParent();
       desc += " in " + par;
       addRepair(rw,desc,pri);

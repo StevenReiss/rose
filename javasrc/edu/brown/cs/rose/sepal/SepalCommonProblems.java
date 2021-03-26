@@ -79,6 +79,9 @@ private static final BractAstPattern assign_result;
 private static final BractAstPattern mult_pattern;
 private static final BractAstPattern mult_result;
 
+private static final BractAstPattern and_pattern;
+private static final BractAstPattern and_result;
+
 static {
    cond_pattern = BractAstPattern.expression("Ex = Ey");
    cond_result = BractAstPattern.expression("Ex == Ey");
@@ -103,6 +106,9 @@ static {
    
    mult_pattern = BractAstPattern.expression("Ex*Ey == 0","(Ex*Ey) == 0");
    mult_result = BractAstPattern.expression("(Ex == 0 || Ey == 0)");
+   
+   and_pattern = BractAstPattern.expression("Ex^(Ex-1)");
+   and_result = BractAstPattern.expression("Ex&(Ex-1)");
 }
 
 
@@ -135,7 +141,8 @@ public SepalCommonProblems()
    checkStringOperations(stmt);
    checkLoopIndex(stmt);
    checkNonAssignment(stmt);
-   checkMultiplyForZero(stmt);
+   checkSimplePattern(stmt,mult_pattern,mult_result,0.9);
+   checkSimplePattern(stmt,and_pattern,and_result,0.75);
 }
 
 
@@ -313,21 +320,21 @@ private void checkNonAssignment(ASTNode stmt)
 
 /********************************************************************************/
 /*                                                                              */
-/*      Check for x*y == 0                                                      */
+/*      Check for simple expression patterns                                    */
 /*                                                                              */
 /********************************************************************************/
 
-private void checkMultiplyForZero(ASTNode stmt)
+private void checkSimplePattern(ASTNode stmt,BractAstPattern p1,BractAstPattern p2,double v)
 {
-   Map<ASTNode,PatternMap> rslt = mult_pattern.matchAll(stmt,null);
-   if (rslt == null) return;
+   Map<ASTNode,PatternMap> rslt = p1.matchAll(stmt,null);
+   if (rslt == null || rslt.isEmpty()) return;
    for (ASTNode n : rslt.keySet()) {
       PatternMap pmap = rslt.get(n);
-      ASTRewrite rw = mult_result.replace(n,pmap);
+      ASTRewrite rw = p2.replace(n,pmap);
       if (rw != null) {
-         String desc = "Use " + pmap.get("x") + " == 0 || " + pmap.get("y") + " == 0";
-         desc += " instead of multiplication";   
-         addRepair(rw,desc,0.9);
+         ASTNode tgt = p2.getResult(n,pmap);
+         String desc = "Use " + tgt + " instead of " + n;
+         addRepair(rw,desc,v);
        }
     }
 }

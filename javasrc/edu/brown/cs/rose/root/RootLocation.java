@@ -141,6 +141,8 @@ public File getFile()                           { return for_file; }
 public int getStartOffset()                     { return start_offset; }
 public int getEndOffset()                       { return end_offset; }
 public String getProject()                      { return project_name; }
+public int getMethodOffset()                    { return method_offset; }
+public int getMethodEndOffset()                 { return method_offset + method_length; }
 
 public double getPriority()                     { return location_priority; }
 public void setPriority(double v)               { location_priority = v; }

@@ -1,8 +1,8 @@
 /********************************************************************************/
 /*                                                                              */
-/*              SepalClassNullCondition.java                                    */
+/*              SepalAvoidException.java                                        */
 /*                                                                              */
-/*      Add conditionals to skip access to null values                          */
+/*      description of class                                                    */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
@@ -36,6 +36,7 @@
 package edu.brown.cs.rose.sepal;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.eclipse.jdt.core.dom.AST;
@@ -50,6 +51,7 @@ import org.eclipse.jdt.core.dom.ForStatement;
 import org.eclipse.jdt.core.dom.IfStatement;
 import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.MethodInvocation;
+import org.eclipse.jdt.core.dom.ParenthesizedExpression;
 import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.jdt.core.dom.ReturnStatement;
 import org.eclipse.jdt.core.dom.Statement;
@@ -67,7 +69,7 @@ import edu.brown.cs.rose.root.RootLocation;
 import edu.brown.cs.rose.root.RootProblem;
 import edu.brown.cs.rose.root.RootRepairFinderDefault;
 
-public class SepalClassNullCondition extends RootRepairFinderDefault
+public class SepalAvoidException extends RootRepairFinderDefault
 {
 
 
@@ -77,22 +79,20 @@ public class SepalClassNullCondition extends RootRepairFinderDefault
 /*                                                                              */
 /********************************************************************************/
 
-
-
 /********************************************************************************/
 /*                                                                              */
 /*      Constructors                                                            */
 /*                                                                              */
 /********************************************************************************/
 
-public SepalClassNullCondition()
+public SepalAvoidException()
 { }
 
 
 
 /********************************************************************************/
 /*                                                                              */
-/*      Basic processing methods                                                */
+/*      Basic Processing methods                                                */
 /*                                                                              */
 /********************************************************************************/
 
@@ -105,15 +105,8 @@ public SepalClassNullCondition()
 
 @Override public void process()
 {
+   ConditionMaker cm = null;
    RootProblem rp = getProblem();
-   if (rp.getProblemType() != RoseProblemType.EXCEPTION ||
-         !rp.getProblemDetail().equals("java.lang.NullPointerException")) {
-      if (rp.getProblemType() != RoseProblemType.LOCATION && 
-            rp.getProblemType() != RoseProblemType.ASSERTION)
-         return;
-    }
-   // might also want to handle location errors where there is an exception node
-   
    Statement stmt = (Statement) getResolvedStatementForLocation(null);
    RootLocation ploc = rp.getBugLocation();
    ASTNode bstmt = getResolvedStatementForLocation(ploc);
@@ -121,10 +114,32 @@ public SepalClassNullCondition()
       // if the erroreous value is a variable computed here, then can add check afterwards
       // If this is a call passing in the erroreous value, skip the call
       return;
-    }   
+    }  
    
    ASTNode n = getProcessor().getController().getExceptionNode(rp);
    if (n == null) return;
+   
+   if (stmt != bstmt) {
+      // if the erroreous value is a variable computed here, then can add check afterwards
+      // If this is a call passing in the erroreous value, skip the call
+      return;
+    }  
+   Object o1 = null;
+   switch (rp.getProblemDetail()) {
+      case "java.lang.NullPointerException" :
+         o1 = new NullCondition();
+         break;
+      case "java.lang.ArrayIndexOutOfBoundsException" :
+         o1 = new BoundsCondition();
+         break;
+      case "java.lang.IndexOutOfBoundsException" :
+         o1 = new ListBounds();
+         break;
+      default :
+         return;
+    }
+   cm = (ConditionMaker) o1;
+   
    Expression base = (Expression) n;
    ASTNode blk = bstmt.getParent();
    CondScan cond = new CondScan(stmt,base);
@@ -136,34 +151,35 @@ public SepalClassNullCondition()
       stmtdesc = stmtdesc.substring(0,20) + "...";
     }
    
-   ASTRewrite rw1 = skipStatements(base,stmt,endstmt);
+   ASTRewrite rw1 = skipStatements(cm,base,stmt,endstmt);
    if (rw1 != null) {
-      String desc = "Add 'if (" + base + " != null) { ' ";
+      String desc = "Add 'if (" + cm.getNeqCondition(base).toString() + ") { ' ";
       if (stmt == endstmt) desc += "around " + stmtdesc;
       else desc += "around next and subsequent affected statements";
       addRepair(rw1,desc,0.75);
     }
-   ASTRewrite rw2 = loopContine(base,stmt);
+   ASTRewrite rw2 = loopContine(cm,base,stmt);
    if (rw2 != null) {
-      String desc = "Add 'if (" + base + " == null) continue;' before " + stmtdesc;
+      String desc = "Add 'if (" + cm.getEqlCondition(base).toString() + ") continue;' before " + stmtdesc;
       addRepair(rw2,desc,0.5);
     }
-   ASTRewrite rw3 = condReturn(base,stmt);
+   ASTRewrite rw3 = condReturn(cm,base,stmt);
    if (rw3 != null) {
-      String desc = "Add 'if (" + base + " == null) return;' before " + stmtdesc;
+      String desc = "Add 'if (" + cm.getEqlCondition(base).toString() + ") return;' before " + stmtdesc;
       addRepair(rw3,desc,0.5);
     }
-   ASTRewrite rw4 = ifcondRepair(base,stmt);
+   ASTRewrite rw4 = ifcondRepair(cm,base,stmt);
    if (rw4 != null) {
-      String desc = "Add '(" + base + " != null) &&' to " + stmtdesc;
+      String desc = "Add '(" + cm.getNeqCondition(base).toString() + ") &&' to " + stmtdesc;
       addRepair(rw4,desc,0.7);
     }
-   ASTRewrite rw5 = nullReturn(base,stmt);
+   ASTRewrite rw5 = nullReturn(cm,base,stmt);
    if (rw5 != null) {
-      String desc = "Add '(" + base + " == null) ||' to " + stmtdesc;
+      String desc = "Add '(" + cm.getEqlCondition(base).toString() + ") ||' to " + stmtdesc;
       addRepair(rw5,desc,0.5);
-    }
+    } 
 }
+
 
 
 
@@ -173,29 +189,30 @@ public SepalClassNullCondition()
 /*                                                                              */
 /********************************************************************************/
 
-private ASTRewrite skipStatements(Expression base,Statement start,Statement end)
+private ASTRewrite skipStatements(ConditionMaker cm,Expression base,
+      Statement start,Statement end)
 {
    ASTNode par = start.getParent();
    if (par instanceof Block) {
-      return skipBlock(base,start,end);
+      return skipBlock(cm,base,start,end);
     }
    else if (par instanceof IfStatement) {
       IfStatement s = (IfStatement) par;
       if (start.getLocationInParent() == IfStatement.ELSE_STATEMENT_PROPERTY) return null;
-      return addToConditionalAnd(base,s.getExpression(),null);
+      return addToConditionalAnd(cm,base,s.getExpression(),null);
     }
    else if (par instanceof WhileStatement) {
       WhileStatement s = (WhileStatement) par;
-      return addToConditionalAnd(base,s.getExpression(),null);
+      return addToConditionalAnd(cm,base,s.getExpression(),null);
     }
    else if (par instanceof ForStatement) {
       ForStatement f = (ForStatement) par;
       if (start.getLocationInParent() == ForStatement.BODY_PROPERTY) {
          if (f.getExpression() != null) {
-            return addToConditionalAnd(base,f.getExpression(),null);
+            return addToConditionalAnd(cm,base,f.getExpression(),null);
           }
          else {
-            return createForCondition(base,f);
+            return createForCondition(cm,base,f);
           }
        }
     }
@@ -204,25 +221,14 @@ private ASTRewrite skipStatements(Expression base,Statement start,Statement end)
 }
 
 
-private ASTRewrite nullReturn(Expression base,Statement stmt)
-{
-   if (!(stmt instanceof IfStatement)) return null;
-   IfStatement ifstmt = (IfStatement) stmt;
-   if (!(ifstmt.getThenStatement() instanceof ReturnStatement)) return null;
-    
-   return addToConditionalOr(base,ifstmt.getExpression(),base);
-}  
-
-
-
 
 @SuppressWarnings("unchecked")
-private ASTRewrite skipBlock(Expression base,Statement start,Statement end)
+private ASTRewrite skipBlock(ConditionMaker cm,Expression base,Statement start,Statement end)
 {
    AST ast = start.getAST();
    
    IfStatement ifs = ast.newIfStatement();
-   ifs.setExpression(getCheckExpr(ast,base,true));
+   ifs.setExpression(cm.getCheckExpression(ast,base,true));
    Block nblk = ast.newBlock();
    ifs.setThenStatement(nblk);
    
@@ -248,115 +254,14 @@ private ASTRewrite skipBlock(Expression base,Statement start,Statement end)
 }
 
 
-private ASTRewrite addToConditionalAnd(Expression base,Expression cond,Expression before)
-{
-   AST ast = cond.getAST();
-   ASTRewrite rw = ASTRewrite.create(ast);
-   Expression nbase = getCheckExpr(ast,base,true);
-   
-   if (cond instanceof InfixExpression) {
-      InfixExpression inf = (InfixExpression) cond;
-      if (inf.getOperator() == InfixExpression.Operator.CONDITIONAL_AND) {
-         ListRewrite lrw = rw.getListRewrite(cond,InfixExpression.EXTENDED_OPERANDS_PROPERTY);
-         if (before == null) lrw.insertLast(nbase,null);
-         else lrw.insertBefore(nbase,before,null);
-         return rw;
-       }
-    }
-   
-   InfixExpression inf = ast.newInfixExpression();
-   inf.setOperator(InfixExpression.Operator.CONDITIONAL_AND);
-   inf.setLeftOperand(nbase);
-   inf.setRightOperand((Expression) ASTNode.copySubtree(ast,cond));
-   
-   rw.replace(cond,inf,null);
-   
-   return rw;
-}
-
-
-private ASTRewrite addToConditionalOr(Expression base,Expression cond,Expression before)
-{
-   AST ast = cond.getAST();
-   ASTRewrite rw = ASTRewrite.create(ast);
-   Expression nbase = getCheckExpr(ast,base,false);
-   
-   if (cond instanceof InfixExpression) {
-      InfixExpression inf = (InfixExpression) cond;
-      if (inf.getOperator() == InfixExpression.Operator.CONDITIONAL_OR) {
-         ListRewrite lrw = rw.getListRewrite(cond,InfixExpression.EXTENDED_OPERANDS_PROPERTY);
-         if (before == null) lrw.insertLast(nbase,null);
-         else lrw.insertBefore(nbase,before,null);
-         return rw;
-       }
-    }
-   
-   InfixExpression inf = ast.newInfixExpression();
-   inf.setOperator(InfixExpression.Operator.CONDITIONAL_OR);
-   inf.setLeftOperand(nbase);
-   inf.setRightOperand((Expression) ASTNode.copySubtree(ast,cond));
-   
-   rw.replace(cond,inf,null);
-   
-   return rw;
-}
-
-
-
-private ASTRewrite ifcondRepair(Expression base,Statement s)
-{
-   if (s.getNodeType() != ASTNode.IF_STATEMENT) return null;
-   
-   ASTNode cond = null;
-   ASTNode elt = null;
-   for (ASTNode n = base; n != null; n = n.getParent()) {
-      if (n == s) break;
-      elt = cond;
-      cond = n;
-    }
-   if (cond.getLocationInParent() != IfStatement.EXPRESSION_PROPERTY) return null;
-   
-   return addToConditionalAnd(base,(Expression) cond,(Expression) elt);
-}
-
-
-
-private ASTRewrite createForCondition(Expression base,Statement f)
-{
-   AST ast = f.getAST();
-   ASTRewrite rw = ASTRewrite.create(ast);
-   Expression nbase = getCheckExpr(ast,base,true);
-   
-   rw.set(f,ForStatement.EXPRESSION_PROPERTY,nbase,null);
-   
-   return rw;
-}
-
-
-
-
-private Expression getCheckExpr(AST ast,Expression base,boolean neq)
-{
-   Expression e1 = (Expression) ASTNode.copySubtree(ast,base);
-   
-   InfixExpression inf = ast.newInfixExpression();
-   inf.setLeftOperand(e1);
-   inf.setRightOperand(ast.newNullLiteral());
-   if (neq) inf.setOperator(InfixExpression.Operator.NOT_EQUALS);
-   else inf.setOperator(InfixExpression.Operator.EQUALS);
-   
-   return inf;
-   
-}
-
 
 /********************************************************************************/
 /*                                                                              */
-/*      Generate a continue for null value in a loop                            */
+/*      Try continue if inside loop                                             */
 /*                                                                              */
 /********************************************************************************/
 
-private ASTRewrite loopContine(Expression base,Statement start)
+private ASTRewrite loopContine(ConditionMaker cm,Expression base,Statement start)
 {
    Boolean inloop = null;
    Block blk = null;
@@ -373,8 +278,8 @@ private ASTRewrite loopContine(Expression base,Statement start)
          case ASTNode.WHILE_STATEMENT :
          case ASTNode.DO_STATEMENT :
          case ASTNode.ENHANCED_FOR_STATEMENT :
-             inloop = true;
-             break;
+            inloop = true;
+            break;
          case ASTNode.BLOCK :
             if (blk == null) blk = (Block) p;
             break;
@@ -387,7 +292,7 @@ private ASTRewrite loopContine(Expression base,Statement start)
    AST ast = start.getAST();
    ASTRewrite rw = ASTRewrite.create(ast);
    IfStatement s = ast.newIfStatement();
-   s.setExpression(getCheckExpr(ast,base,false));
+   s.setExpression(cm.getCheckExpression(ast,base,false));
    s.setThenStatement(ast.newContinueStatement());
    ListRewrite lrw = rw.getListRewrite(blk,Block.STATEMENTS_PROPERTY);
    lrw.insertBefore(s,prev,null);
@@ -397,13 +302,14 @@ private ASTRewrite loopContine(Expression base,Statement start)
 
 
 
+
 /********************************************************************************/
 /*                                                                              */
-/*      Generate a return for null value                                        */
+/*      Generate a return for bad value                                         */
 /*                                                                              */
 /********************************************************************************/
 
-private ASTRewrite condReturn(Expression base,Statement start)
+private ASTRewrite condReturn(ConditionMaker cm,Expression base,Statement start)
 {
    JcompSymbol mthd = null;
    Block blk = null;
@@ -442,7 +348,7 @@ private ASTRewrite condReturn(Expression base,Statement start)
    
    ASTRewrite rw = ASTRewrite.create(ast);
    IfStatement s = ast.newIfStatement();
-   s.setExpression(getCheckExpr(ast,base,false));
+   s.setExpression(cm.getCheckExpression(ast,base,false));
    s.setThenStatement(ret);
    ListRewrite lrw = rw.getListRewrite(blk,Block.STATEMENTS_PROPERTY);
    lrw.insertBefore(s,prev,null);
@@ -451,16 +357,262 @@ private ASTRewrite condReturn(Expression base,Statement start)
 }
 
 
+
 /********************************************************************************/
 /*                                                                              */
-/*      Scan to determine extent of conditional                                 */
+/*      Augment existing if with condition                                      */
 /*                                                                              */
 /********************************************************************************/
 
-private class CondScan extends ASTVisitor {
+private ASTRewrite ifcondRepair(ConditionMaker cm,Expression base,Statement s)
+{
+   if (s.getNodeType() != ASTNode.IF_STATEMENT) return null;
    
+   ASTNode cond = null;
+   ASTNode elt = null;
+   for (ASTNode n = base; n != null; n = n.getParent()) {
+      if (n == s) break;
+      elt = cond;
+      cond = n;
+    }
+   if (cond.getLocationInParent() != IfStatement.EXPRESSION_PROPERTY) return null;
+   
+   return addToConditionalAnd(cm,base,(Expression) cond,(Expression) elt);
+}
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Generate return if bad condition                                        */
+/*                                                                              */
+/********************************************************************************/
+
+private ASTRewrite nullReturn(ConditionMaker cm,Expression base,Statement stmt)
+{
+   if (!(stmt instanceof IfStatement)) return null;
+   IfStatement ifstmt = (IfStatement) stmt;
+   if (!(ifstmt.getThenStatement() instanceof ReturnStatement)) return null;
+   
+   return addToConditionalOr(cm,base,ifstmt.getExpression(),base);
+}  
+
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Handle condition manipulation                                           */
+/*                                                                              */
+/********************************************************************************/
+
+private ASTRewrite addToConditionalAnd(ConditionMaker cm,Expression base,
+      Expression cond,Expression before)
+{
+   AST ast = cond.getAST();
+   ASTRewrite rw = ASTRewrite.create(ast);
+   Expression nbase = cm.getCheckExpression(ast,base,true);
+   
+   if (cond instanceof InfixExpression) {
+      InfixExpression inf = (InfixExpression) cond;
+      if (inf.getOperator() == InfixExpression.Operator.CONDITIONAL_AND) {
+         ListRewrite lrw = rw.getListRewrite(cond,InfixExpression.EXTENDED_OPERANDS_PROPERTY);
+         if (before == null) lrw.insertLast(nbase,null);
+         else lrw.insertBefore(nbase,before,null);
+         return rw;
+       }
+    }
+   
+   InfixExpression inf = ast.newInfixExpression();
+   inf.setOperator(InfixExpression.Operator.CONDITIONAL_AND);
+   inf.setLeftOperand(nbase);
+   inf.setRightOperand((Expression) ASTNode.copySubtree(ast,cond));
+   
+   rw.replace(cond,inf,null);
+   
+   return rw;
+}
+
+
+
+private ASTRewrite addToConditionalOr(ConditionMaker cm,Expression base,Expression cond,Expression before)
+{
+   AST ast = cond.getAST();
+   ASTRewrite rw = ASTRewrite.create(ast);
+   Expression nbase = cm.getCheckExpression(ast,base,false);
+   
+   if (cond instanceof InfixExpression) {
+      InfixExpression inf = (InfixExpression) cond;
+      if (inf.getOperator() == InfixExpression.Operator.CONDITIONAL_OR) {
+         ListRewrite lrw = rw.getListRewrite(cond,InfixExpression.EXTENDED_OPERANDS_PROPERTY);
+         if (before == null) lrw.insertLast(nbase,null);
+         else lrw.insertBefore(nbase,before,null);
+         return rw;
+       }
+    }
+   
+   InfixExpression inf = ast.newInfixExpression();
+   inf.setOperator(InfixExpression.Operator.CONDITIONAL_OR);
+   inf.setLeftOperand(nbase);
+   inf.setRightOperand((Expression) ASTNode.copySubtree(ast,cond));
+   
+   rw.replace(cond,inf,null);
+   
+   return rw;
+}
+
+
+
+private ASTRewrite createForCondition(ConditionMaker cm,Expression base,Statement f)
+{
+   AST ast = f.getAST();
+   ASTRewrite rw = ASTRewrite.create(ast);
+   Expression nbase = cm.getCheckExpression(ast,base,true);
+   
+   rw.set(f,ForStatement.EXPRESSION_PROPERTY,nbase,null);
+   
+   return rw;
+}
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Handle condition generation                                             */
+/*                                                                              */
+/********************************************************************************/
+
+private abstract static class ConditionMaker {
+
+   protected ConditionMaker() { }
+   
+   ASTNode getNeqCondition(ASTNode base) {
+      return getCheckExpression(base.getAST(),(Expression) base,true);
+    }
+   
+   ASTNode getEqlCondition(ASTNode base) {
+      return getCheckExpression(base.getAST(),(Expression) base,false);
+    }
+   
+   Expression getCheckExpression(AST ast,Expression base,boolean neq) {
+      return null;
+    }
+   
+}       // end of inner abstract class ConditionMaker
+
+
+
+
+private static class NullCondition extends ConditionMaker {
+   
+   NullCondition() { }
+   
+   Expression getCheckExpression(AST ast,Expression base,boolean neq) {
+      Expression e1 = (Expression) ASTNode.copySubtree(ast,base);
+      
+      InfixExpression inf = ast.newInfixExpression();
+      inf.setLeftOperand(e1);
+      inf.setRightOperand(ast.newNullLiteral());
+      if (neq) inf.setOperator(InfixExpression.Operator.NOT_EQUALS);
+      else inf.setOperator(InfixExpression.Operator.EQUALS);
+      
+      return inf; 
+    }
+   
+}       // end of inner class NullCondition
+
+
+
+private static class BoundsCondition extends ConditionMaker {
+   
+   BoundsCondition() { }
+ 
+   Expression getCheckExpression(AST ast,Expression base,boolean neq) {
+      if (base.getNodeType() != ASTNode.ARRAY_ACCESS) return null;
+      ArrayAccess aa = (ArrayAccess) base;
+      InfixExpression e1 = ast.newInfixExpression();
+      e1.setLeftOperand((Expression) ASTNode.copySubtree(ast,aa.getIndex()));
+      if (neq) e1.setOperator(InfixExpression.Operator.LESS_EQUALS);
+      else e1.setOperator(InfixExpression.Operator.GREATER);
+      FieldAccess fa = ast.newFieldAccess();
+      fa.setExpression((Expression) ASTNode.copySubtree(ast,aa.getArray()));
+      fa.setName(ast.newSimpleName("length"));
+      e1.setRightOperand(fa);
+      InfixExpression e2 = ast.newInfixExpression();
+      e2.setLeftOperand((Expression) ASTNode.copySubtree(ast,aa.getIndex()));
+      if (neq) e2.setOperator(InfixExpression.Operator.GREATER_EQUALS);
+      else e2.setOperator(InfixExpression.Operator.LESS);
+      e2.setRightOperand(ast.newNumberLiteral("0"));
+      InfixExpression e3 = ast.newInfixExpression();
+      e3.setLeftOperand(e1);
+      if (neq) e3.setOperator(InfixExpression.Operator.CONDITIONAL_AND);
+      else e3.setOperator(InfixExpression.Operator.CONDITIONAL_OR);
+      e3.setRightOperand(e2);
+      ParenthesizedExpression pe = ast.newParenthesizedExpression();
+      pe.setExpression(e3);
+      return pe;
+    }
+   
+}       // end of inner class BoundsCondition
+
+
+private static class ListBounds extends ConditionMaker {
+   
+   ListBounds() { }
+   
+   Expression getCheckExpression(AST ast,Expression base,boolean neq) {
+      if (base.getNodeType() != ASTNode.METHOD_INVOCATION) return null;
+      MethodInvocation mi = (MethodInvocation) base;
+      Expression idx = null;
+      List<?> args = mi.arguments();
+      if (args.size() > 0) idx = (Expression) args.get(0);
+      
+      MethodInvocation e4 = ast.newMethodInvocation();
+      e4.setExpression((Expression) ASTNode.copySubtree(ast,mi.getExpression()));
+      e4.setName(ast.newSimpleName("size"));
+     
+      if (idx == null) {
+         InfixExpression e5 = ast.newInfixExpression();
+         e5.setLeftOperand(e4);
+         if (neq) e5.setOperator(InfixExpression.Operator.NOT_EQUALS);
+         else e5.setOperator(InfixExpression.Operator.EQUALS);
+         e5.setRightOperand(ast.newNumberLiteral("0"));
+         return e5;
+       }
+      
+      InfixExpression e1 = ast.newInfixExpression();
+      e1.setLeftOperand((Expression) ASTNode.copySubtree(ast,idx));
+      if (neq) e1.setOperator(InfixExpression.Operator.LESS_EQUALS);
+      else e1.setOperator(InfixExpression.Operator.GREATER);
+      e1.setRightOperand(e4);
+      InfixExpression e2 = ast.newInfixExpression();
+      e2.setLeftOperand((Expression) ASTNode.copySubtree(ast,idx));
+      if (neq) e2.setOperator(InfixExpression.Operator.GREATER_EQUALS);
+      else e2.setOperator(InfixExpression.Operator.LESS);
+      e2.setRightOperand(ast.newNumberLiteral("0"));
+      InfixExpression e3 = ast.newInfixExpression();
+      e3.setLeftOperand(e1);
+      if (neq) e3.setOperator(InfixExpression.Operator.CONDITIONAL_AND);
+      else e3.setOperator(InfixExpression.Operator.CONDITIONAL_OR);
+      e3.setRightOperand(e2);
+      ParenthesizedExpression pe = ast.newParenthesizedExpression();
+      pe.setExpression(e3);
+      return pe;
+    }
+   
+}       // end of inner class ListBounds
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Find span of statement for skipping                                     */
+/*                                                                              */
+/********************************************************************************/
+
+private static class CondScan extends ASTVisitor {
+
    private Set<JcompSymbol> defined_symbols;
-   private String null_expr;
+   private String bad_expr;
    private Statement end_statement;
    private int nest_level;
    private Statement start_statement;
@@ -478,7 +630,7 @@ private class CondScan extends ASTVisitor {
             defined_symbols.add(js);
           }
        }
-      null_expr = exp.toString();
+      bad_expr = exp.toString();
       nest_level = 0;
       start_statement = start;
       end_statement = null;
@@ -500,7 +652,7 @@ private class CondScan extends ASTVisitor {
       if (n instanceof Block) {
          --nest_level;
        }
-      else if (n instanceof Statement && nest_level == 0 && end_statement != null) {
+      else if (n instanceof Statement && nest_level <= 1 && end_statement != null) {
          if (is_required) {
             end_statement = (Statement) n;
             defined_symbols.addAll(add_symbols);
@@ -515,17 +667,8 @@ private class CondScan extends ASTVisitor {
        }
     }
    
-   @Override public boolean visit(Block b) {
-      ++nest_level;
-      return true;
-    }
-   
-   @Override public void endVisit(Block b) {
-      --nest_level;
-    }
-   
    @Override public boolean visit(VariableDeclarationFragment vdf) {
-      if (end_statement != null && nest_level == 0) {
+      if (end_statement != null && nest_level <= 1) {
          JcompSymbol js = JcompAst.getDefinition(vdf);
          add_symbols.add(js);
        }
@@ -534,7 +677,7 @@ private class CondScan extends ASTVisitor {
    
    private void checkExpression(Expression n) {
       String etxt = n.toString();
-      if (etxt.equals(null_expr)) {
+      if (etxt.equals(bad_expr)) {
          StructuralPropertyDescriptor spd = n.getLocationInParent();
          if (spd == FieldAccess.EXPRESSION_PROPERTY ||
                spd == QualifiedName.QUALIFIER_PROPERTY ||
@@ -544,15 +687,16 @@ private class CondScan extends ASTVisitor {
             is_required = true;
        }
     }
-   
+
 }       // end of inner class CondScan
 
 
 
-}       // end of class SepalClassNullCondition
+
+}       // end of class SepalAvoidException
 
 
 
 
-/* end of SepalClassNullCondition.java */
+/* end of SepalAvoidException.java */
 

@@ -43,6 +43,7 @@ import edu.brown.cs.ivy.mint.MintConstants.CommandArgs;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
 import edu.brown.cs.rose.root.RootControl;
 import edu.brown.cs.rose.root.RootLocation;
+import edu.brown.cs.rose.root.RootMetrics;
 import edu.brown.cs.rose.root.RootProblem;
 import edu.brown.cs.rose.root.RootProcessor;
 import edu.brown.cs.rose.root.RootRepair;
@@ -70,6 +71,7 @@ private List<Class<?>> processor_classes;
 private List<Class<?>> location_classes;
 private RootValidate base_validator;
 private List<RootTask> sub_tasks;
+private long    start_time;
 
 
 
@@ -116,6 +118,7 @@ public RootControl getController()              { return rose_control; }
 @Override public void run()
 {
    List<ProcessorTask> tasks = new ArrayList<>();
+   start_time = System.currentTimeMillis();
    
    List<RootLocation> uselocs = null;
    if (at_location == null && location_classes.size() > 0) {
@@ -152,6 +155,8 @@ public RootControl getController()              { return rose_control; }
       for (RootTask rt : t) rt.waitForDone();
     }
    
+   long t1 = System.currentTimeMillis();
+   RootMetrics.noteCommand("BRACT","ENDREPAIR",t1-start_time);
    CommandArgs args = new CommandArgs("NAME",reply_id);
    rose_control.sendRoseMessage("ENDSUGGEST",args,null,-1);
 }
@@ -221,6 +226,11 @@ private List<RootLocation> getLocations()
    IvyXmlWriter xw = new IvyXmlWriter();
    br.outputXml(xw);
    String body = xw.toString();
+   
+   long t1 = System.currentTimeMillis();
+   RootMetrics.noteCommand("BRACT","SENDREPAIR",br.getDescription(),
+
+         br.getPriority(),br.getValidatedPriority(),t1-start_time);
    
    rose_control.sendRoseMessage("SUGGEST",args,body,-1);
 }

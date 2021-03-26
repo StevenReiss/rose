@@ -58,6 +58,7 @@ import javax.swing.SwingUtilities;
 import org.w3c.dom.Element;
 
 import edu.brown.cs.bubbles.bale.BaleFactory;
+import edu.brown.cs.bubbles.bale.BaleConstants.BaleFileOverview;
 import edu.brown.cs.bubbles.board.BoardColors;
 import edu.brown.cs.bubbles.board.BoardLog;
 import edu.brown.cs.bubbles.board.BoardMetrics;
@@ -68,10 +69,12 @@ import edu.brown.cs.bubbles.buda.BudaRoot;
 import edu.brown.cs.bubbles.bump.BumpLocation;
 import edu.brown.cs.ivy.file.IvyFormat;
 import edu.brown.cs.ivy.swing.SwingGridPanel;
+import edu.brown.cs.ivy.swing.SwingText;
 import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.rose.bush.BushConstants.BushRepairAdder;
 import edu.brown.cs.rose.root.RootEdit;
 import edu.brown.cs.rose.root.RootLocation;
+import edu.brown.cs.rose.root.RootRepair;
 
 class BushSuggestPanel implements BushConstants, BushRepairAdder
 {
@@ -90,8 +93,12 @@ private JPanel          content_pane;
 private SuggestList     suggestion_list;
 private SuggestListModel list_model;
 private JLabel          suggestions_pending;
+private String          metric_id;
+private JLabel          done_label;
 
 private static boolean do_preview = false;
+
+private static final double THRESHOLD = 0.1;
 
 private static final String PENDING = "Finding suggestions ...";
 
@@ -103,12 +110,13 @@ private static final String PENDING = "Finding suggestions ...";
 /*                                                                              */
 /********************************************************************************/
 
-BushSuggestPanel(Component src,BushProblem prob,BushLocation loc)
+BushSuggestPanel(Component src,BushProblem prob,BushLocation loc,String mid)
 {
    from_panel = src;
    for_problem = prob;
    for_location = loc;
    content_pane = null;
+   metric_id = mid;
 }
 
 
@@ -138,14 +146,16 @@ private JPanel createDisplay()
 {
    SwingGridPanel pnl = new SuggestPanel();
    pnl.beginLayout();
-   pnl.addBannerLabel("Suggest Repairs for " + for_problem.getDescription());
+   JLabel lbl = pnl.addBannerLabel("Suggest Repairs for " + for_problem.getDescription());
+   lbl.setFont(SwingText.deriveLarger(lbl.getFont()));
+   
    RootLocation loc = for_problem.getBugLocation();
    if (loc != null) {
-      pnl.addSectionLabel("   At " + loc.getLineNumber() + " in " +
-            loc.getMethod());
+      done_label = pnl.addBannerLabel("   At " + loc.getLineNumber() + " in " +
+            loc.getMethod() + "*");
     }
    if (for_location != null) {
-      pnl.addSectionLabel("Fix " + for_location.getLineNumber() + " in " +
+      done_label = pnl.addBannerLabel("Fix " + for_location.getLineNumber() + " in " +
             for_location.getMethod());
     }
    pnl.addSeparator();
@@ -185,7 +195,6 @@ private JPanel createDisplay()
    
    BoardLog.logD("BUSH","Suggest size " + list_model.getSize() + " " +
          suggestion_list.getVisibleRowCount() + " " + d1);
-   
 }
 
 
@@ -195,7 +204,45 @@ private JPanel createDisplay()
    if (sz == 0) {
       suggestions_pending.setText("No suggestions found");
     }
+   if (done_label != null) {
+      String txt = done_label.getText();
+      if (txt.endsWith("*")) {
+         txt = txt.substring(0,txt.length()-1).trim();
+         done_label.setText(txt);
+       }
+    }
 }
+
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Create a preview bubble                                                 */
+/*                                                                              */
+/********************************************************************************/
+
+private void showPreviewBubble(RootRepair repair)
+{
+   RootLocation loc = repair.getLocation();
+   int m0 = loc.getMethodOffset();
+   int m1 = loc.getMethodEndOffset();
+   if (m0 == 0 || m1 == 0) return;
+   RootEdit edit = repair.getEdit();
+   int e0 = edit.getEditStartOffset();
+   int e1 = edit.getEditEndOffset();
+   if (e0 == 0 || e1 == 0) return;
+   BaleFileOverview bfo = BaleFactory.getFactory().getFileOverview(loc.getProject(),loc.getFile());
+   if (bfo == null) return;
+   BoardLog.logD("BUSH","Show Preview " + m0 + " " + m1 + " " + e0 + " " + e1);
+   // use bfo to create a temporary document
+   // create positions for m0, m1, e0, e1 in that document
+   // do the edit indicated by edit in the temp document
+   // extract text from m0' to m1'
+   // color the text from e0' to e1'
+   // display the result in a JEditPane inside a bubble with a edit preview header
+}
+
 
 
 /********************************************************************************/
@@ -293,10 +340,16 @@ private class SuggestRenderer implements ListCellRenderer<BushRepair> {
    
    @Override public Component getListCellRendererComponent(JList<? extends BushRepair> l,
          BushRepair r,int idx,boolean sel,boolean foc) {
-      String desc = r.getDescription();
       RootLocation loc = r.getLocation();
-      String cnts = "<html>" + desc + "<p>";
-      cnts += "&nbsp;&nbsp;&nbsp;At " + loc.getLineNumber() + ":" + loc.getMethod();
+      String desc = r.getDescription();
+      
+      String mthd = loc.getMethod();
+      int midx = mthd.lastIndexOf(".");
+      if (midx > 0) idx = mthd.lastIndexOf(".",midx-1);
+      if (midx > 0) mthd = mthd.substring(midx+1);
+      
+      String cnts = "<html>" + IvyXml.htmlSanitize(desc) + "<p>";
+      cnts += "&nbsp;&nbsp;&nbsp;At " + loc.getLineNumber() + " of " + mthd;
       cnts += " (" + IvyFormat.formatNumber(r.getValidatedPriority()) + ")";
       Component c = base_renderer.getListCellRendererComponent(l,cnts,idx,sel,foc);
       
@@ -336,6 +389,10 @@ private class SuggestListModel extends DefaultListModel<BushRepair> {
    private static final long serialVersionUID = 1;
    
    @Override public synchronized void addElement(BushRepair r) {
+      double th = 0;
+      if (getSize() > 0) th = elementAt(0).getValidatedPriority() * THRESHOLD;
+      if (r.getValidatedPriority() < th) return;
+      
       int min = 0;
       int max = getSize()-1;
       while (min <= max) {
@@ -352,13 +409,26 @@ private class SuggestListModel extends DefaultListModel<BushRepair> {
       BoardLog.logD("BUSH","Add repair " + min + " " + getSize() + " " + r.getDescription());
       
       add(min,r);
+      if (min == 0) {
+         th = r.getValidatedPriority() * THRESHOLD;
+         int cut = -1;
+         for (int i = 1; i < getSize(); ++i) {
+            BushRepair r1 = elementAt(i);
+            if (r1.getValidatedPriority() < th) {
+               cut = i;
+               break;
+             }
+          }
+         if (cut > 0) {
+            removeRange(cut,getSize()-1);
+          }
+       }
       
       int sz = Math.min(getSize(),10);
       
       BoardLog.logD("BUSH","Set row count to " + sz);
       
       suggestion_list.setVisibleRowCount(sz+1);
-      
     }
    
 }       // end of inner class SuggestListModel
@@ -382,9 +452,10 @@ private class PreviewAction extends AbstractAction {
     }
    
    @Override public void actionPerformed(ActionEvent e) {
-      // metrics("PREVIEW",...
+      BushFactory.metrics("SUGGEST_PREVUE",metric_id,for_repair.getDescription(),
+            for_repair.getPriority(),for_repair.getValidatedPriority());
       BoardLog.logD("BUSH","PREVIEW REPAIR " + for_repair.getDescription());
-   
+      showPreviewBubble(for_repair);
     }
    
 }       // end of inner class PreviewAction
@@ -401,7 +472,8 @@ private class RepairAction extends AbstractAction {
     }
    
    @Override public void actionPerformed(ActionEvent e) {
-      // BushFactory.metrics("REPAIR",...
+      BushFactory.metrics("SUGGEST_REPAIR",metric_id,for_repair.getDescription(),
+            for_repair.getPriority(),for_repair.getValidatedPriority());
       RootEdit redit = for_repair.getEdit();
       Element tedit = redit.getTextEdit();
       
@@ -430,8 +502,9 @@ private class SourceAction extends AbstractAction implements Runnable {
    @Override public void actionPerformed(ActionEvent e) {
       if (for_repair == null) return;
       BoardMetrics.noteCommand("BUSH","GotoSuggestSource");
-      // BushFactory.metrics("SOURCE",...
-      BushFactory.metrics("GotoSuggestSource",for_repair.getDescription());
+      BushFactory.metrics("SUGGEST_SOURCE",metric_id,for_repair.getDescription(),
+            for_repair.getPriority(),for_repair.getValidatedPriority());
+      BushFactory.metrics("GOTO_SOURCE",for_repair.getDescription());
       BushLocation loc = (BushLocation) for_repair.getLocation();
       if (loc == null) loc = for_location;
       if (loc == null) return;
