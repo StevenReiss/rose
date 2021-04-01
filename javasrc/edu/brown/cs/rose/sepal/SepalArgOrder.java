@@ -85,7 +85,7 @@ public SepalArgOrder()
 /*                                                                              */
 /********************************************************************************/
 
-@Override protected double getFinderPriority()
+@Override public double getFinderPriority()
 {
    return 0.33;
 }

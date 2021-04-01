@@ -96,7 +96,7 @@ public SepalAvoidException()
 /*                                                                              */
 /********************************************************************************/
 
-@Override protected double getFinderPriority()
+@Override public double getFinderPriority()
 {
    return 0.5;
 }
@@ -155,7 +155,7 @@ public SepalAvoidException()
    if (rw1 != null) {
       String desc = "Add 'if (" + cm.getNeqCondition(base).toString() + ") { ' ";
       if (stmt == endstmt) desc += "around " + stmtdesc;
-      else desc += "around next and subsequent affected statements";
+      else desc += "around " + stmtdesc + " and subsequent statements";
       addRepair(rw1,desc,0.75);
     }
    ASTRewrite rw2 = loopContine(cm,base,stmt);

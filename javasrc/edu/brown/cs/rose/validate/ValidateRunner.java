@@ -36,13 +36,14 @@
 package edu.brown.cs.rose.validate;
 
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
+import edu.brown.cs.rose.root.RootConstants.PriorityTask;
 import edu.brown.cs.rose.root.RootProcessor;
 import edu.brown.cs.rose.root.RootRepair;
 import edu.brown.cs.rose.root.RootTask;
 import edu.brown.cs.rose.root.RootTestCase;
 import edu.brown.cs.rose.root.RoseLog;
 
-class ValidateRunner extends RootTask implements ValidateConstants
+class ValidateRunner extends RootTask implements ValidateConstants, PriorityTask
 {
 
 
@@ -140,6 +141,11 @@ private void sendRepair()
 }
 
 
+
+@Override public double getTaskPriority() 
+{
+   return for_repair.getPriority();
+}
 
 
 }       // end of class ValidateRunner

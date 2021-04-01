@@ -207,8 +207,6 @@ private JPanel createDisplay()
 	 for_frame.getMethod());
    pnl.addSeparator();
    List<String> choices = new ArrayList<>();
-   BoardLog.logD("BUSH","Choices " + for_thread.getExceptionType() + " " +
-         for_frame.getLevel() + " " + for_thread.getStack().getFrame(0) + " " + for_frame);
    if (for_thread.getExceptionType() != null &&
 	 for_thread.getStack().getFrame(0) == for_frame) {
       if (for_thread.getExceptionType().equals("java.lang.AssertionError")) {
@@ -270,15 +268,12 @@ private void updateSize()
    if (content_panel == null) return;
    BudaBubble bbl = BudaRoot.findBudaBubble(content_panel);
    Dimension d = bbl.getPreferredSize();
-   Dimension d1 = bbl.getSize();
-   BoardLog.logD("BUSH","Check size " + d + " " + d1);
    bbl.setSize(d);
 }
 
 
 private void updateShow()
 {
-   BoardLog.logD("BUSH","Update show " + rose_ready + " " + active_panel);
    if (rose_ready) problem_panel.setEnabled(true);
    
    if (active_panel != null && rose_ready) {
@@ -607,7 +602,7 @@ private abstract class VarExprPanel extends DataPanel implements ActionListener,
       variable_selector = addChoice(what,vars,0,false,this);
       ElementsFinder finder = new ElementsFinder(this);
       BoardThreadPool.start(finder);
-      current_value = addDescription("Current Value",null);
+      current_value = addDescription("Current Value","<No Variable>");
       List<String> shoulds = new ArrayList<>();
       should_be = addChoice("Should Be",shoulds,0,false,this);
       should_be.setVisible(false);
@@ -652,6 +647,7 @@ private abstract class VarExprPanel extends DataPanel implements ActionListener,
                 }
                else setValue(var,rval,null);
              }
+            else current_value.setText("<No Variable>");
             break;
          case "Should Be" :
             String s = (String) should_be.getSelectedItem();
@@ -990,8 +986,6 @@ private List<String> findVariables()
 	    break;
        }
     }
-
-   BoardLog.logD("BUSH","VARIABLE LIST " + rslt.size());
 
    return rslt;
 }

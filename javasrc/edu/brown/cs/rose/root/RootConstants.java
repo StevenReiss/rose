@@ -69,6 +69,16 @@ String ROSE_GLOBAL_INDEX_TYPE = "STMTSEARCHGLOBAL";
 double DEFAULT_PRIORITY = 0.5;
 
 
+interface PriorityTask {
+   
+   /**
+    *   Return the priority.  Higher numbers will be executed before lower ones,
+    *   Tasks that do not implement PriorityTask will be considered to have priority 0.
+    *   Note this is used by RootThreadPool.
+    **/ 
+   double getTaskPriority();
+   
+}
 
 
 }       // end of interface RootConstants

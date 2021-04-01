@@ -243,7 +243,7 @@ private List<RootLocation> getLocations()
 /*                                                                              */
 /********************************************************************************/
 
-private static class ProcessorTask extends RootTask {
+private static class ProcessorTask extends RootTask implements PriorityTask {
    
    private RootRepairFinder repair_finder;
    
@@ -264,6 +264,10 @@ private static class ProcessorTask extends RootTask {
             noteDone();
           }
        }
+    }
+   
+   @Override public double getTaskPriority() {
+      return repair_finder.getFinderPriority() * 0.5;
     }
    
 }       // end of inner class ProcessorTask

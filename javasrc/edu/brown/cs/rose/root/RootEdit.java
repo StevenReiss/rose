@@ -104,7 +104,7 @@ public RootEdit(File f,TextEdit te)
 
 public File getFile()                           { return base_file; }
 
-public Element getTextEdit()
+public Element getTextEditXml()
 {
    if (complete_edit != null) return complete_edit;
    

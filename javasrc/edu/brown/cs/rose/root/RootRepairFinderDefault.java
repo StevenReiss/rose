@@ -119,7 +119,7 @@ protected RootLocation getLocation()            { return at_location; }
 
 @Override public abstract void process();
 
-protected abstract double getFinderPriority();
+public abstract double getFinderPriority();
 
 
 

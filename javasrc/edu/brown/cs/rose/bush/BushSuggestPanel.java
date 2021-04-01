@@ -51,14 +51,22 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
+import javax.swing.JTextPane;
 import javax.swing.ListCellRenderer;
 import javax.swing.ListModel;
 import javax.swing.SwingUtilities;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultStyledDocument;
+import javax.swing.text.Position;
+import javax.swing.text.StyledDocument;
 
 import org.w3c.dom.Element;
 
 import edu.brown.cs.bubbles.bale.BaleFactory;
 import edu.brown.cs.bubbles.bale.BaleConstants.BaleFileOverview;
+import edu.brown.cs.bubbles.board.BoardAttributes;
 import edu.brown.cs.bubbles.board.BoardColors;
 import edu.brown.cs.bubbles.board.BoardLog;
 import edu.brown.cs.bubbles.board.BoardMetrics;
@@ -96,7 +104,7 @@ private JLabel          suggestions_pending;
 private String          metric_id;
 private JLabel          done_label;
 
-private static boolean do_preview = false;
+private static boolean do_preview = true;
 
 private static final double THRESHOLD = 0.1;
 
@@ -146,16 +154,16 @@ private JPanel createDisplay()
 {
    SwingGridPanel pnl = new SuggestPanel();
    pnl.beginLayout();
-   JLabel lbl = pnl.addBannerLabel("Suggest Repairs for " + for_problem.getDescription());
-   lbl.setFont(SwingText.deriveLarger(lbl.getFont()));
+   done_label = pnl.addBannerLabel("Finding Repairs for " + for_problem.getDescription());
+   done_label.setFont(SwingText.deriveLarger(done_label.getFont()));
    
    RootLocation loc = for_problem.getBugLocation();
    if (loc != null) {
-      done_label = pnl.addBannerLabel("   At " + loc.getLineNumber() + " in " +
-            loc.getMethod() + "*");
+      pnl.addBannerLabel("   At " + loc.getLineNumber() + " in " +
+            loc.getMethod());
     }
    if (for_location != null) {
-      done_label = pnl.addBannerLabel("Fix " + for_location.getLineNumber() + " in " +
+      pnl.addBannerLabel("Fix " + for_location.getLineNumber() + " in " +
             for_location.getMethod());
     }
    pnl.addSeparator();
@@ -206,8 +214,8 @@ private JPanel createDisplay()
     }
    if (done_label != null) {
       String txt = done_label.getText();
-      if (txt.endsWith("*")) {
-         txt = txt.substring(0,txt.length()-1).trim();
+      if (txt.startsWith("Finding")) {
+         txt = "Showing" + txt.substring(7);
          done_label.setText(txt);
        }
     }
@@ -234,13 +242,94 @@ private void showPreviewBubble(RootRepair repair)
    if (e0 == 0 || e1 == 0) return;
    BaleFileOverview bfo = BaleFactory.getFactory().getFileOverview(loc.getProject(),loc.getFile());
    if (bfo == null) return;
-   BoardLog.logD("BUSH","Show Preview " + m0 + " " + m1 + " " + e0 + " " + e1);
-   // use bfo to create a temporary document
-   // create positions for m0, m1, e0, e1 in that document
-   // do the edit indicated by edit in the temp document
-   // extract text from m0' to m1'
-   // color the text from e0' to e1'
-   // display the result in a JEditPane inside a bubble with a edit preview header
+   
+   BoardAttributes atts = new BoardAttributes("Rose");
+   AttributeSet oldedit = atts.getAttributes("Original");
+   AttributeSet newedit = atts.getAttributes("Edited");
+   
+   int e2 = e0;
+   int e3 = e1;
+   
+   DefaultStyledDocument d1,d2;
+   try {
+      String text = bfo.getText(m0,m1-m0);
+      d1 = new DefaultStyledDocument();
+      d1.insertString(0,text,null);
+      d2 = new DefaultStyledDocument();
+      d2.insertString(0,text,null);
+      Position p0 = (e0 <= m0 ? null : d2.createPosition(e0-m0-1));
+      Position p1 = (e1-m0 >= d2.getLength() ? null : d2.createPosition(e1-m0+1));
+      int delta = applyEdit(d2,m0,repair.getEdit());
+      int e2a = (e0-m0);
+      int e3a = (e1-m0) - (delta-m0);
+      e2 = (p0 == null ? 0 : p0.getOffset()+1);
+      e3 = (p1 == null ? d2.getLength() : p1.getOffset()-1);
+      if (e2 != e2a || e3 != e3a) 
+         BoardLog.logE("BUSH","Edit change " + e2a + " " + e2 + " " + e3a + " " + e3);
+    }
+   catch (BadLocationException e) {
+      BoardLog.logE("BUSH","Problem getting text for preview",e);
+      return;
+    }
+  
+   PreviewPanel pnl = new PreviewPanel(repair,d1,d2);
+   
+   JTextPane tp = pnl.getOriginalEditor();
+   tp.select(e0-m0,e1-m0);
+   tp.setCharacterAttributes(oldedit,true);
+   
+   JTextPane etp = pnl.getEditedEditor();
+   etp.select(e2,e3);
+   etp.setCharacterAttributes(newedit,true);
+   
+   PreviewBubble bbl = new PreviewBubble(pnl);
+   BudaBubbleArea bba = BudaRoot.findBudaBubbleArea(from_panel);
+   bba.addBubble(bbl,content_pane,null,
+         BudaConstants.PLACEMENT_LOGICAL|BudaConstants.PLACEMENT_RIGHT);
+   bbl.setVisible(true);
+}
+
+
+
+private int applyEdit(DefaultStyledDocument doc,int delta,RootEdit edit) throws BadLocationException
+{
+   Element editxml = IvyXml.getChild(edit.getTextEditXml(),"EDIT");
+   delta = applyEdit(doc,delta,editxml);
+   
+   return delta;
+}
+
+
+private int applyEdit(DefaultStyledDocument doc,int delta,Element edit) throws BadLocationException
+{
+   int off = IvyXml.getAttrInt(edit,"OFFSET");
+   int len = IvyXml.getAttrInt(edit,"LENGTH");
+   String text = IvyXml.getTextElement(edit,"TEXT");
+   
+   switch (IvyXml.getAttrString(edit,"TYPE")) {
+      case "MULTI" :
+         for (Element cedit : IvyXml.children(edit,"EDIT")) {
+            delta = applyEdit(doc,delta,cedit);
+          }
+         break;
+      case "INSERT" :
+         doc.insertString(off-delta,text,null);
+         delta -= text.length();
+         break;
+      case "DELETE" :
+         doc.remove(off-delta,len);
+         delta += len;
+         break;
+      case "REPLACE" :
+         doc.replace(off-delta,len,text,null);
+         delta -= text.length()-len;
+         break;
+      default :
+         BoardLog.logE("BUSH","Unknown edit type: " + IvyXml.convertXmlToString(edit));
+         break;
+    }
+   
+   return delta;
 }
 
 
@@ -463,10 +552,10 @@ private class PreviewAction extends AbstractAction {
 
 private class RepairAction extends AbstractAction {
 
-   private BushRepair for_repair;
+   private RootRepair for_repair;
    private static final long serialVersionUID = 1; 
    
-   RepairAction(BushRepair r) {
+   RepairAction(RootRepair r) {
       super("Make repair " + r.getDescription());
       for_repair = r;
     }
@@ -475,9 +564,9 @@ private class RepairAction extends AbstractAction {
       BushFactory.metrics("SUGGEST_REPAIR",metric_id,for_repair.getDescription(),
             for_repair.getPriority(),for_repair.getValidatedPriority());
       RootEdit redit = for_repair.getEdit();
-      Element tedit = redit.getTextEdit();
+      Element tedit = redit.getTextEditXml();
       
-      BoardLog.logD("BUSH","MAKE REPAIR " + for_repair.getDescription() + " " + redit.getFile() + " " + IvyXml.convertXmlToString(redit.getTextEdit()));
+      BoardLog.logD("BUSH","MAKE REPAIR " + for_repair.getDescription() + " " + redit.getFile() + " " + IvyXml.convertXmlToString(redit.getTextEditXml()));
       
       if (IvyXml.isElement(tedit,"REPAIREDIT")) tedit = IvyXml.getChild(tedit,"EDIT");
       BaleFactory.getFactory().applyEdits(redit.getFile(),tedit);
@@ -489,11 +578,11 @@ private class RepairAction extends AbstractAction {
 
 private class SourceAction extends AbstractAction implements Runnable {
    
-   private BushRepair for_repair;
+   private RootRepair for_repair;
    private BudaBubble source_bubble;
    private static final long serialVersionUID = 1;
    
-   SourceAction(BushRepair r) {
+   SourceAction(RootRepair r) {
       super ("Show source for " + r.getDescription());
       for_repair = r;
       source_bubble = null;
@@ -540,7 +629,77 @@ private class SourceAction extends AbstractAction implements Runnable {
 
 
 
+/********************************************************************************/
+/*                                                                              */
+/*      Preview Panel and Bubble                                                */
+/*                                                                              */
+/********************************************************************************/
 
+private class PreviewPanel extends SwingGridPanel {
+   
+   private RootRepair   for_repair;
+   private JTextPane before_editor;
+   private JTextPane after_editor;
+   
+   private static final long serialVersionUID = 1;
+   
+   PreviewPanel(RootRepair rep,StyledDocument d1,StyledDocument d2) {
+      for_repair = rep;
+      String txt = "Preview of " + rep.getDescription();
+      beginLayout();
+      addBannerLabel(txt);
+      addSeparator();
+      before_editor = new PreviewEditor(d1);
+      after_editor = new PreviewEditor(d2);
+      SwingGridPanel codepanel = new SwingGridPanel();
+      codepanel.addGBComponent(new JScrollPane(before_editor),0,0,1,1,10,10);
+      codepanel.addGBComponent(new JSeparator(JSeparator.VERTICAL),1,0,1,1,0,10);
+      codepanel.addGBComponent(new JScrollPane(after_editor),2,0,1,1,10,10);
+      addLabellessRawComponent("EDITS",codepanel);
+      setBackground(BoardColors.getColor("Rose.background.color"));
+      setOpaque(true);
+    }
+   
+   RootRepair getRepair()                               { return for_repair; }
+   
+   JTextPane getOriginalEditor()                        { return before_editor; }
+   JTextPane getEditedEditor()                          { return after_editor; }
+   
+}       // end of inner class PreviewPanel
+
+
+private class PreviewEditor extends JTextPane {
+   
+   private static final long serialVersionUID = 1;
+   
+   PreviewEditor(StyledDocument d) {
+      super(d);
+      setEditable(false);
+    }
+   
+}       // end of inner class PreviewEditor
+
+
+
+private class PreviewBubble extends BudaBubble {
+   
+   private RootRepair   for_repair;
+   
+   private static final long serialVersionUID = 1;
+   
+   PreviewBubble(PreviewPanel pnl) {
+      for_repair = pnl.getRepair();
+      setContentPane(pnl);
+    }
+   
+   @Override public void handlePopupMenu(MouseEvent e) {
+      JPopupMenu menu = new JPopupMenu();
+      menu.add(new RepairAction(for_repair));
+      menu.add(new SourceAction(for_repair));
+      menu.add(getFloatBubbleAction());
+    }
+   
+}       // end of inner class PreviewBubble
 
 
 }       // end of class BushSuggestPanel

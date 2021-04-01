@@ -88,7 +88,7 @@ public SepalValueFixer()
 /*										*/
 /********************************************************************************/
 
-@Override protected double getFinderPriority()
+@Override public double getFinderPriority()
 {
    return 0.5;
 }

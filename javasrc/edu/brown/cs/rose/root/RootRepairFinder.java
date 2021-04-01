@@ -58,7 +58,12 @@ public interface RootRepairFinder
  *      Process to find repair suggestions.
  **/
 
-    void process();
+   void process();
+    
+/**
+ *      Return processor priority
+ **/
+   default double getFinderPriority()           { return 0.5; }    
 
 }       // end of interface RoseRepairFinder
 

@@ -35,7 +35,9 @@
 
 package edu.brown.cs.rose.root;
 
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.Comparator;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -72,13 +74,14 @@ private boolean do_debug = true;
 
 private RootThreadPool()
 {
+   BlockingQueue<Runnable> bq = new PriorityBlockingQueue<>(10,new TaskComparator());
    if (do_debug) {
       thread_pool = new ThreadPoolExecutor(1,1,30000,TimeUnit.MILLISECONDS,
-            new LinkedBlockingQueue<>(),new OurThreadFactory());
+            bq,new OurThreadFactory());
     }
    else {
       thread_pool = new ThreadPoolExecutor(2,12,30000,TimeUnit.MILLISECONDS,
-            new LinkedBlockingQueue<>(),new OurThreadFactory());
+            bq,new OurThreadFactory());
     }
 }
 
@@ -112,6 +115,25 @@ private static class OurThreadFactory implements ThreadFactory {
     }
    
 }       // end of inner class OurThreadFactory
+
+
+private static class TaskComparator implements Comparator<Runnable> {
+   
+   @Override public int compare(Runnable r1,Runnable r2) {
+      double p1 = 0;
+      double p2 = 0;
+      if (r1 instanceof PriorityTask) {
+         p1 = ((PriorityTask) r1).getTaskPriority();
+       }
+      if (r2 instanceof PriorityTask) {
+         p2 = ((PriorityTask) r2).getTaskPriority();
+       }
+      if (p1 < p2) return 1;
+      if (p1 > p2) return -1;
+      return 0;
+    }
+   
+}       // end of inner class TaskComparator
 
 
 private static class ProcThread extends Thread implements LoggerThread {
