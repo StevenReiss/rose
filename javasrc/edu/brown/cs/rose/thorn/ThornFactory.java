@@ -37,9 +37,9 @@ package edu.brown.cs.rose.thorn;
 
 import java.util.List;
 
-import org.eclipse.jdt.core.dom.ASTNode;
-
+import edu.brown.cs.rose.bud.BudLaunch;
 import edu.brown.cs.rose.root.RootControl;
+import edu.brown.cs.rose.root.RootProblem;
 
 public class ThornFactory implements ThornConstants
 {
@@ -72,10 +72,10 @@ public ThornFactory(RootControl rc)
 /*                                                                              */
 /********************************************************************************/
 
-public List<ThornVariable> getChangedVariables(ASTNode from)
+public List<ThornVariable> getChangedVariables(BudLaunch bl,RootProblem prob,String topframe)
 {
    ThornChangedFinder tcf = new ThornChangedFinder(rose_control);
-   List<ThornVariable> rslt = tcf.process(from);
+   List<ThornVariable> rslt = tcf.process(bl,prob,topframe);
    
    return rslt;
 }

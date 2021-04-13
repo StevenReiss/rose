@@ -145,7 +145,7 @@ public RootValidate createValidate(RootProblem prob,String frameid,RootLocation 
     }
    if (frameid == null) return null;
 
-   ValidateChangedItems itms = new ValidateChangedItems(bl,frameid);
+   ValidateChangedItems itms = new ValidateChangedItems(bl,frameid,prob);
    List<ValidateAction> cngs = itms.getChangeActions();
 
    ValidateContext ctx = new ValidateContext(root_control,prob,frameid,cngs);

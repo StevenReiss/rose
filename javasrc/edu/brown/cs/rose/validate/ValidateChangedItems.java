@@ -35,20 +35,18 @@
 
 package edu.brown.cs.rose.validate;
 
-import java.io.File;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.eclipse.jdt.core.dom.ASTNode;
 
 import edu.brown.cs.rose.bud.BudLaunch;
-import edu.brown.cs.rose.bud.BudStack;
-import edu.brown.cs.rose.bud.BudStackFrame;
 import edu.brown.cs.rose.bud.BudValue;
 import edu.brown.cs.rose.root.RootControl;
+import edu.brown.cs.rose.root.RootProblem;
 import edu.brown.cs.rose.thorn.ThornFactory;
 import edu.brown.cs.rose.thorn.ThornConstants.ThornVariable;
 import edu.brown.cs.rose.thorn.ThornConstants.ThornVariableType;
@@ -66,6 +64,7 @@ class ValidateChangedItems implements ValidateConstants
 private RootControl	root_control;
 private BudLaunch	for_launch;
 private String		for_frame;
+private RootProblem     for_problem;
 
 
 
@@ -75,11 +74,12 @@ private String		for_frame;
 /*										*/
 /********************************************************************************/
 
-ValidateChangedItems(BudLaunch bl,String frame)
+ValidateChangedItems(BudLaunch bl,String frame,RootProblem prob)
 {
    root_control = bl.getControl();
    for_launch = bl;
    for_frame = frame;
+   for_problem = prob;
 }
 
 
@@ -92,7 +92,7 @@ ValidateChangedItems(BudLaunch bl,String frame)
 
 List<ValidateAction> getChangeActions()
 {
-   Set<ThornVariable> items = findChangedItems();
+   Collection<ThornVariable> items = findChangedItems();
 
    if (items == null) return null;
 
@@ -125,33 +125,13 @@ List<ValidateAction> getChangeActions()
 /*										*/
 /********************************************************************************/
 
-private Set<ThornVariable> findChangedItems()
+private Collection<ThornVariable> findChangedItems()
 {
-   Set<ThornVariable> rslt = new HashSet<>();
-   BudStack bs = for_launch.getStack();
    ThornFactory tf = new ThornFactory(root_control);
+   
+   List<ThornVariable> vars = tf.getChangedVariables(for_launch,for_problem,for_frame);
 
-   for (BudStackFrame bf : bs.getFrames()) {
-      File f = bf.getSourceFile();
-      if (f != null && f.exists() && f.canRead()) {
-	 String proj = null;
-	 if (f != null) proj = root_control.getProjectForFile(f);
-	 ASTNode n = root_control.getSourceNode(proj,f,-1,bf.getLineNumber(),true,true);
-	 List<ThornVariable> fnd = tf.getChangedVariables(n);
-	 if (fnd != null && !fnd.isEmpty()) {
-	    boolean top = for_frame.equals(bf.getFrameId());
-	    for (ThornVariable tv : fnd) {
-	       if (!top && tv.getVariableType() == ThornVariableType.PARAMETER) continue;
-	       rslt.add(tv);
-	     }
-	  }
-	 // this needs to track what is internal and removed by outer method
-	 // This should probably be done in THORN, with getChangedVariables() taking
-	 // the current set as arguments and returning the resultant set
-       }
-    }
-
-   return rslt;
+   return vars;
 }
 
 

@@ -47,6 +47,7 @@ import org.w3c.dom.Element;
 import edu.brown.cs.ivy.jcomp.JcompAst;
 import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
+import edu.brown.cs.rose.bract.BractFactory;
 import edu.brown.cs.rose.bud.BudLaunch;
 import edu.brown.cs.rose.bud.BudStack;
 import edu.brown.cs.rose.bud.BudStackFrame;
@@ -100,6 +101,10 @@ protected StemQueryBase(StemMain ctrl,Element xml)
    method_name = IvyXml.getAttrString(xml,"METHOD");
    stem_control = ctrl;
    for_problem = null;
+   Element pxml = IvyXml.getChild(xml,"PROBLEM");
+   if (pxml != null) {
+      for_problem = BractFactory.getFactory().createProblemDescription(ctrl,pxml);
+    }
    
    bud_launch = new BudLaunch(ctrl,launch_id,thread_id,frame_id,project_name);
 }

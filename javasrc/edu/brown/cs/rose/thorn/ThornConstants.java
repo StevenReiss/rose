@@ -35,7 +35,9 @@
 
 package edu.brown.cs.rose.thorn;
 
+import java.util.HashMap;
 
+import edu.brown.cs.ivy.jcomp.JcompSymbol;
 
 public interface ThornConstants
 {
@@ -54,7 +56,7 @@ interface ThornVariable {
 }
 
 
-
+class ThornChangeMap extends HashMap<JcompSymbol,ThornChangedData> { }
 
 
 }       // end of interface ThornConstants

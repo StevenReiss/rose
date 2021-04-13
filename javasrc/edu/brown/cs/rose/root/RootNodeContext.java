@@ -35,8 +35,10 @@
 
 package edu.brown.cs.rose.root;
 
+import org.eclipse.jdt.core.dom.ASTNode;
 import org.w3c.dom.Element;
 
+import edu.brown.cs.ivy.jcomp.JcompAst;
 import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
 
@@ -81,6 +83,31 @@ public RootNodeContext(Element xml)
    after_type = IvyXml.getAttrString(xml,"AFTERTYPE");
    after_typeid = IvyXml.getAttrInt(xml,"AFTERTYPEID");
 }
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Access methods                                                          */
+/*                                                                              */
+/********************************************************************************/
+
+public ASTNode findAstNode(ASTNode base)
+{
+   ASTNode root = base.getRoot();
+   ASTNode n = JcompAst.findNodeAtOffset(root,start_offset);
+   for (ASTNode p = n; p != null; p = p.getParent()) {
+      if (p.getNodeType() == node_typeid) {
+         int end = p.getStartPosition() + p.getLength();
+         if (Math.abs(end-end_offset) < 2) return p;
+       }
+    }
+   
+   return null;
+}
+
+
+
 
 
 /********************************************************************************/

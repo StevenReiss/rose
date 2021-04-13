@@ -380,7 +380,7 @@ private FrameData setupTest(MintControl ctrl,String project,String launch)
 
 private void runTest(MintControl ctrl,FrameData fd,String oprob)
 {
-   getChangedVariables(ctrl,fd);
+   getChangedVariables(ctrl,fd,oprob);
    String prob = getStartFrame(ctrl,oprob);
    getSuggestionsFor(ctrl,fd,prob,null);
    
@@ -424,7 +424,7 @@ private Element getHistory(MintControl ctrl,FrameData fd,String prob)
 
 
 
-private void getChangedVariables(MintControl ctrl,FrameData fd)
+private void getChangedVariables(MintControl ctrl,FrameData fd,String prob)
 {
    CommandArgs args = new CommandArgs("TYPE","EXCEPTION",
          "METHOD",fd.getMethod(),
@@ -435,7 +435,7 @@ private void getChangedVariables(MintControl ctrl,FrameData fd)
          "LAUNCH",fd.getLaunchId(),
          "FRAME",fd.getId(),
          "THREAD",fd.getThreadId() );
-   Element xml = sendStemReply(ctrl,"CHANGEDITEMS",args,null);
+   Element xml = sendStemReply(ctrl,"CHANGEDITEMS",args,prob);
    Assert.assertTrue(IvyXml.isElement(xml,"RESULT"));
    
    String pvals = null;

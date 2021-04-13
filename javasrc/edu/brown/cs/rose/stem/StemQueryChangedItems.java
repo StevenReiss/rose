@@ -80,7 +80,7 @@ void process(StemMain sm,IvyXmlWriter xw) throws RoseException
    ASTNode n = getResolvedSourceStatement();
    if (n == null) throw new RoseException("Can't find starting statement");
    ThornFactory tf = new ThornFactory(sm);
-   List<ThornVariable> rslt = tf.getChangedVariables(n);
+   List<ThornVariable> rslt = tf.getChangedVariables(bud_launch,for_problem,frame_id);
    
    if (rslt == null) throw new RoseException("Problem finding changed variables");
    
