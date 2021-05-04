@@ -65,7 +65,6 @@ private RootControl	root_control;
 private RootProblem	for_problem;
 private String          frame_id;
 private BudLaunch	for_launch;
-private List<ValidateAction> setup_actions;
 private String          base_session;
 private ValidateExecution base_execution;
 
@@ -77,14 +76,13 @@ private ValidateExecution base_execution;
 /*										*/
 /********************************************************************************/
 
-ValidateContext(RootControl ctrl,RootProblem p,String fid,List<ValidateAction> acts)
+ValidateContext(RootControl ctrl,RootProblem p,String fid)
 {
    root_control = ctrl;
    for_problem = p;
    for_launch = new BudLaunch(root_control,for_problem);
    frame_id = fid;
    if (frame_id == null) frame_id = for_launch.getFrame();
-   setup_actions = acts;
 }
 
 
@@ -101,7 +99,7 @@ ValidateContext(RootControl ctrl,RootProblem p,String fid,List<ValidateAction> a
 
 BudLaunch getLaunch()                                   { return for_launch; }
 
-List<ValidateAction> getActions()                       { return setup_actions; }
+
 
 RootControl getControl()                                { return root_control; }
 
@@ -134,6 +132,7 @@ public void validateAndSend(RootProcessor rp,RootRepair rr)
 
 void setupBaseExecution()
 {
+   // set up the base session in SEEDE
    CommandArgs args = new CommandArgs("TYPE","LAUNCH",
          "PROJECT",for_problem.getBugLocation().getProject(),
          "LAUNCHID",for_launch.getLaunch(),
@@ -145,11 +144,8 @@ void setupBaseExecution()
    Element sessxml = IvyXml.getChild(rslt,"SESSION");
    base_session = IvyXml.getAttrString(sessxml,"ID");
    if (base_session == null) return;
-   
-   for (ValidateAction va : setup_actions) {
-      va.perform(root_control,base_session);
-    }
-   
+
+   // Add all the loaded files
    IvyXmlWriter xw = new IvyXmlWriter();
    for (File f : root_control.getLoadedFiles()) {
       xw.begin("FILE");
@@ -160,10 +156,33 @@ void setupBaseExecution()
    xw.close();
    root_control.sendSeedeMessage(base_session,"ADDFILE",null,cnts);
    
+   ValidateChangedItems valuechanges = new ValidateChangedItems(for_launch,frame_id,for_problem);
+   List<ValidateAction> changes = valuechanges.getParameterActions();
+   for (ValidateAction va : changes) {
+      va.perform(root_control,base_session);
+    }
+   
+   for ( ; ; ) {
+      runBaseExecution();
+      if (base_execution.getSeedeResult().getProblemTime() >= 0) break;
+   
+      changes = valuechanges.getResetActions(this);
+      if (changes == null) break;
+      for (ValidateAction va : changes) {
+         va.perform(root_control,base_session);
+       }
+    }
+}
+   
+
+
+
+
+void runBaseExecution()
+{
    base_execution = new ValidateExecution(base_session,this,null);
    base_execution.start(root_control);
    
-   // for debugging
    base_execution.getSeedeResult().setupForLaunch(getLaunch());
 }
 

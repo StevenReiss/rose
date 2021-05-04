@@ -45,8 +45,10 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.swing.AbstractAction;
 import javax.swing.JButton;
@@ -121,6 +123,17 @@ private AdvancedPanel   advanced_panel;
 private BushUsageMonitor usage_monitor;
 private Map<String,Element> expression_data;
 private boolean         rose_ready;
+
+private static Set<String> assertion_exceptions;
+
+static {
+   assertion_exceptions = new HashSet<>();
+   assertion_exceptions.add("java.lang.AssertionError");
+   assertion_exceptions.add("org.junit.ComparisonFailure");
+   assertion_exceptions.add("junit.framework.AssertionFailedError");
+   assertion_exceptions.add("junit.framework.ComparisonFailure");
+   assertion_exceptions.add("org.junit.AssumpptionViolatedException");
+}
 
 
 
@@ -206,10 +219,18 @@ private JPanel createDisplay()
    pnl.addDescription("Location",for_frame.getLineNumber() + " @ " +
 	 for_frame.getMethod());
    pnl.addSeparator();
+   
    List<String> choices = new ArrayList<>();
-   if (for_thread.getExceptionType() != null &&
-	 for_thread.getStack().getFrame(0) == for_frame) {
-      if (for_thread.getExceptionType().equals("java.lang.AssertionError")) {
+   BumpStackFrame fm0 = null;
+   for (int i = 0; i < for_thread.getStack().getNumFrames(); ++i) {
+      BumpStackFrame fm1 = for_thread.getStack().getFrame(i);
+      if (!fm1.isSystem()) {
+         fm0 = fm1;
+         break;
+       }
+    }
+   if (for_thread.getExceptionType() != null && fm0 == for_frame) {
+      if (assertion_exceptions.contains(for_thread.getExceptionType())) {
          choices.add("Assertion should not have failed");
          active_panel = assertion_panel;
        }
@@ -1174,11 +1195,13 @@ private class AdvancedPanel extends SwingGridPanel implements ActionListener {
       List<String> frames = new ArrayList<>();
       BumpThreadStack bts = for_thread.getStack();
       int idx = 0;
+      int ctr = 0;
       for (int i = 0; i < bts.getNumFrames(); ++i) {
          BumpStackFrame frm = bts.getFrame(i);
          if (frm.isSystem() || frm.isSynthetic() || frm.getFile() == null) continue;
          frames.add(frm.getDisplayString());
-         if (frm == for_frame) idx = i;
+         if (frm == for_frame) idx = ctr;
+         ++ctr;
        }
       entry_box = addChoice("Entry",frames,idx,this);
       String [] alts = new String [] { "Return", "Throw", "Loop" };

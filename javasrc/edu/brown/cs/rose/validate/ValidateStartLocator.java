@@ -89,7 +89,10 @@ String getStartingFrame()
 {
    String startframe = for_launch.getFrame();
 
-   if (at_location != null) startframe = updateFrameForLocation(startframe,at_location);
+   if (at_location != null) {
+      startframe = updateFrameForLocation(startframe,at_location);
+      // might want to move up stack anyway by calling findValidStart
+    }
    else {
       List<RootLocation> locs = root_control.getLocations(base_problem);
       if (locs != null) {
@@ -97,9 +100,8 @@ String getStartingFrame()
 	    startframe = updateFrameForLocation(startframe,loc);
 	  }
        }
+      startframe = findValidStart(startframe);
     }
-
-   startframe = findValidStart(startframe);
 
    return startframe;
 }

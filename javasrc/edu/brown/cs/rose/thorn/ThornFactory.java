@@ -35,7 +35,6 @@
 
 package edu.brown.cs.rose.thorn;
 
-import java.util.List;
 
 import edu.brown.cs.rose.bud.BudLaunch;
 import edu.brown.cs.rose.root.RootControl;
@@ -72,12 +71,12 @@ public ThornFactory(RootControl rc)
 /*                                                                              */
 /********************************************************************************/
 
-public List<ThornVariable> getChangedVariables(BudLaunch bl,RootProblem prob,String topframe)
+public ThornChangeData getChangedVariables(BudLaunch bl,RootProblem prob,String topframe)
 {
    ThornChangedFinder tcf = new ThornChangedFinder(rose_control);
-   List<ThornVariable> rslt = tcf.process(bl,prob,topframe);
+   ThornChangeData tcd = tcf.process(bl,prob,topframe);
    
-   return rslt;
+   return tcd;
 }
 
 

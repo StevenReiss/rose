@@ -38,11 +38,12 @@ package edu.brown.cs.rose.stem;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.CompilationUnit;
@@ -260,14 +261,18 @@ private JcompProject getJcompProject(String proj,SourceFile file)
    if (jp != null) return jp;
    
    JcodeFactory jf = getJcodeFactory(proj);
-   Collection<JcompSource> srcs = new ArrayList<>();
+   List<JcompSource> srcs = new ArrayList<>();
    srcs.add(file);
+   addRelatedSources(srcs);
    jp = jcomp_control.getProject(jf,srcs);
    if (jp == null) return null;
    
    synchronized (this) {
       JcompProject njp = project_map.putIfAbsent(file,jp);
       if (njp != null) jp = njp;
+      for (JcompSource src : srcs) {
+         project_map.putIfAbsent((SourceFile) src,njp);
+       }
     }
    
    return jp;
@@ -305,6 +310,39 @@ private ASTNode findNode(CompilationUnit cu,int offset)
 }
 
 
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Augment sources as needed                                               */
+/*                                                                              */
+/********************************************************************************/
+
+private void addRelatedSources(List<JcompSource> srcs)
+{
+   Set<String> used = new HashSet<>();
+   for (JcompSource jcs : srcs) {
+      used.add(jcs.getFileName());
+    }
+   
+   List<JcompSource> add = new ArrayList<>();
+   for (JcompSource jcs : srcs) {
+      SourceFile sf = (SourceFile) jcs;
+      File f = sf.getFile();
+      File dir = f.getParentFile();
+      for (File srcf : dir.listFiles()) {
+         if (srcf.getName().endsWith(".java")) {
+            if (used.contains(srcf.getPath())) continue;
+            SourceFile sf1 = getSourceFile(srcf);
+            used.add(sf1.getFileName());
+            add.add(sf1);
+          }
+       }
+    }
+   
+   srcs.addAll(add);
+}
+
 /********************************************************************************/
 /*                                                                              */
 /*      File representation                                                     */
@@ -322,6 +360,8 @@ private static class SourceFile implements JcompSource {
       file_body = null;
       file_document = null;
     }
+   
+   File getFile()                               { return for_file; }
    
    @Override public String getFileName()        { return for_file.getPath(); }
    

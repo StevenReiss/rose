@@ -36,6 +36,8 @@
 package edu.brown.cs.rose.root;
 
 import java.io.File;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
@@ -44,6 +46,8 @@ import org.eclipse.jface.text.Document;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.Position;
 import org.eclipse.text.edits.TextEdit;
+
+import edu.brown.cs.ivy.file.IvyFile;
 
 public abstract class RootRepairFinderDefault implements RootRepairFinder, RootConstants
 {
@@ -58,6 +62,7 @@ public abstract class RootRepairFinderDefault implements RootRepairFinder, RootC
 private RootProcessor  bract_control;
 private RootProblem   for_problem;
 private RootLocation  at_location;
+private Set<String>     done_repairs;
 
 
 
@@ -72,6 +77,7 @@ protected RootRepairFinderDefault()
    bract_control = null;
    for_problem = null;
    at_location = null;
+   done_repairs = new HashSet<>();
 }
 
 
@@ -207,6 +213,7 @@ protected void addRepair(ASTRewrite rw,String desc,double priority)
       try {
          TextEdit te1 = te.copy();
          te1.apply(doc);
+         if (isRepairDone(doc.get())) return;
          int newline = doc.getLineOfOffset(pos.getOffset());
          int newline1 = doc.getLineOfOffset(pos1.getOffset());
          int newline2 = doc.getLineOfOffset(pos2.getOffset());
@@ -226,6 +233,13 @@ protected void addRepair(ASTRewrite rw,String desc,double priority)
 }
 
 
+
+private boolean isRepairDone(String text)
+{
+   String rslt = IvyFile.digestString(text);
+   if (done_repairs.add(rslt)) return false;
+   return true;
+}
 
 
 

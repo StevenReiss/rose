@@ -67,8 +67,6 @@ ValidateChecker(ValidateContext ctx,ValidateTrace orig,ValidateTrace check,RootR
    original_execution = orig;
    check_execution = check;
    for_repair = repair;
-   
-   original_execution.setupForLaunch(ctx.getLaunch());
 }
 
 
@@ -83,6 +81,7 @@ double check()
    if (check_execution == null) return 0;
    if (original_execution == null) return 0.5;
    if (validate_context.getProblem() == null) return 0.5;
+   if (check_execution.getRootContext() == null) return 0;
    
    ValidateMatcher matcher = new ValidateMatcher(original_execution,check_execution,for_repair);
    matcher.computeMatch();

@@ -120,6 +120,8 @@ ValidateCall getRootContext()
 
 ValidateCall getCallForContext(Element ctx)
 {
+   if (ctx == null) return null;
+   
    synchronized (call_map) {
       ValidateCall vc = call_map.get(ctx);
       if (vc == null) {
@@ -291,15 +293,17 @@ private boolean checkStack(BudLaunch launch,Stack<String> stack)
 private boolean checkStack(BudLaunch launch,Stack<String> stack,int start)
 {
    BudStack stk = launch.getStack();
+   BudStackFrame topframe = stk.getTopFrame();
    List<BudStackFrame> frms = stk.getFrames();
-   if (start != stack.size() - 1) return false;
    for (int i = start; i >= 0; --i) {
       BudStackFrame frm = frms.get(i);
       String id = frm.getClassName() + "." + frm.getMethodName() + 
             frm.getFormatSignature();
+      if (start-i >= stack.size()) return false;
       if (!id.equals(stack.get(start-i))) return false;
+      if (frm == topframe) return true;
     }
-   return true;
+   return false;
 }
 
 
@@ -316,7 +320,7 @@ private void findContextTime(Element ctx,BudLaunch launch)
     }
    if (linevar == null) return;
    
-   BudStackFrame frame = launch.getStack().getFrames().get(0);
+   BudStackFrame frame = launch.getStack().getTopFrame();
    String lno = Integer.toString(frame.getLineNumber());
    long atline = -1;
    for (Element val : IvyXml.children(linevar,"VALUE")) {
@@ -340,7 +344,7 @@ private void findContextTime(Element ctx,BudLaunch launch)
 private void findContextTime(Element ctx,BudLaunch launch,long from,long to)
 {
    // check local variables in the context vs those of the launch
-   BudStackFrame frame = launch.getStack().getFrames().get(0);
+   BudStackFrame frame = launch.getStack().getTopFrame();
    for (String var : frame.getLocals()) {
       BudLocalVariable local = frame.getLocal(var);
       for (Element varelt : IvyXml.children(ctx,"VARIABLE")) {

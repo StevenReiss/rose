@@ -47,6 +47,7 @@ import edu.brown.cs.rose.bud.BudLaunch;
 import edu.brown.cs.rose.bud.BudValue;
 import edu.brown.cs.rose.root.RootControl;
 import edu.brown.cs.rose.root.RootProblem;
+import edu.brown.cs.rose.thorn.ThornChangeData;
 import edu.brown.cs.rose.thorn.ThornFactory;
 import edu.brown.cs.rose.thorn.ThornConstants.ThornVariable;
 import edu.brown.cs.rose.thorn.ThornConstants.ThornVariableType;
@@ -65,6 +66,7 @@ private RootControl	root_control;
 private BudLaunch	for_launch;
 private String		for_frame;
 private RootProblem     for_problem;
+private ThornChangeData change_data;
 
 
 
@@ -80,19 +82,22 @@ ValidateChangedItems(BudLaunch bl,String frame,RootProblem prob)
    for_launch = bl;
    for_frame = frame;
    for_problem = prob;
+   
+   ThornFactory tf = new ThornFactory(root_control);
+   change_data = tf.getChangedVariables(for_launch,for_problem,for_frame);
 }
 
 
 
 /********************************************************************************/
 /*										*/
-/*	Processing methods							*/
+/*	Processing methods: Simple parameters           			*/
 /*										*/
 /********************************************************************************/
 
-List<ValidateAction> getChangeActions()
+List<ValidateAction> getParameterActions()
 {
-   Collection<ThornVariable> items = findChangedItems();
+   Collection<ThornVariable> items = change_data.getTopParameters();
 
    if (items == null) return null;
 
@@ -118,22 +123,16 @@ List<ValidateAction> getChangeActions()
 }
 
 
-
 /********************************************************************************/
-/*										*/
-/*	Find the set of items that have changed 				*/
-/*										*/
+/*                                                                              */
+/*      Processing methods -- all possible actions                              */
+/*                                                                              */
 /********************************************************************************/
 
-private Collection<ThornVariable> findChangedItems()
+List<ValidateAction> getResetActions(ValidateContext ctx)
 {
-   ThornFactory tf = new ThornFactory(root_control);
-   
-   List<ThornVariable> vars = tf.getChangedVariables(for_launch,for_problem,for_frame);
-
-   return vars;
+   return null;
 }
-
 
 
 

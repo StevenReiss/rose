@@ -153,7 +153,7 @@ protected static String getNodeTypeName(ASTNode n)
 protected ASTNode getSourceStatement() throws RoseException
 {
    return stem_control.getSourceStatement(project_name,for_file,line_offset,
-         line_number,false);
+         line_number,true);
 }
 
 

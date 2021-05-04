@@ -85,6 +85,15 @@ public List<BudStackFrame> getFrames()
 }
 
 
+public BudStackFrame getTopFrame()
+{
+   for (BudStackFrame bsf : stack_frames) {
+      if (bsf.isUserFrame()) return bsf;
+    }
+   
+   return null;
+}
+
 
 }       // end of class BudStack
 

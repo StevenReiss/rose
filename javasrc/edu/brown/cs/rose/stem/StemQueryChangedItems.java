@@ -42,6 +42,7 @@ import org.w3c.dom.Element;
 
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
 import edu.brown.cs.rose.root.RoseException;
+import edu.brown.cs.rose.thorn.ThornChangeData;
 import edu.brown.cs.rose.thorn.ThornFactory;
 import edu.brown.cs.rose.thorn.ThornConstants.ThornVariable;
 
@@ -80,8 +81,10 @@ void process(StemMain sm,IvyXmlWriter xw) throws RoseException
    ASTNode n = getResolvedSourceStatement();
    if (n == null) throw new RoseException("Can't find starting statement");
    ThornFactory tf = new ThornFactory(sm);
-   List<ThornVariable> rslt = tf.getChangedVariables(bud_launch,for_problem,frame_id);
+   ThornChangeData tcd = tf.getChangedVariables(bud_launch,for_problem,frame_id);
    
+   if (tcd == null) throw new RoseException("Problem finding change data");
+   List<ThornVariable> rslt = tcd.getTopParameters();
    if (rslt == null) throw new RoseException("Problem finding changed variables");
    
    xw.begin("RESULT");

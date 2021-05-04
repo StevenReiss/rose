@@ -87,7 +87,9 @@ String getMethod()
 
 File getFile()
 {
-   return new File(IvyXml.getAttrString(context_element,"FILE"));
+   String fnm = IvyXml.getAttrString(context_element,"FILE");
+   if (fnm == null) return null;
+   return new File(fnm);
 }
 
 
@@ -109,6 +111,8 @@ int getContextId()
 
 boolean sameAs(ValidateCall call) 
 {
+   if (call == null) return false;
+   
    return getContextId() == call.getContextId();
 }
 

@@ -95,7 +95,7 @@ ValidateRunner(ValidateContext ctx,RootProcessor rp,RootRepair rr)
       for_repair.getEdit().outputXml(xw);
       String cnts = xw.toString();
       xw.close();
-      RoseLog.logD("VALIDATE","VALIDATE FOR " + cnts);
+      RoseLog.logD("VALIDATE","VALIDATE FOR " + ssid + ": " + cnts);
       
       String sts = base_context.handleEdits(ssid,cnts);
       switch (sts) {

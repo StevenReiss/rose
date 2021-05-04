@@ -56,7 +56,7 @@ interface ThornVariable {
 }
 
 
-class ThornChangeMap extends HashMap<JcompSymbol,ThornChangedData> {
+class ThornChangeMap extends HashMap<JcompSymbol,ThornChangedItem> {
 
    private static final long serialVersionUID = 1;
 

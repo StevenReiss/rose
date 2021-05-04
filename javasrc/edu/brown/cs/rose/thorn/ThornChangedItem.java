@@ -37,7 +37,7 @@ package edu.brown.cs.rose.thorn;
 
 import edu.brown.cs.ivy.jcomp.JcompSymbol;
 
-class ThornChangedData implements ThornConstants
+class ThornChangedItem implements ThornConstants
 {
 
 
@@ -60,7 +60,7 @@ private boolean         is_relevant;
 /*                                                                              */
 /********************************************************************************/
 
-ThornChangedData(JcompSymbol js)
+ThornChangedItem(JcompSymbol js)
 {
    ref_value = js;
    is_changed = false;
@@ -68,7 +68,7 @@ ThornChangedData(JcompSymbol js)
 }
 
 
-ThornChangedData(JcompSymbol js,ThornChangedData base)
+ThornChangedItem(JcompSymbol js,ThornChangedItem base)
 {
    ref_value = js;
    is_relevant = base.is_relevant;
@@ -77,7 +77,7 @@ ThornChangedData(JcompSymbol js,ThornChangedData base)
 
 
 
-private ThornChangedData(ThornChangedData base,JcompSymbol js,boolean ch,boolean rl)
+private ThornChangedItem(ThornChangedItem base,JcompSymbol js,boolean ch,boolean rl)
 {
    ref_value = (js == null ? base.ref_value : js);
    is_changed = base.is_changed | ch;
@@ -104,25 +104,25 @@ boolean isRelevant()                            { return is_relevant; }
 /*                                                                              */
 /********************************************************************************/
 
-ThornChangedData changeReference(JcompSymbol js)
+ThornChangedItem changeReference(JcompSymbol js)
 {
    if (js == null || js == ref_value) return this;
-   return new ThornChangedData(this,js,false,false);
+   return new ThornChangedItem(this,js,false,false);
 }
 
 
 
-ThornChangedData setChanged()
+ThornChangedItem setChanged()
 {
    if (is_changed) return this;
-   return new ThornChangedData(this,null,true,false);
+   return new ThornChangedItem(this,null,true,false);
 }
 
 
-ThornChangedData setRelevant()
+ThornChangedItem setRelevant()
 {
    if (is_relevant) return this;
-   return new ThornChangedData(this,null,false,true);
+   return new ThornChangedItem(this,null,false,true);
 }
 
 
@@ -161,8 +161,8 @@ ThornChangedData setRelevant()
 
 
 @Override public boolean equals(Object o) {
-   if (o instanceof ThornChangedData) {
-      ThornChangedData vd = (ThornChangedData) o;
+   if (o instanceof ThornChangedItem) {
+      ThornChangedItem vd = (ThornChangedItem) o;
       if (ref_value != vd.ref_value) return false; 
       if (is_changed != vd.is_changed) return false;
       if (is_relevant != vd.is_relevant) return false;

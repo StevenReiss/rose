@@ -166,6 +166,7 @@ void computeMatch()
 {
    ValidateCall origctx = original_trace.getRootContext();
    ValidateCall matchctx = match_trace.getRootContext();
+   if (matchctx == null) return;
    
    try {
       matchContexts(origctx,matchctx);
@@ -181,7 +182,7 @@ void computeMatch()
 
 private void matchContexts(ValidateCall origctx,ValidateCall matchctx)
 {
-   if (origctx.sameAs(problem_context)) { 
+   if (problem_context != null && origctx.sameAs(problem_context)) { 
       match_problem_context = matchctx;
     }
    

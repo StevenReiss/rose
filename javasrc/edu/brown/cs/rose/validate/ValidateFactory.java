@@ -36,7 +36,6 @@
 package edu.brown.cs.rose.validate;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.w3c.dom.Element;
@@ -145,10 +144,7 @@ public RootValidate createValidate(RootProblem prob,String frameid,RootLocation 
     }
    if (frameid == null) return null;
 
-   ValidateChangedItems itms = new ValidateChangedItems(bl,frameid,prob);
-   List<ValidateAction> cngs = itms.getChangeActions();
-
-   ValidateContext ctx = new ValidateContext(root_control,prob,frameid,cngs);
+   ValidateContext ctx = new ValidateContext(root_control,prob,frameid);
    
    ctx.setupBaseExecution();
    

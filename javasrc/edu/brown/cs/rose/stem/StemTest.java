@@ -131,7 +131,7 @@ public void testRoseNullPointer()
       xw.field("THREAD",fd.getThreadId());
       xw.field("TYPE","EXCEPTION");
       xw.textElement("ITEM","java.lang.NullPointerException");
-      fd.outputLocation(xw,project,5,mc);
+      fd.outputLocation(xw,project,0.5,mc);
       xw.end("PROBLEM");
       String cnts = xw.toString();
       
@@ -167,7 +167,7 @@ public void testRoseArrayIndex()
       xw.field("THREAD",fd.getThreadId());
       xw.field("TYPE","EXCEPTION");
       xw.textElement("ITEM","java.lang.ArrayIndexOutOfBoundsException");
-      fd.outputLocation(xw,project,5,mc);
+      fd.outputLocation(xw,project,0.5,mc);
       xw.end("PROBLEM");
       String cnts = xw.toString();  
       
@@ -203,7 +203,7 @@ public void testRoseWrongVariable()
       xw.textElement("ITEM","rslt");
       xw.textElement("ORIGINAL","java.lang.String \"The cow jumped over the moon.\"");
       xw.textElement("TARGET","\"The calf jumped over the moon.\"");
-      fd.outputLocation(xw,project,5,mc);
+      fd.outputLocation(xw,project,0.5,mc);
       xw.end("PROBLEM");
       String cnts = xw.toString();
       
@@ -240,7 +240,7 @@ public void testRoseNotNull()
       xw.textElement("ITEM","baby");
       xw.textElement("ORIGINAL","null");
       xw.textElement("TARGET","Non-Null");
-      fd.outputLocation(xw,project,5,mc);
+      fd.outputLocation(xw,project,0.5,mc);
       xw.end("PROBLEM");
       String cnts = xw.toString();
       
@@ -272,7 +272,7 @@ public void testRoseLocation()
       xw.field("FRAME",fd.getId());
       xw.field("THREAD",fd.getThreadId());
       xw.field("TYPE","LOCATION");
-      fd.outputLocation(xw,project,5,mc);
+      fd.outputLocation(xw,project,0.5,mc);
       xw.end("PROBLEM");
       String cnts = xw.toString();
       
@@ -308,7 +308,7 @@ public void testRoseString()
       xw.textElement("ITEM","baby");
       xw.textElement("ORIGINAL","java.lang.String piglet");
       xw.textElement("TARGET","piglets");
-      fd.outputLocation(xw,project,5,mc);
+      fd.outputLocation(xw,project,0.5,mc);
       xw.end("PROBLEM");
       String cnts = xw.toString();
       
@@ -341,7 +341,7 @@ public void testRoseLocation_3()
       xw.field("FRAME",fd.getId());
       xw.field("THREAD",fd.getThreadId());
       xw.field("TYPE","LOCATION");
-      fd.outputLocation(xw,project,5,mc);
+      fd.outputLocation(xw,project,0.5,mc);
       xw.end("PROBLEM");
       String cnts = xw.toString();
       
@@ -354,6 +354,74 @@ public void testRoseLocation_3()
       shutdownBedrock(workspace);
     }
 }
+
+
+@Test
+public void testRoseAssertion_3()
+{
+   String workspace = "rosetest";
+   String project = "rosetest";
+   String launch = "test03a";
+   MintControl mc = setupBedrock(workspace,project);
+   
+   try {
+      FrameData fd = setupTest(mc,project,launch);
+      
+      IvyXmlWriter xw = new IvyXmlWriter();
+      xw.begin("PROBLEM");
+      xw.field("LAUNCH",fd.getLaunchId());     
+      xw.field("FRAME",fd.getId());
+      xw.field("THREAD",fd.getThreadId());
+      xw.field("TYPE","ASSERTION");
+      xw.textElement("ITEM","org.junit.ComparisonFailure");
+      fd.outputLocation(xw,project,0.5,mc);
+      xw.end("PROBLEM");
+      String cnts = xw.toString();
+      
+      runTest(mc,fd,cnts);
+    }
+   catch (Throwable t) {
+      RoseLog.logE("Problem processing test",t);
+    }
+   finally {
+      shutdownBedrock(workspace);
+    }
+}
+
+
+
+@Test
+public void testAssertion()
+{
+   String workspace = "rosetest";
+   String project = "rosetest";
+   String launch = "test07";
+   MintControl mc = setupBedrock(workspace,project);
+   
+   try {
+      FrameData fd = setupTest(mc,project,launch);
+      
+      IvyXmlWriter xw = new IvyXmlWriter();
+      xw.begin("PROBLEM");
+      xw.field("LAUNCH",fd.getLaunchId());     
+      xw.field("FRAME",fd.getId());
+      xw.field("THREAD",fd.getThreadId());
+      xw.field("TYPE","ASSERTION");
+      xw.textElement("ITEM","org.junit.ComparisonFailure");
+      fd.outputLocation(xw,project,0.5,mc);
+      xw.end("PROBLEM");
+      String cnts = xw.toString();
+      
+      runTest(mc,fd,cnts);
+    }
+   catch (Throwable t) {
+      RoseLog.logE("Problem processing test",t);
+    }
+   finally {
+      shutdownBedrock(workspace);
+    }
+}
+
 
 
 
@@ -381,7 +449,7 @@ private FrameData setupTest(MintControl ctrl,String project,String launch)
 private void runTest(MintControl ctrl,FrameData fd,String oprob)
 {
    getChangedVariables(ctrl,fd,oprob);
-   String prob = getStartFrame(ctrl,oprob);
+   String prob = getStartFrame(ctrl,oprob,null);
    getSuggestionsFor(ctrl,fd,prob,null);
    
    Element locs = getHistory(ctrl,fd,prob);
@@ -393,12 +461,14 @@ private void runTest(MintControl ctrl,FrameData fd,String oprob)
       if (m == null) continue;
       int idx = m.lastIndexOf(".");
       if (idx > 0) m = m.substring(idx+1);
-      if (m.startsWith("test")) continue;
+      if (m.startsWith("test") && !m.contains("code")) continue;
       int line = IvyXml.getAttrInt(loc,"LINE");
       if (line <= 0 || line == lline) continue;
       lline = line;
-      
-      getSuggestionsFor(ctrl,fd,prob,node);
+      String loccnts = IvyXml.convertXmlToString(loc);
+      String locprob = getStartFrame(ctrl,oprob,loccnts);
+     
+      getSuggestionsFor(ctrl,fd,locprob,node);
     }
 }
    
@@ -466,10 +536,12 @@ private void getChangedVariables(MintControl ctrl,FrameData fd,String prob)
 }
 
 
-private String getStartFrame(MintControl ctrl,String prob)
+private String getStartFrame(MintControl ctrl,String prob,String loc)
 {
    CommandArgs args = new CommandArgs();
-   Element rslt = sendStemReply(ctrl,"STARTFRAME",args,prob);
+   String cnts = prob;
+   if (loc != null) cnts += loc;
+   Element rslt = sendStemReply(ctrl,"STARTFRAME",args,cnts);
    String startframe = IvyXml.getAttrString(rslt,"STARTFRAME");
    String startrtn = IvyXml.getAttrString(rslt,"CLASS");
    startrtn += "." + IvyXml.getAttrString(rslt,"METHOD");
@@ -730,7 +802,10 @@ private FrameData getTopFrame(MintControl mc,String project,LaunchData ld)
 {
    List<FrameData> frames = getFrames(mc,project,ld);
    if (frames == null || frames.size() == 0) return null;
-   return frames.get(0);
+   for (FrameData fd : frames) {
+      if (fd.isUserFrame()) return fd;
+    }
+   return null;
 }
 
 
@@ -788,6 +863,7 @@ private static class FrameData {
    private String       file_name;
    private String       project_name;
    private int          line_number;
+   private boolean      is_user;
    
    FrameData(LaunchData ld,Element xml) {
       for_launch = ld;
@@ -799,6 +875,10 @@ private static class FrameData {
       String sgn = IvyXml.getAttrString(xml,"SIGNATURE");
       if (sgn != null) method_name += sgn;
       project_name = null;
+      is_user = true;
+      if (file_name == null) is_user = false;
+      else if (!(new File(file_name).exists())) is_user = false;
+      else if (!IvyXml.getAttrString(xml,"FILETYPE").equals("JAVAFILE")) is_user = false;
     }
    
    String getId()                       { return frame_id; }
@@ -807,6 +887,7 @@ private static class FrameData {
    int getLine()                        { return line_number; }
    String getThreadId()                 { return for_launch.getThreadId(); }
    String getLaunchId()                 { return for_launch.getLaunchId(); }
+   boolean isUserFrame()                { return is_user; }
    
    String getSourceFile(MintControl ctrl) {
       if (file_name == null) {
@@ -832,14 +913,14 @@ private static class FrameData {
        }
     }
    
-   void outputLocation(IvyXmlWriter xw,String proj,int p,MintControl mc) {
+   void outputLocation(IvyXmlWriter xw,String proj,double p,MintControl mc) {
       xw.begin("LOCATION");
       xw.field("FILE",getSourceFile(mc));
       xw.field("LINE",getLine());
       xw.field("METHOD",getMethod());
       xw.field("PROJECT",proj);
       // want signature appended to method?
-      xw.field("PRIORIT",p);
+      xw.field("PRIORITY",p);
       xw.end("LOCATION");
     }
    

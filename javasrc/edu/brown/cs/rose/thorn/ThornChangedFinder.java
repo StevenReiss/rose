@@ -54,6 +54,7 @@ import org.eclipse.jdt.core.dom.IfStatement;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.QualifiedName;
+import org.eclipse.jdt.core.dom.ReturnStatement;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.Statement;
@@ -73,6 +74,7 @@ import edu.brown.cs.rose.bud.BudStackFrame;
 import edu.brown.cs.rose.root.RootControl;
 import edu.brown.cs.rose.root.RootProblem;
 import edu.brown.cs.rose.root.RootTestCase;
+import edu.brown.cs.rose.root.RoseLog;
 
 class ThornChangedFinder implements ThornConstants
 {
@@ -105,9 +107,12 @@ ThornChangedFinder(RootControl ctrl)
 /*                                                                              */
 /********************************************************************************/
 
-List<ThornVariable> process(BudLaunch bl,RootProblem rp,String topframe)
+ThornChangeData process(BudLaunch bl,RootProblem rp,String topframe)
 {
-   BudStackFrame bf0 = bl.getStack().getFrames().get(0);
+   ThornChangeData rslt = new ThornChangeData();
+   
+   // need to find correct starting frame
+   BudStackFrame bf0 = bl.getStack().getTopFrame();
    ASTNode stmt0 = getNodeForFrame(bf0);
    
    ThornChangeMap initvars = findProblemVariables(stmt0,rp);
@@ -120,19 +125,25 @@ List<ThornVariable> process(BudLaunch bl,RootProblem rp,String topframe)
    BudStackFrame prevframe = null;
    ASTNode prevnode = null;
    BudStack bs = bl.getStack();
+   boolean havefirst = false;
    for (BudStackFrame bf : bs.getFrames()) {
+      if (!havefirst && bf.isUserFrame()) havefirst = true;
       ASTNode n = getNodeForFrame(bf);
       if (n != null) {
          initvars = convertChangesToParent(chngs,bf,prevframe,n,prevnode);
 	 chngs = processMethod(n,initvars);
-         if (topframe.equals(bf.getFrameId())) break;
+         rslt.setChanges(bf,chngs);
+         if (topframe.equals(bf.getFrameId())) {
+            rslt.setTopFrame(bf);
+            break;
+          }
          prevframe = bf;
          prevnode = n;
        }
-      else return null;
+      else if (havefirst) return null;
     }
    
-   return processResult(stmt0,chngs);
+   return rslt;
 }
 
 
@@ -207,7 +218,7 @@ ThornChangeMap findProblemVariables(ASTNode base,RootProblem rp)
          JcompSymbol js = findVariableSymbol(base,rp.getProblemDetail());
          if (js != null) {
             ThornChangeMap cm = new ThornChangeMap();
-            ThornChangedData cd = new ThornChangedData(js);
+            ThornChangedItem cd = new ThornChangedItem(js);
             cd = cd.setRelevant();
             cm.put(js,cd);
             return cm;
@@ -249,9 +260,9 @@ private static class NodeVarFinder extends ASTVisitor {
    @Override public void postVisit(ASTNode n) {
       JcompSymbol js = JcompAst.getReference(n);
       if (js != null) {
-         ThornChangedData cd = change_map.get(js);
+         ThornChangedItem cd = change_map.get(js);
          if (cd == null) {
-            cd = new ThornChangedData(js);
+            cd = new ThornChangedItem(js);
           }
          cd = cd.setRelevant();
          change_map.put(js,cd);
@@ -271,6 +282,11 @@ private JcompSymbol findVariableSymbol(ASTNode n,String name)
        }
       if (curscp != null) break;
     }
+   if (curscp == null) {
+      RoseLog.logE("THORN","Can't find scope for " + n);
+      return null;
+    } 
+   
    if (name.startsWith("this.")) {
       String s = name.substring(5);
       return curscp.lookupVariable(s);
@@ -303,7 +319,7 @@ private ThornChangeMap convertChangesToParent(ThornChangeMap orig,BudStackFrame 
    call.accept(cf);
    
    ThornChangeMap newmap = new ThornChangeMap();
-   for (ThornChangedData tcd : orig.values()) {
+   for (ThornChangedItem tcd : orig.values()) {
       JcompSymbol js = tcd.getReference();
       if (js.isFieldSymbol()) {
          newmap.put(js,tcd);
@@ -416,60 +432,7 @@ private void processStatement(ASTNode stmt,ChangedVisitor v)
 
 
 
-/********************************************************************************/
-/*                                                                              */
-/*      Get results based on process scan                                       */
-/*                                                                              */
-/********************************************************************************/
 
-private List<ThornVariable> processResult(ASTNode base,ThornChangeMap changes)
-{
-   List<ThornVariable> rslt = new ArrayList<>();
-   
-   JcompSymbol mthd = getMethodOfNode(base);
-   
-   boolean usethis = false;
-   
-   for (ThornChangedData tcd : changes.values()) {
-      JcompSymbol js = tcd.getReference();
-      VarData vd = null;
-      if (js.isMethodSymbol()) {
-         if (js.getClassType() == mthd.getClassType()) {
-            if (!mthd.isStatic()) usethis = true;
-          }
-       }
-      else if (js.isFieldSymbol()) {
-          if (tcd.isChanged() && tcd.isRelevant()) {
-            if (js.getClassType() == mthd.getClassType()) {
-               vd = new VarData(js.getName(),ThornVariableType.THIS_FIELD,tcd);
-             }
-            else {
-               vd = new VarData(js.getFullName(),ThornVariableType.FIELD,tcd);
-             }
-          }
-       }
-      else {
-         ASTNode n = js.getDefinitionNode();
-         if (n instanceof SingleVariableDeclaration && 
-               n.getParent() instanceof MethodDeclaration) {
-            // handle parameters
-            if (tcd.isChanged()) {
-               vd = new VarData(js.getName(),ThornVariableType.PARAMETER,tcd);
-             }
-          }
-         else {
-            // handle locals
-          }
-       }
-      if (vd != null) rslt.add(vd);
-    }
-   
-   if (usethis) {
-      // might want to check for non-const methods and note that
-    }
-   
-   return rslt;
-}
 
 
 
@@ -481,7 +444,7 @@ private List<ThornVariable> processResult(ASTNode base,ThornChangeMap changes)
 /*                                                                              */
 /********************************************************************************/
 
-private static class ChangedVisitor extends ASTVisitor {
+private class ChangedVisitor extends ASTVisitor {
    
    private boolean note_relevant;
    private Stack<Boolean> relevant_stack;
@@ -489,7 +452,7 @@ private static class ChangedVisitor extends ASTVisitor {
    private Stack<Boolean> loop_stack;
    private ThornChangeMap change_data;
    
-   ChangedVisitor(Map<JcompSymbol,ThornChangedData> ch) {
+   ChangedVisitor(Map<JcompSymbol,ThornChangedItem> ch) {
       note_relevant = false;
       relevant_stack = new Stack<>();
       doing_loop = false;
@@ -505,9 +468,9 @@ private static class ChangedVisitor extends ASTVisitor {
    @Override public boolean visit(Assignment a) {
       JcompSymbol js = getAssignSymbol(a.getLeftHandSide());
       if (js == null) return true;
-      ThornChangedData cd = change_data.get(js);
+      ThornChangedItem cd = change_data.get(js);
       if (cd == null) {
-         cd = new ThornChangedData(js);
+         cd = new ThornChangedItem(js);
        }
       cd = cd.setChanged();
       change_data.put(js,cd);
@@ -521,9 +484,9 @@ private static class ChangedVisitor extends ASTVisitor {
       JcompSymbol js = JcompAst.getDefinition(vdf);
       if (js == null) return true;
       if (vdf.getInitializer() == null) return true;
-      ThornChangedData cd = change_data.get(js);
+      ThornChangedItem cd = change_data.get(js);
       if (cd == null) {
-         cd = new ThornChangedData(js);
+         cd = new ThornChangedItem(js);
        }
       cd = cd.setChanged();
       change_data.put(js,cd);
@@ -536,9 +499,9 @@ private static class ChangedVisitor extends ASTVisitor {
       if (note_relevant) {
          JcompSymbol js = JcompAst.getReference(n);
          if (js != null) {
-            ThornChangedData cd = change_data.get(js);
+            ThornChangedItem cd = change_data.get(js);
             if (cd == null) {
-               cd = new ThornChangedData(js);
+               cd = new ThornChangedItem(js);
              }
             cd = cd.setRelevant();
             change_data.put(js,cd);
@@ -590,6 +553,29 @@ private static class ChangedVisitor extends ASTVisitor {
       acceptLoop(s.getBody());
       accept(s.getExpression());
       return false;
+    }
+   
+   @Override public void endVisit(MethodInvocation mi) {
+      JcompSymbol js = JcompAst.getReference(mi.getName());
+      if (js == null) return;
+      ASTNode mthd = js.getDefinitionNode();
+      if (mthd == null) return;
+      List<ASTNode> rets = findReturns(mthd);
+      for (ASTNode base : rets) {
+         ThornChangeMap vm = processMethod(base,null);
+         for (ThornChangedItem tcd : vm.values()) {
+            JcompSymbol rjs = tcd.getReference();
+            if (rjs.isFieldSymbol() && (tcd.isChanged() || tcd.isRelevant())) {
+               ThornChangedItem ocd = change_data.get(rjs);
+               if (ocd == null) {
+                  ocd = new ThornChangedItem(rjs);
+                }
+               if (tcd.isRelevant()) ocd = ocd.setRelevant();
+               if (tcd.isChanged()) ocd = ocd.setChanged();
+               change_data.put(rjs,ocd);
+             }
+          }
+       }
     }
    
    private void acceptRelevant(ASTNode n) {
@@ -666,30 +652,55 @@ private static class AssignFinder extends ASTVisitor {
 
 
 
+
+
+
+
+
 /********************************************************************************/
 /*                                                                              */
-/*      Result structure                                                        */
+/*      Visitor to find returns in a method                                     */
 /*                                                                              */
 /********************************************************************************/
 
-private static class VarData implements ThornVariable {
+private List<ASTNode> findReturns(ASTNode mthd)
+{
+   ReturnFinder rf = new ReturnFinder();
+   mthd.accept(rf);
    
-   private String var_name; 
-   private ThornVariableType var_type;
+   return rf.getReturns();
+}
+
+
+private static class ReturnFinder extends ASTVisitor {
    
-   VarData(String nm,ThornVariableType typ,ThornChangedData tcd) {
-      var_name = nm;
-      var_type = typ;
+   private List<ASTNode> return_statements;
+   private ASTNode last_statement;
+   
+   ReturnFinder() {
+      return_statements = new ArrayList<>();
+      last_statement = null;
     }
    
-   @Override public String getName()                    { return var_name; }
-   @Override public ThornVariableType getVariableType() { return var_type; }
-   
-   @Override public String toString() {
-      return var_type.toString() + ":" + var_name;
+   List<ASTNode> getReturns() { 
+      if (return_statements.isEmpty() && last_statement != null) {
+         return_statements.add(last_statement);
+       }
+      return return_statements; 
     }
    
-}       // end of inner class VarData
+   @Override public void endVisit(ReturnStatement rs) {
+      return_statements.add(rs);
+    }
+   
+   @Override public void postVisit(ASTNode n) {
+      if (n instanceof Statement) {
+         while (n.getParent() instanceof Statement) n = n.getParent();
+         last_statement = n;
+       }
+    }
+   
+}       // end of inner class ReturnFinder
 
 
 

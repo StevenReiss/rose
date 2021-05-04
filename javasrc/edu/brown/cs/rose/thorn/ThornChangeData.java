@@ -1,6 +1,6 @@
 /********************************************************************************/
 /*                                                                              */
-/*              BudStackFrame.java                                              */
+/*              ThornChangeData.java                                            */
 /*                                                                              */
 /*      description of class                                                    */
 /*                                                                              */
@@ -33,19 +33,21 @@
 
 
 
-package edu.brown.cs.rose.bud;
+package edu.brown.cs.rose.thorn;
 
-import java.io.File;
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-import org.w3c.dom.Element;
+import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 
-import edu.brown.cs.ivy.file.IvyFormat;
-import edu.brown.cs.ivy.xml.IvyXml;
+import edu.brown.cs.ivy.jcomp.JcompSymbol;
+import edu.brown.cs.rose.bud.BudStackFrame;
 
-public class BudStackFrame implements BudConstants
+public class ThornChangeData implements ThornConstants
 {
 
 
@@ -55,15 +57,8 @@ public class BudStackFrame implements BudConstants
 /*                                                                              */
 /********************************************************************************/
 
-private String frame_id;
-private File   source_file;
-private String class_name;
-private String method_name;
-private String method_signature;
-private String format_signature;
-private Map<String,BudLocalVariable> frame_variables;
-private int     line_number;
-private boolean is_userframe;
+private Map<BudStackFrame,ThornChangeMap> frame_changes;
+private BudStackFrame                     top_frame;
 
 
 
@@ -73,41 +68,11 @@ private boolean is_userframe;
 /*                                                                              */
 /********************************************************************************/
 
-BudStackFrame(Element xml)
+ThornChangeData()
 {
-   frame_id = IvyXml.getAttrString(xml,"ID");
-   class_name = IvyXml.getAttrString(xml,"RECEIVER");
-   method_name = IvyXml.getAttrString(xml,"METHOD");
-   int idx = method_name.lastIndexOf(".");
-   if (idx > 0) method_name = method_name.substring(idx+1);
-   
-   String fnm = IvyXml.getAttrString(xml,"FILE");
-   if (fnm == null) source_file = null;
-   else source_file = new File(fnm);
-   
-   String typ = IvyXml.getAttrString(xml,"FILETYPE");
-   if (source_file == null || !source_file.exists() || !typ.equals("JAVAFILE")) is_userframe = false;
-   else is_userframe = true;
-   
-   String sgn = IvyXml.getAttrString(xml,"SIGNATURE");
-   method_signature = sgn;
-   if (sgn != null) {
-      int sidx = sgn.lastIndexOf(")");
-      if (sidx > 0) sgn = sgn.substring(0,sidx+1);
-      String fsgn = IvyFormat.formatTypeName(sgn);
-      format_signature = fsgn;
-    }
-   else format_signature = null;
-   
-   line_number = IvyXml.getAttrInt(xml,"LINENO");
-   
-   frame_variables = new HashMap<>();
-   for (Element e : IvyXml.children(xml,"VALUE")) {
-      BudLocalVariable blv = new BudLocalVariable(e);
-      frame_variables.put(blv.getName(),blv);
-    }
+   frame_changes = new HashMap<>();
+   top_frame = null;
 }
-
 
 
 /********************************************************************************/
@@ -116,26 +81,116 @@ BudStackFrame(Element xml)
 /*                                                                              */
 /********************************************************************************/
 
-public String getFrameId()                      { return frame_id; }
-public String getClassName()                    { return class_name; }
-public String getMethodName()                   { return method_name; }
-public String getMethodSignature()              { return method_signature; }
-public String getFormatSignature()              { return format_signature; }
-public int getLineNumber()                      { return line_number; }
-public File getSourceFile()                     { return source_file; }
-public boolean isUserFrame()                    { return is_userframe; }
+void setChanges(BudStackFrame f,ThornChangeMap tcm)
+{
+   frame_changes.put(f,tcm);
+}
 
-public Collection<String> getLocals()           { return frame_variables.keySet(); }
-public BudLocalVariable getLocal(String nm)     { return frame_variables.get(nm); }
 
+
+ThornChangeMap getChanges(BudStackFrame f)
+{
+   return frame_changes.get(f);
+}
+
+
+void setTopFrame(BudStackFrame f)
+{
+   top_frame = f;
+}
+
+
+BudStackFrame getTopFrame()
+{
+   return top_frame;
+}
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Get parameters for a frame                                              */
+/*                                                                              */
+/********************************************************************************/
+
+public List<ThornVariable> getTopParameters()
+{
+   return getParameters(top_frame);
+}
+
+
+
+List<ThornVariable> getParameters(BudStackFrame f)
+{
+   List<ThornVariable> rslt = new ArrayList<>();
+   ThornChangeMap changes = getChanges(f);
+   String cls = f.getClassName();
    
+   for (ThornChangedItem tcd : changes.values()) {
+      JcompSymbol js = tcd.getReference();
+      VarData vd = null;
+      if (js.isFieldSymbol()) {
+         if (tcd.isChanged() && tcd.isRelevant()) {
+            if (js.getClassType().getName().equals(cls)) {
+               vd = new VarData(js.getName(),ThornVariableType.THIS_FIELD,tcd);
+             }
+            else {
+               vd = new VarData(js.getFullName(),ThornVariableType.FIELD,tcd);
+             }
+          }
+       }
+      else {
+         ASTNode n = js.getDefinitionNode();
+         if (n instanceof SingleVariableDeclaration && 
+               n.getParent() instanceof MethodDeclaration) {
+            // handle parameters
+            if (tcd.isChanged()) {
+               vd = new VarData(js.getName(),ThornVariableType.PARAMETER,tcd);
+             }
+          }
+         else {
+            // handle locals
+          }
+       }
+      if (vd != null) rslt.add(vd);
+    }
+   
+   return rslt;
+}
 
 
 
-}       // end of class BudStackFrame
+
+/********************************************************************************/
+/*                                                                              */
+/*      Variable Result structure                                               */
+/*                                                                              */
+/********************************************************************************/
+
+private static class VarData implements ThornVariable {
+
+   private String var_name; 
+   private ThornVariableType var_type;
+   
+   VarData(String nm,ThornVariableType typ,ThornChangedItem tcd) {
+      var_name = nm;
+      var_type = typ;
+    }
+   
+   @Override public String getName()                    { return var_name; }
+   @Override public ThornVariableType getVariableType() { return var_type; }
+   
+   @Override public String toString() {
+      return var_type.toString() + ":" + var_name;
+    }
+   
+}       // end of inner class VarData
+
+
+
+}       // end of class ThornChangeData
 
 
 
 
-/* end of BudStackFrame.java */
+/* end of ThornChangeData.java */
 

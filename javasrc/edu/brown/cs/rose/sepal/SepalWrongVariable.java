@@ -194,6 +194,7 @@ private Map<JcompType,List<UserVariable>> findTypes(Collection<UserVariable> var
    
    for (UserVariable uv : vars) {
       JcompSymbol js = uv.getSymbol();
+      if (js.isTypeSymbol()) continue;
       JcompType jt = js.getType();
       List<UserVariable> luv = rslt.get(jt);
       if (luv == null) {

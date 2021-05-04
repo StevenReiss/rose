@@ -229,7 +229,6 @@ private List<RootLocation> getLocations()
    
    long t1 = System.currentTimeMillis();
    RootMetrics.noteCommand("BRACT","SENDREPAIR",br.getDescription(),
-
          br.getPriority(),br.getValidatedPriority(),t1-start_time);
    
    rose_control.sendRoseMessage("SUGGEST",args,body,-1);
