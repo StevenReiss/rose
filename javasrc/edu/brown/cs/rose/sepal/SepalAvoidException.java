@@ -151,32 +151,34 @@ public SepalAvoidException()
       stmtdesc = stmtdesc.substring(0,20) + "...";
     }
    
+   String logdata = getClass().getName() + "@" + rp.getProblemDetail();
+   
    ASTRewrite rw1 = skipStatements(cm,base,stmt,endstmt);
    if (rw1 != null) {
       String desc = "Add 'if (" + cm.getNeqCondition(base).toString() + ") { ' ";
       if (stmt == endstmt) desc += "around " + stmtdesc;
       else desc += "around " + stmtdesc + " and subsequent statements";
-      addRepair(rw1,desc,0.75);
+      addRepair(rw1,desc,logdata + "@SKIP",0.75);
     }
    ASTRewrite rw2 = loopContine(cm,base,stmt);
    if (rw2 != null) {
       String desc = "Add 'if (" + cm.getEqlCondition(base).toString() + ") continue;' before " + stmtdesc;
-      addRepair(rw2,desc,0.5);
+      addRepair(rw2,desc,logdata + "@CONTINUE",0.5);
     }
    ASTRewrite rw3 = condReturn(cm,base,stmt);
    if (rw3 != null) {
       String desc = "Add 'if (" + cm.getEqlCondition(base).toString() + ") return;' before " + stmtdesc;
-      addRepair(rw3,desc,0.5);
+      addRepair(rw3,desc,logdata + "@RETURN",0.5);
     }
    ASTRewrite rw4 = ifcondRepair(cm,base,stmt);
    if (rw4 != null) {
       String desc = "Add '(" + cm.getNeqCondition(base).toString() + ") &&' to " + stmtdesc;
-      addRepair(rw4,desc,0.7);
+      addRepair(rw4,desc,logdata + "@CONDRETURN",0.7);
     }
    ASTRewrite rw5 = nullReturn(cm,base,stmt);
    if (rw5 != null) {
       String desc = "Add '(" + cm.getEqlCondition(base).toString() + ") ||' to " + stmtdesc;
-      addRepair(rw5,desc,0.5);
+      addRepair(rw5,desc,logdata + "@NULLRETURN",0.5);
     } 
 }
 

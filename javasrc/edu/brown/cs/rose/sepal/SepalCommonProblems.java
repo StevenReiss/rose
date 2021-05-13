@@ -162,6 +162,8 @@ private void checkAssignInConditional(ASTNode stmt)
 {
    Map<ASTNode,PatternMap> rslt = cond_pattern.matchAll(stmt,null);
    if (rslt == null) return;
+   
+   String logdata = getClass().getName();
    for (ASTNode n : rslt.keySet()) {
       ASTNode p = n.getParent();
       PatternMap pmap = rslt.get(n);
@@ -172,7 +174,7 @@ private void checkAssignInConditional(ASTNode stmt)
             ASTRewrite rw = cond_result.replace(n,pmap);
             if (rw != null) {
                String desc = "Use " + pmap.get("x") + "==" + pmap.get("y") + " instead of =";
-               addRepair(rw,desc,1.0);
+               addRepair(rw,desc,logdata + "@ASSIGNCOND",1.0);
              }
             break;
        }
@@ -199,6 +201,8 @@ private void stringCompare(ASTNode stmt,BractAstPattern pat,BractAstPattern repl
 {
    Map<ASTNode,PatternMap> rslt = pat.matchAll(stmt,null);
    if (rslt == null) return;
+   
+   String logdata = getClass().getName();
    for (ASTNode n : rslt.keySet()) {
       PatternMap vals = rslt.get(n);
       ASTNode lhs = (ASTNode) vals.get("x");
@@ -218,7 +222,8 @@ private void stringCompare(ASTNode stmt,BractAstPattern pat,BractAstPattern repl
                desc = "Use !" + vals.get("x") + ".equals(" + vals.get("y") + ")";
                desc += " instead of !=";
              }
-            addRepair(rw,desc,0.75);
+            addRepair(rw,desc,logdata + "STRINGCOMP",0.75);
+
           }
        }
     } 
@@ -237,6 +242,7 @@ private void checkStringOperations(ASTNode stmt)
 { 
    if (!(stmt instanceof ExpressionStatement)) return;
    
+   String logdata = getClass().getName();
    ExpressionStatement estmt = (ExpressionStatement) stmt;
    Expression expr = estmt.getExpression();
    PatternMap vals = new PatternMap();
@@ -261,7 +267,7 @@ private void checkStringOperations(ASTNode stmt)
          ASTRewrite rw = string_result.replace(expr,vals);
          if (rw != null) {
             String desc = "Assign result of " + mthd + " to " + lhs;
-            addRepair(rw,desc,0.9);
+            addRepair(rw,desc,logdata + "@STRINGOP",0.9);
           }
          break;
       default :
@@ -280,11 +286,12 @@ private void checkStringOperations(ASTNode stmt)
 private void checkLoopIndex(ASTNode stmt)
 { 
    PatternMap rslt = new PatternMap();
+   String logdata = getClass().getName();
    if (loop_pattern.match(stmt,rslt)) {
       ASTRewrite rw = loop_result.replace(stmt,rslt);
       if (rw != null) {
          String desc = "Change for to loop from 0 to " + rslt.get("max") + "-1";
-         addRepair(rw,desc,0.5);
+         addRepair(rw,desc,logdata + "@LOOPINDEX",0.5);
        }
     }
 }
@@ -301,6 +308,8 @@ private void checkNonAssignment(ASTNode stmt)
 {
    Map<ASTNode,PatternMap> rslt = assign_pattern.matchAll(stmt,null);
    if (rslt == null) return;
+   
+   String logdata = getClass().getName();
    for (ASTNode n : rslt.keySet()) {
       ASTNode p = n.getParent();
       switch (p.getNodeType()) {
@@ -309,7 +318,7 @@ private void checkNonAssignment(ASTNode stmt)
             ASTRewrite rw = assign_result.replace(n,pmap);
             if (rw != null) {
                String desc = "Use " + pmap.get("x") + " = ... rather than ==";
-               addRepair(rw,desc,0.9);
+               addRepair(rw,desc,logdata + "@NONASSIGN",0.9);
              }
             break;
        }
@@ -334,7 +343,8 @@ private void checkSimplePattern(ASTNode stmt,BractAstPattern p1,BractAstPattern 
       if (rw != null) {
          ASTNode tgt = p2.getResult(n,pmap);
          String desc = "Use " + tgt + " instead of " + n;
-         addRepair(rw,desc,v);
+         String logdata = getClass().getName() + "@" + p1.getSummary();
+         addRepair(rw,desc,logdata,v);
        }
     }
 }

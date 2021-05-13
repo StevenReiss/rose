@@ -162,7 +162,7 @@ protected ASTNode getResolvedStatementForLocation(RootLocation loc)
  *      is used to scale the priority of the repair finder.
  **/ 
 
-protected void addRepair(ASTRewrite rw,String desc,double priority)
+protected void addRepair(ASTRewrite rw,String desc,String logdata,double priority)
 {
    if (rw == null) return;
    double pri = getFinderPriority();
@@ -228,7 +228,7 @@ protected void addRepair(ASTRewrite rw,String desc,double priority)
       catch (BadLocationException e) { }
     }
    
-   RootRepair rr = new RootRepairDefault(this,desc,pri,loc,te,vlm);
+   RootRepair rr = new RootRepairDefault(this,desc,pri,loc,te,vlm,logdata);
    getProcessor().validateRepair(rr);
 }
 

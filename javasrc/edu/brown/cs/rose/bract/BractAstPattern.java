@@ -104,6 +104,7 @@ enum PatternType { STATEMENT, EXPRESSION, DECLARATION }
 
 private List<ASTNode>   base_nodes;
 private PatternMap      default_values;
+private String          pat_summary;
 
 
 
@@ -117,8 +118,10 @@ private BractAstPattern(PatternType type,PatternMap defaults,String [] pats)
 {
    base_nodes = new ArrayList<>();
    default_values = defaults;
+   pat_summary = null;
    
    for (String pat : pats) {
+      if (pat_summary == null) pat_summary = pat;
       ASTNode node = null;
       try {
          switch (type) {
@@ -487,6 +490,12 @@ private boolean matchSubtree(String nam,PatternMap values,ASTNode orig)
 }
 
 
+public String getSummary()
+{
+   return pat_summary;
+}
+
+
 
 /********************************************************************************/
 /*                                                                              */
@@ -589,6 +598,8 @@ private class SubtreeSubst extends ASTVisitor {
     }
    
 }       // end of inner class SubtreeSubst
+
+
 
 
 

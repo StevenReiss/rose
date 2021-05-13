@@ -157,7 +157,8 @@ private void flipArgs(MethodInvocation mi,int arg0,int arg1)
     }
    ASTRewrite rw = ASTRewrite.create(ast);
    rw.replace(mi,rslt,null);
-   addRepair(rw,"Change argument order in call to " + mi.getName(),0.5);
+   addRepair(rw,"Change argument order in call to " + mi.getName(),null,0.5);
+
 }
 
 

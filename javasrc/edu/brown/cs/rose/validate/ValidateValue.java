@@ -98,6 +98,17 @@ Long getNumericValue()
 }
 
 
+int getLineValue()
+{
+   try {
+      return Integer.parseInt(IvyXml.getText(value_element));
+    }
+   catch (NumberFormatException e) { }
+   
+   return 0;
+}
+
+
 
 String getValue()
 {

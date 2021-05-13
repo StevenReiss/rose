@@ -541,7 +541,8 @@ private class PreviewAction extends AbstractAction {
     }
    
    @Override public void actionPerformed(ActionEvent e) {
-      BushFactory.metrics("SUGGEST_PREVUE",metric_id,for_repair.getDescription(),
+      BushFactory.metrics("SUGGEST_PREVIEW",metric_id,for_repair.getId(),
+            for_repair.getLogData(),for_repair.getDescription(),
             for_repair.getPriority(),for_repair.getValidatedPriority());
       BoardLog.logD("BUSH","PREVIEW REPAIR " + for_repair.getDescription());
       showPreviewBubble(for_repair);
@@ -561,7 +562,8 @@ private class RepairAction extends AbstractAction {
     }
    
    @Override public void actionPerformed(ActionEvent e) {
-      BushFactory.metrics("SUGGEST_REPAIR",metric_id,for_repair.getDescription(),
+      BushFactory.metrics("MAKE_REPAIR",metric_id,for_repair.getId(),
+            for_repair.getLogData(),for_repair.getDescription(),
             for_repair.getPriority(),for_repair.getValidatedPriority());
       RootEdit redit = for_repair.getEdit();
       Element tedit = redit.getTextEditXml();
@@ -591,7 +593,8 @@ private class SourceAction extends AbstractAction implements Runnable {
    @Override public void actionPerformed(ActionEvent e) {
       if (for_repair == null) return;
       BoardMetrics.noteCommand("BUSH","GotoSuggestSource");
-      BushFactory.metrics("SUGGEST_SOURCE",metric_id,for_repair.getDescription(),
+      BushFactory.metrics("SUGGEST_SOURCE",metric_id,for_repair.getId(),
+            for_repair.getLogData(),for_repair.getDescription(),
             for_repair.getPriority(),for_repair.getValidatedPriority());
       BushFactory.metrics("GOTO_SOURCE",for_repair.getDescription());
       BushLocation loc = (BushLocation) for_repair.getLocation();

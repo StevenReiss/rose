@@ -306,7 +306,9 @@ private void createRepair(UserVariable uv,JcompSymbol js,ASTNode where)
 
       ASTNode par = where.getParent();
       desc += " in " + par;
-      addRepair(rw,desc,pri);
+      String logdata = getClass().getName() + "#" + pri;
+      double priority = 0.5 + (pri/2);
+      addRepair(rw,desc,logdata,priority);
     }
    
 }

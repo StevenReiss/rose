@@ -124,6 +124,7 @@ public void validateAndSend(RootProcessor rp,RootRepair rr)
 
 
 
+
 /********************************************************************************/
 /*                                                                              */
 /*      Get base-line seede execution                                           */
@@ -137,6 +138,7 @@ void setupBaseExecution()
          "PROJECT",for_problem.getBugLocation().getProject(),
          "LAUNCHID",for_launch.getLaunch(),
          "THREADID",for_launch.getThread(),
+//       "SHOWALL",true,
          "FRAMEID",frame_id); 
    
    Element rslt = root_control.sendSeedeMessage(null,"BEGIN",args,null);
@@ -161,16 +163,17 @@ void setupBaseExecution()
    for (ValidateAction va : changes) {
       va.perform(root_control,base_session);
     }
+   runBaseExecution();
+   if (base_execution.getSeedeResult().getProblemTime() >= 0) return;
    
    for ( ; ; ) {
-      runBaseExecution();
-      if (base_execution.getSeedeResult().getProblemTime() >= 0) break;
-   
       changes = valuechanges.getResetActions(this);
-      if (changes == null) break;
+      if (changes == null || changes.isEmpty()) break;
       for (ValidateAction va : changes) {
          va.perform(root_control,base_session);
        }
+      runBaseExecution();
+      if (base_execution.getSeedeResult().getProblemTime() >= 0) break;
     }
 }
    

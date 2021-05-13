@@ -122,7 +122,7 @@ public void testRoseNullPointer()
    MintControl mc = setupBedrock(workspace,project);
    
    try {
-      FrameData fd = setupTest(mc,project,launch);
+      FrameData fd = setupTest(mc,project,launch,0);
       
       IvyXmlWriter xw = new IvyXmlWriter();
       xw.begin("PROBLEM");
@@ -158,7 +158,7 @@ public void testRoseArrayIndex()
    MintControl mc = setupBedrock(workspace,project);
    
    try {
-      FrameData fd = setupTest(mc,project,launch);
+      FrameData fd = setupTest(mc,project,launch,0);
       
       IvyXmlWriter xw = new IvyXmlWriter();
       xw.begin("PROBLEM");
@@ -192,7 +192,7 @@ public void testRoseWrongVariable()
    MintControl mc = setupBedrock(workspace,project);
    
    try {
-      FrameData fd = setupTest(mc,project,launch);
+      FrameData fd = setupTest(mc,project,launch,0);
       
       IvyXmlWriter xw = new IvyXmlWriter();
       xw.begin("PROBLEM");
@@ -229,7 +229,7 @@ public void testRoseNotNull()
    MintControl mc = setupBedrock(workspace,project);
    
    try {
-      FrameData fd = setupTest(mc,project,launch);
+      FrameData fd = setupTest(mc,project,launch,0);
       
       IvyXmlWriter xw = new IvyXmlWriter();
       xw.begin("PROBLEM");
@@ -264,7 +264,7 @@ public void testRoseLocation()
    MintControl mc = setupBedrock(workspace,project);
    
    try {
-      FrameData fd = setupTest(mc,project,launch);
+      FrameData fd = setupTest(mc,project,launch,0);
 
       IvyXmlWriter xw = new IvyXmlWriter();
       xw.begin("PROBLEM");
@@ -297,7 +297,7 @@ public void testRoseString()
    MintControl mc = setupBedrock(workspace,project);
    
    try {
-      FrameData fd = setupTest(mc,project,launch);
+      FrameData fd = setupTest(mc,project,launch,0);
       
       IvyXmlWriter xw = new IvyXmlWriter();
       xw.begin("PROBLEM");
@@ -333,7 +333,7 @@ public void testRoseLocation_3()
    MintControl mc = setupBedrock(workspace,project);
    
    try {
-      FrameData fd = setupTest(mc,project,launch);
+      FrameData fd = setupTest(mc,project,launch,0);
       
       IvyXmlWriter xw = new IvyXmlWriter();
       xw.begin("PROBLEM");
@@ -365,7 +365,7 @@ public void testRoseAssertion_3()
    MintControl mc = setupBedrock(workspace,project);
    
    try {
-      FrameData fd = setupTest(mc,project,launch);
+      FrameData fd = setupTest(mc,project,launch,0);
       
       IvyXmlWriter xw = new IvyXmlWriter();
       xw.begin("PROBLEM");
@@ -399,7 +399,7 @@ public void testAssertion()
    MintControl mc = setupBedrock(workspace,project);
    
    try {
-      FrameData fd = setupTest(mc,project,launch);
+      FrameData fd = setupTest(mc,project,launch,0);
       
       IvyXmlWriter xw = new IvyXmlWriter();
       xw.begin("PROBLEM");
@@ -431,10 +431,12 @@ public void testAssertion()
 /*                                                                              */
 /********************************************************************************/
 
-private FrameData setupTest(MintControl ctrl,String project,String launch)
+private FrameData setupTest(MintControl ctrl,String project,String launch,int cont)
 {
    LaunchData ld = startLaunch(ctrl,project,launch);
-   waitForStop();
+   for (int i = 0; i < cont; ++i) {
+      continueLaunch(ctrl,project,ld);
+    }
    FrameData fd = getTopFrame(ctrl,project,ld);
    setupStem(ctrl,true);
    
@@ -777,7 +779,6 @@ private LaunchData startLaunch(MintControl mc,String proj,String name)
 }
 
 
-@SuppressWarnings("unused")
 private void continueLaunch(MintControl mc,String project,LaunchData ld)
 {
    stopped_thread = null;

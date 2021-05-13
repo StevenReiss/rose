@@ -44,6 +44,9 @@ import java.util.Set;
 
 
 import edu.brown.cs.rose.bud.BudLaunch;
+import edu.brown.cs.rose.bud.BudLocalVariable;
+import edu.brown.cs.rose.bud.BudStack;
+import edu.brown.cs.rose.bud.BudStackFrame;
 import edu.brown.cs.rose.bud.BudValue;
 import edu.brown.cs.rose.root.RootControl;
 import edu.brown.cs.rose.root.RootProblem;
@@ -131,6 +134,155 @@ List<ValidateAction> getParameterActions()
 
 List<ValidateAction> getResetActions(ValidateContext ctx)
 {
+   BudStack bs = for_launch.getStack();
+   BudStackFrame startframe = null;
+   for (BudStackFrame bsf : bs.getFrames()) {
+      if (bsf.getFrameId().equals(for_frame)) {
+         startframe = bsf;
+         break;
+       }
+    }
+   
+   
+   ValidateExecution ve = ctx.getBaseExecution();
+   ValidateTrace vt = ve.getSeedeResult();
+   ValidateCall vc = vt.getRootContext();
+   
+   ValidateSetup vs = new ValidateSetup(ctx,change_data,startframe,vc);
+
+   List<ValidateAction> rslt = vs.findResets();
+   
+   return rslt;
+}
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Find actions for a particular frame and call                            */
+/*                                                                              */
+/********************************************************************************/
+
+private List<ValidateAction> findResetActions(ValidateTrace vt,
+      BudStackFrame bsf,ValidateCall vc,int fct)
+{
+   ValidateVariable linev = vc.getLineNumbers();
+   long time = -1;
+   for (ValidateValue vv : linev.getValues(vt)) {
+      long lno = vv.getNumericValue();
+      if (lno == bsf.getLineNumber()) {
+         time = vv.getStartTime();
+       }
+      else if (time >= 0) {
+         long endt = vv.getStartTime();
+         List<ValidateAction> rstl = findResetActions(vt,bsf,vc,fct,time,endt);
+         if (rstl != null) return rstl;
+         time = -1;
+       }
+    }
+   if (time >= 0) {
+      long endt = vc.getEndTime();
+      return findResetActions(vt,bsf,vc,fct,time,endt);
+    }
+   return null;
+}
+
+
+
+
+private List<ValidateAction> findResetActions(ValidateTrace vt,
+      BudStackFrame bsf,ValidateCall vc,int fct,long time,long endt)
+{
+   if (fct != 0) {
+      BudStackFrame bsf1 = for_launch.getStack().getFrames().get(fct-1);
+      for (ValidateCall innercall : vc.getInnerCalls()) {
+         if (innercall.getStartTime() >= time && innercall.getStartTime() < endt) {
+            // this check might not work
+            if (innercall.getMethod().equals(bsf1.getMethodName())) {
+               if (checkVariables(bsf,vt,vc,vc.getStartTime())) {
+                  System.err.println("CHECK NEXT LEVEL");
+                }
+               // might want to handle mulitple instances
+               break;
+             }
+          }
+       }
+    }
+   else {
+      // check top-frame here
+    }
+   
+   return null;
+}
+
+/********************************************************************************/
+/*                                                                              */
+/*      Check variable values                                                   */
+/*                                                                              */
+/********************************************************************************/
+
+private boolean checkVariables(BudStackFrame frame,ValidateTrace vt,ValidateCall vc,long t0)
+{
+   for (Map.Entry<String,ValidateVariable> ent : vc.getVariables().entrySet()) {
+      String vname = ent.getKey();
+      BudLocalVariable bvar = frame.getLocal(vname);
+      if (bvar == null) continue;
+      ValidateVariable vv = ent.getValue();
+      ValidateValue vval = vv.getValueAtTime(vt,t0);
+      if (compareVariable(bvar,vval,t0) == Boolean.FALSE) return false;
+    }
+   
+   return true;
+}
+
+
+private Boolean compareVariable(BudLocalVariable local,ValidateValue vv,long t0)
+{
+   switch (local.getKind()) {
+      case "PRIMITIVE" :
+      case "STRING" :
+         String valtxt = vv.getValue();
+         return local.getValue().equals(valtxt);
+      case "ARRAY" :
+         return compareArray(local,vv,t0);
+      case "OBJECT" :
+         return compareObject(local,vv,t0);
+      default :
+         break;
+    }
+   
+   return null;
+}
+
+
+
+private Boolean compareArray(BudLocalVariable local,ValidateValue vv,long t0)
+{
+   if (local.getType().equals("null")) {
+      if (vv.isNull()) return true;
+      return false;
+    }   
+   
+   if (!local.getType().equals(vv.getDataType())) return false;
+   
+   // check size and elements here
+      
+   return null;
+}
+
+
+
+private Boolean compareObject(BudLocalVariable local,ValidateValue vv,long t0)
+{
+   if (local.getType().equals("null")) {
+      if (vv.isNull()) return true;
+      return false;
+    }
+   
+   if (!local.getType().equals(vv.getDataType())) return false;
+   
+   // check fields here
+   
    return null;
 }
 

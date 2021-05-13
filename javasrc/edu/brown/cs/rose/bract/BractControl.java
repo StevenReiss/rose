@@ -228,8 +228,8 @@ private List<RootLocation> getLocations()
    String body = xw.toString();
    
    long t1 = System.currentTimeMillis();
-   RootMetrics.noteCommand("BRACT","SENDREPAIR",br.getDescription(),
-         br.getPriority(),br.getValidatedPriority(),t1-start_time);
+   RootMetrics.noteCommand("BRACT","SENDREPAIR",
+         br.getPriority(),br.getValidatedPriority(),t1-start_time,br.getId(),br.getLogData(),br.getDescription());
    
    rose_control.sendRoseMessage("SUGGEST",args,body,-1);
 }

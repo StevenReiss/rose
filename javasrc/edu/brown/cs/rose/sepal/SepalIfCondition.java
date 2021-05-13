@@ -149,11 +149,12 @@ private void invertCondition(Expression ex)
          break;
     }
    
+   String logdata = getClass().getName();
    if (comp != null) {
       ASTRewrite rw = ASTRewrite.create(ex.getAST());
       rw.replace(ex,comp,null);
       String desc = "Use " + comp + " instead of " + ex;
-      addRepair(rw,desc,0.25);
+      addRepair(rw,desc,logdata + "@CHANGEOP",0.25);
     }
    
    if (ex.getNodeType() == ASTNode.INFIX_EXPRESSION) {
@@ -163,7 +164,7 @@ private void invertCondition(Expression ex)
             ASTRewrite rw = ASTRewrite.create(ex.getAST());
             rw.replace(ex,comp,null);
             String desc = "Use " + comp + " in place of " + ex;
-            addRepair(rw,desc,0.25);
+            addRepair(rw,desc,logdata + "@INVERT",0.25);
           }
        }
     }

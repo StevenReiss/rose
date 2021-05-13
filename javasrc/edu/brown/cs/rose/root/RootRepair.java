@@ -55,6 +55,8 @@ abstract public class RootRepair implements RootConstants
 
 private String          repair_finder;
 private String          repair_description;
+private String          repair_logdata;
+private String          repair_id;
 private double          repair_priority;
 private double          validate_score;
 private RootEdit        repair_edit;
@@ -71,7 +73,7 @@ private RootLineMap     line_map;
 
 
 protected RootRepair(RootRepairFinder finder,String desc,double pri,
-      RootLocation loc,RootEdit edit,RootLineMap linemap)
+      RootLocation loc,RootEdit edit,RootLineMap linemap,String logdata)
 { 
    repair_finder = finder.getClass().getName();
    repair_description = desc;
@@ -80,6 +82,9 @@ protected RootRepair(RootRepairFinder finder,String desc,double pri,
    repair_location = loc;
    validate_score = 0.5;
    line_map = linemap;
+   if (logdata == null) logdata = repair_finder;
+   else repair_logdata = logdata;
+   repair_id = "R" + hashCode();
 }
 
 
@@ -91,6 +96,8 @@ protected RootRepair(Element xml,RootLocation loc)
    repair_description = IvyXml.getTextElement(xml,"DESCRIPTION");
    repair_edit = new RootEdit(IvyXml.getChild(xml,"REPAIREDIT"));
    validate_score = IvyXml.getAttrDouble(xml,"VALIDATE",0.5);
+   repair_logdata = IvyXml.getTextElement(xml,"LOGDATA");
+   repair_id = IvyXml.getAttrString(xml,"ID");
    repair_location = loc;
 }
 
@@ -152,6 +159,20 @@ public long getMappedLine(File file,long line)
    return line_map.getEditedLine(file,(int) line);
 }
 
+
+public String getLogData()      
+{
+   return repair_logdata;
+}
+
+
+public String getId()
+{
+   return repair_id;
+}
+
+
+
 /********************************************************************************/
 /*                                                                              */
 /*      Output methods                                                          */
@@ -164,8 +185,11 @@ public void outputXml(IvyXmlWriter xw)
    xw.field("PRIORITY",repair_priority);
    if (validate_score > 0) xw.field("VALIDATE",validate_score);
    xw.field("FINDER",repair_finder);
+   xw.field("ID",repair_id);
+   localOutputXml(xw);
    repair_edit.outputXml(xw);
    xw.cdataElement("DESCRIPTION",repair_description);
+   xw.textElement("LOGDATA",repair_logdata);
    repair_location.outputXml(xw);
    xw.end("REPAIR");
 }

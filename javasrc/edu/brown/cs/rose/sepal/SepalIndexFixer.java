@@ -138,6 +138,8 @@ public SepalIndexFixer()                        { }
 
 private void checkForStatement(ForStatement fs,Map<ASTNode,PatternMap> rslt)
 {
+   String logdata = getClass().getName();
+   
    for (Map.Entry<ASTNode,PatternMap> ent : rslt.entrySet()) {
       ASTNode idxnode = ent.getKey();
       AST ast = idxnode.getAST();
@@ -155,14 +157,16 @@ private void checkForStatement(ForStatement fs,Map<ASTNode,PatternMap> rslt)
          exp.setLeftOperand((Expression) ASTNode.copySubtree(ast,accnode.getIndex()));
          exp.setRightOperand(ast.newNumberLiteral("1"));
          rw.replace(accnode.getIndex(),exp,null);
-         addRepair(rw,"Replace index " + accnode.getIndex() + " with " + accnode.getIndex() + "+1",0.4);
+         addRepair(rw,"Replace index " + accnode.getIndex() + " with " + accnode.getIndex() + "+1",
+               logdata + "FORINDEX@UP",0.4);
          rw = ASTRewrite.create(ast);
          exp = ast.newInfixExpression();
          exp.setOperator(InfixExpression.Operator.MINUS);
          exp.setLeftOperand((Expression) ASTNode.copySubtree(ast,accnode.getIndex()));
          exp.setRightOperand(ast.newNumberLiteral("1"));
          rw.replace(accnode.getIndex(),exp,null);
-         addRepair(rw,"Replace index " + accnode.getIndex() + " with " + accnode.getIndex() + "-1",0.4);
+         addRepair(rw,"Replace index " + accnode.getIndex() + " with " + accnode.getIndex() + "-1",
+               logdata + "@FORINDEX@DOWN",0.4);
        }
     }
 }

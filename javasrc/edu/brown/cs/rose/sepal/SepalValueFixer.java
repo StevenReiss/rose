@@ -70,6 +70,7 @@ public class SepalValueFixer extends RootRepairFinderDefault
 /*										*/
 /********************************************************************************/
 
+private double          value_priority;
 
 
 /********************************************************************************/
@@ -79,7 +80,9 @@ public class SepalValueFixer extends RootRepairFinderDefault
 /********************************************************************************/
 
 public SepalValueFixer()
-{ }
+{ 
+   value_priority = 0.5;
+}
 
 
 /********************************************************************************/
@@ -371,20 +374,20 @@ private abstract class ValueFix {
       ASTNode par = stmt.getParent();
       ASTRewrite rw = ASTRewrite.create(ast);
       if (par instanceof Block) {
-	 Block blk = (Block) par;
-	 ListRewrite lrw = rw.getListRewrite(blk,Block.STATEMENTS_PROPERTY);
-	 lrw.insertAfter(newstmt,stmt,null);
+         Block blk = (Block) par;
+         ListRewrite lrw = rw.getListRewrite(blk,Block.STATEMENTS_PROPERTY);
+         lrw.insertAfter(newstmt,stmt,null);
        }
       else {
-	 Block blk = ast.newBlock();
-	 ASTNode n1 = ASTNode.copySubtree(ast,stmt);
-	 blk.statements().add(n1);
-	 blk.statements().add(newstmt);
-	 rw.replace(stmt,blk,null);
+         Block blk = ast.newBlock();
+         ASTNode n1 = ASTNode.copySubtree(ast,stmt);
+         blk.statements().add(n1);
+         blk.statements().add(newstmt);
+         rw.replace(stmt,blk,null);
        }
       if (rw != null) {
-	 String desc = "Add " + newstmt + " to change computed value";
-	 addRepair(rw,desc,0.5);
+         String desc = "Add " + newstmt + " to change computed value";
+         addRepair(rw,desc,null,value_priority);
        }
     }
 
@@ -411,7 +414,7 @@ private class ValueFixOp extends ValueFix {
 	 rw.replace(asgn,asg1,null);
 	 String desc = "Use " + asg1 + " instead of " + asgn;
 	 RoseLog.logD("SEPAL","Value fix: " + desc);
-	 addRepair(rw,desc,0.5);
+	 addRepair(rw,desc,null,value_priority);
        }
       else {
 	 addToBlock(stmt,asgn,use_operator,rhs_value,false);
@@ -438,7 +441,7 @@ private class ValueFixLeftOp extends ValueFix {
 	 ASTRewrite rw = ASTRewrite.create(rhs_value.getAST());
 	 rw.replace(asgn,asg1,null);
 	 String desc = "Use " + asg1 + " instead of " + asgn;
-	 addRepair(rw,desc,0.5);
+	 addRepair(rw,desc,null,value_priority);
        }
       else {
 	 addToBlock(stmt,asgn,use_operator,rhs_value,true);
@@ -474,7 +477,7 @@ private class ValueFixMethod extends ValueFix {
 	 ASTRewrite rw = ASTRewrite.create(ast);
 	 rw.replace(asgn,asg1,null);
 	 String desc = "Use " + asg1 + " instead of " + asgn;
-	 addRepair(rw,desc,0.5);
+	 addRepair(rw,desc,null,value_priority);
        }
       else {
 	 ex = (Expression) ASTNode.copySubtree(ast,asgn.getLeftHandSide());
@@ -511,7 +514,7 @@ private class ValueFixStaticMethod extends ValueFix {
 	 ASTRewrite rw = ASTRewrite.create(ast);
 	 rw.replace(asgn,asg1,null);
 	 String desc = "Use " + asg1 + " instead of " + asgn;
-	 addRepair(rw,desc,0.5);
+	 addRepair(rw,desc,null,value_priority);
        }
       else {
 	 ex = (Expression) ASTNode.copySubtree(ast,asgn.getLeftHandSide());

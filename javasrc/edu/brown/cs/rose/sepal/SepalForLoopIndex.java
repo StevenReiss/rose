@@ -107,6 +107,7 @@ public SepalForLoopIndex()
    ASTNode stmt = getResolvedStatementForLocation(null);
    if (stmt == null) return;
    if (stmt.getNodeType() != ASTNode.FOR_STATEMENT) return;
+   String logdata = getClass().getName();
    
    PatternMap nmap = new PatternMap(match_values);
    if (match_pattern.match(stmt,nmap)) {
@@ -128,7 +129,8 @@ public SepalForLoopIndex()
          rw = result_pattern.replace(ex,nmap);
        }
       if (rw != null) {
-         addRepair(rw,desc,0.75);
+         addRepair(rw,desc,logdata + "@FORINDEX",0.75);
+
        }
     }
 }

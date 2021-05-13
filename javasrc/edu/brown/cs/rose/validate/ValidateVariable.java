@@ -82,7 +82,8 @@ List<ValidateValue> getValues(ValidateTrace trace)
 {
    List<ValidateValue> rslt = new ArrayList<>();
    for (Element e : IvyXml.children(variable_element,"VALUE")) {
-      Element v1 = trace.dereference(e);
+      Element v1 = e;
+      if (trace != null) v1 = trace.dereference(e);
       rslt.add(new ValidateValue(v1));
     }
    
