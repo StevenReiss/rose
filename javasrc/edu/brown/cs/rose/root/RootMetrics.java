@@ -121,7 +121,7 @@ public static void noteCommand(String src,String cmd,Object ... args)
    buf.append(cmd);
    for (Object o : args) {
       buf.append(",");
-      buf.append(o.toString());
+      buf.append(String.valueOf(o));
     }
    buf.append(",");
    buf.append(System.currentTimeMillis());

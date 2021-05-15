@@ -123,6 +123,7 @@ private String          default_project;
 private LeashIndex      project_index;
 private LeashIndex      global_index;
 private Set<File>       loaded_files;
+private boolean         run_debug;
 
 
 private static boolean	use_all_files = true;
@@ -159,6 +160,7 @@ private StemMain(String [] args)
    eval_handlers = new HashMap<>();
    stem_compiler = null;
    loaded_files = new HashSet<>();
+   run_debug = true;
    scanArgs(args);
 }
 
@@ -187,6 +189,10 @@ private void scanArgs(String [] args)
 	  }
 	 else if (args[i].startsWith("-D")) {                           // -Debug
 	    RoseLog.setLogLevel(RoseLog.LogLevel.DEBUG);
+	  }
+         else if (args[i].startsWith("-NoD")) {                           // -Debug
+	    RoseLog.setLogLevel(RoseLog.LogLevel.INFO);
+            run_debug = false;
 	  }
 	 else if (args[i].startsWith("-local")) {                       // -local
 	    local_fait = true;
@@ -247,6 +253,9 @@ private void handleStartCommand(MintMessage msg) throws RoseException
       analysis_state = AnalysisState.NONE;
       sts = false;
     }
+   Element sess = IvyXml.getChild(rslt,"SESSION");
+   String sid = IvyXml.getAttrString(sess,"ID");
+   if (sid != null) session_id = sid;
 
    loadFilesIntoFait(null);
 
@@ -750,8 +759,8 @@ private boolean startSeede()
    args.add(mint_control.getMintName());
    args.add("-L");
    args.add(logf.getPath());
-   if (bp.getBoolean("Rose.seede.debug")) args.add("-D");
-   if (bp.getBoolean("Rose.seede.trace")) args.add("-T");
+   if (run_debug && bp.getBoolean("Rose.seede.debug")) args.add("-D");
+   if (run_debug && bp.getBoolean("Rose.seede.trace")) args.add("-T");
    
    for (int i = 0; i < 100; ++i) {
       MintDefaultReply rply = new MintDefaultReply();

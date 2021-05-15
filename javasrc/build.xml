@@ -13,7 +13,7 @@
       <ant antfile="build.xml" dir="edu/brown/cs/rose/validate" />
       <ant antfile="build.xml" dir="edu/brown/cs/rose/stem" />
       <ant antfile="build.xml" dir="edu/brown/cs/rose/sepal" />
-      <ant antfile="build.xml" dir="edu/brown/cs/rose/quixtests" />
+      <ant antfile="build.xml" dir="edu/brown/cs/rose/roseeval" />
    </target>
 
    <path id='jdocsrc'>

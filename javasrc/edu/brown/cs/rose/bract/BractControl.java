@@ -251,7 +251,7 @@ private static class ProcessorTask extends RootTask implements PriorityTask {
     }
    
    @Override public void run() {
-      RoseLog.logD("BRACT","Start repair finder");
+      RoseLog.logD("BRACT","Start repair finder " + repair_finder.getClass());
       try {
          repair_finder.process();
        }
