@@ -216,6 +216,7 @@ private static class NullValue extends BudValue {
    
    @Override protected void localOutputXml(IvyXmlWriter xw) {
       xw.field("NULL",true);
+      xw.field("VALUE","null");
     }
    
    @Override public String toString()          { return "null"; }
@@ -243,6 +244,7 @@ private static class BooleanValue extends BudValue {
    
    @Override protected void localOutputXml(IvyXmlWriter xw) {
       xw.field("BOOLEAN",cur_value);
+      xw.field("VALUE",cur_value);
     }
    
    @Override public String toString() {
@@ -274,6 +276,7 @@ private static class NumericValue extends BudValue {
    
    @Override protected void localOutputXml(IvyXmlWriter xw) {
       xw.field("NUMBER",cur_value);
+      xw.field("VALUE",cur_value);
     }
    
    @Override public String toString()           { return cur_value.toString(); }
@@ -304,6 +307,7 @@ private static class StringValue extends BudValue {
    @Override protected void localOutputXml(IvyXmlWriter xw) {
       xw.field("STRING",true);
       xw.cdataElement("CONTENTS",cur_value);
+      xw.cdataElement("VALUE",cur_value);
     }
    
    @Override public String toString()           { return "\"" + cur_value + "\""; }

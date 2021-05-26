@@ -35,7 +35,10 @@
 
 package edu.brown.cs.rose.stem;
 
+import java.io.File;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
@@ -54,9 +57,12 @@ import org.eclipse.jdt.core.dom.WhileStatement;
 import org.w3c.dom.Element;
 
 import edu.brown.cs.ivy.jcomp.JcompAst;
+import edu.brown.cs.ivy.jcomp.JcompSymbol;
 import edu.brown.cs.ivy.jcomp.JcompType;
 import edu.brown.cs.ivy.mint.MintConstants.CommandArgs;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
+import edu.brown.cs.rose.bud.BudStack;
+import edu.brown.cs.rose.bud.BudStackFrame;
 import edu.brown.cs.rose.bud.BudValue;
 import edu.brown.cs.rose.root.RootProblem;
 import edu.brown.cs.rose.root.RoseException;
@@ -101,7 +107,8 @@ StemQueryExceptionHistory(StemMain ctrl,RootProblem prob)
    stem.waitForAnalysis();
    
    String expr = getExceptionCause();
-   if (expr == null) throw new RoseException("Can't find exception cause");
+   if (expr == null)
+      throw new RoseException("Can't find exception cause for " + exception_type);
    
    CommandArgs args = new CommandArgs("FILE",for_file.getAbsolutePath(),
          "QTYPE","EXPRESSION",
@@ -138,12 +145,19 @@ ASTNode getExceptionNode()
             checker = new ArrayIndexOutOfBoundsChecker();
             break;
          case "java.lang.IndexOutOfBoundsException" :
+         case "java.util.NoSuchElementException" :
             checker = new IndexOutOfBoundsChecker();
+            break;
+         case "java.lang.StringIndexOutOfBoundsException" :
+            checker = new StringIndexOutOfBoundsChecker();
+            break;
+         case "java.lang.StackOverflowError" :
+            checker = new StackOverflowChecker();
             break;
        }
       
       if (checker != null) {
-         stmt.accept(checker);
+         checker.doCheck(stmt);
          return checker.getResult();
        }
     }
@@ -167,15 +181,21 @@ private String getExceptionCause() throws RoseException
         checker = new ArrayIndexOutOfBoundsChecker();
         break;
      case "java.lang.IndexOutOfBoundsException" :
+     case "java.util.NoSuchElementException" :
         checker = new IndexOutOfBoundsChecker();
+        break;
+     case "java.lang.StringIndexOutOfBoundsException" :
+        checker = new StringIndexOutOfBoundsChecker();
+        break;
+     case "java.lang.StackOverflowError" :
+        checker = new StackOverflowChecker();
         break;
    }
   
   if (checker != null) {
-     stmt.accept(checker);
+     checker.doCheck(stmt);
      String loc = checker.generateResult();
-     if (loc == null) return null;
-     return loc;
+     if (loc != null) return loc;
    }
   
   return null;
@@ -192,6 +212,10 @@ private abstract class ExceptionChecker extends ASTVisitor {
       use_node = null;
       orig_value = null;
       target_value = null;
+    }
+   
+   void doCheck(ASTNode n) {
+      n.accept(this);
     }
    
    protected void useNode(ASTNode n,String orig,String tgt) {
@@ -350,6 +374,7 @@ private class NullPointerChecker extends ExceptionChecker {
       ex.accept(this);
       if (haveNode()) return false;
       BudValue bv = evaluate(ex.toString());
+      if (bv == null) return false;
       if (bv.isNull()) {
          useNode(ex,"null","Non-Null");
          return false;
@@ -398,7 +423,10 @@ private class IndexOutOfBoundsChecker extends ExceptionChecker {
    @Override public void endVisit(MethodInvocation mi) {
       if (mi.getExpression() == null) return;
       JcompType jt = JcompAst.getExprType(mi.getExpression());
-      switch (jt.getName()) {
+      String jtname = jt.getName();
+      int idx0 = jtname.indexOf("<");
+      if (idx0 > 0) jtname = jtname.substring(0,idx0);
+      switch (jtname) {
          case "java.util.ArrayList" :
          case "java.util.List" :
          case "java.util.Vector" :
@@ -406,6 +434,7 @@ private class IndexOutOfBoundsChecker extends ExceptionChecker {
          case "java.util.ArrayDeque" :
          case "java.util.LinkedList" :
          case "java.util.PriorityQueue" :
+         case "java.util.Deque" :
             break;
          default :
             return;
@@ -437,6 +466,114 @@ private class IndexOutOfBoundsChecker extends ExceptionChecker {
 }       // end of inner class IndexOutOfBoundsChecker
 
 
+private class StringIndexOutOfBoundsChecker extends ExceptionChecker {
+   
+   @Override public void endVisit(MethodInvocation mi) {
+      if (mi.getExpression() == null) return;
+      JcompType jt = JcompAst.getExprType(mi.getExpression());
+      String jtname = jt.getName();
+      int idx0 = jtname.indexOf("<");
+      if (idx0 > 0) jtname = jtname.substring(0,idx0);
+      switch (jtname) {
+         case "java.lang.String" :
+            break;
+         default :
+            return;
+       }
+      switch (mi.getName().getIdentifier()) {
+         case "charAt" :
+         case "codePointAt" :
+         case "codePointBefore" :
+         case "codePointCount" :
+         case "offsetByCodeePoints" :
+         case "getChars" :
+         case "getBytes" :
+         case "substring" :
+         case "subSequence" :
+            break;
+         default :
+            return;
+       }
+      
+      BudValue bv = evaluate("(" + mi.getExpression() + ").length())");
+      if (bv == null) return;
+      long bnd = bv.getInt();
+      List<?> args = mi.arguments();
+      long idx = 0;
+      if (args.size() > 0) {
+         Expression eidx = (Expression) args.get(0);
+         BudValue bidx = evaluate(eidx.toString());
+         if (bidx == null && bnd > 0) return;
+         if (bidx != null) idx = bidx.getInt();
+       }
+      if (idx < 0 || idx >= bnd) useNode(mi,Long.toString(idx),null);
+    }
+   
+   
+}
+
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Stack Overflow handler                                                  */
+/*                                                                              */
+/********************************************************************************/
+
+private class StackOverflowChecker extends ExceptionChecker {
+
+   private String find_method;
+   private String find_signature;
+   
+   StackOverflowChecker() {
+      find_method = null;
+      find_signature = null;
+    }
+   
+   @Override void doCheck(ASTNode stmt) {
+      BudStack stk = bud_launch.getStack();
+      Map<String,Integer> cnts = new HashMap<>();
+      for (BudStackFrame frm : stk.getFrames()) {
+         File f = frm.getSourceFile();
+         int lno = frm.getLineNumber();
+         String mthd = frm.getMethodName();
+         String sgn = frm.getMethodSignature();
+         String key = f.getPath() + "@" + lno + "@" + mthd + "@" + sgn;
+         Integer v = cnts.get(key);
+         if (v == null) v = 0;
+         cnts.put(key,v+1);
+       }
+      String most = null;
+      int mostv = 0;
+      for (Map.Entry<String,Integer> ent : cnts.entrySet()) {
+         if (ent.getValue() > mostv) {
+            most = ent.getKey();
+            mostv = ent.getValue();
+          }
+       }
+      String [] items = most.split("@");
+      Integer lno = Integer.parseInt(items[1]);
+      ASTNode n = stem_control.getSourceNode(project_name,new File(items[0]),-1,lno,true,true);
+      find_method = items[2];
+      find_signature = items[3];
+      n.accept(this);     
+    }
+   
+   @Override public boolean visit(MethodInvocation mi) {
+      if (mi.getName().getIdentifier().equals(find_method)) {
+         JcompSymbol js = JcompAst.getReference(mi.getName());
+         String ftynm = js.getType().getJavaTypeName();
+         if (find_signature == null || find_signature.equals(ftynm)) {
+            useNode(mi,null,null);
+          }
+       }
+      return true;
+    }
+   
+}       // end of inner class StackOverflowChecker
+
+
 
 
 /********************************************************************************/
@@ -448,6 +585,9 @@ private class IndexOutOfBoundsChecker extends ExceptionChecker {
 private BudValue evaluate(String expr) {
    return bud_launch.evaluate(expr);
 }
+
+
+
 
 }       // end of class StemQueryExceptionHistory
 

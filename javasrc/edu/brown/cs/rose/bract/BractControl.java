@@ -221,6 +221,9 @@ private List<RootLocation> getLocations()
 
 @Override public void sendRepair(RootRepair br)
 {
+   long time = System.currentTimeMillis() - start_time;
+   br.setTime(time);
+   
    CommandArgs args = new CommandArgs("NAME",reply_id);
    
    IvyXmlWriter xw = new IvyXmlWriter();

@@ -169,12 +169,13 @@ private String findValidStart(String fid)
 	  }
 	 else f = null;
 	 if (f == null) {
-	    if (prior != null && ct < 10) {
-	       fid = prior.getFrameId();
-	     }
 	    break;
 	  }
        }
+    }
+   
+   if (prior != null && ct < 5) {
+      fid = prior.getFrameId();
     }
 
    return fid;

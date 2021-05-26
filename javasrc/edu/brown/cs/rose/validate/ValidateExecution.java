@@ -91,6 +91,12 @@ String getSessionId()                   { return session_id; }
 
 RootRepair getRepair()                  { return for_repair; }
 
+long getExecutionTime()
+{
+   if (exec_state != ExecState.READY || seede_result == null) return 0;
+   return seede_result.getExecutionTime();
+}
+
 
 
 /********************************************************************************/
@@ -110,7 +116,7 @@ void start(RootControl rc)
    vfac.register(this);
    
    CommandArgs args = new CommandArgs("EXECID",session_id,
-         "CONTINUOUS",false,"MAXTIME",1000000,"MAXDEPTH",100);
+         "CONTINUOUS",false,"MAXTIME",for_context.getMaxTime(),"MAXDEPTH",100);
    Element r1 = rc.sendSeedeMessage(session_id,"EXEC",args,null);
    if (!IvyXml.isElement(r1,"RESULT")) {
       RoseLog.logD("VALIDATE","Exec setup returned: " + IvyXml.convertXmlToString(r1));     exec_state = ExecState.READY;

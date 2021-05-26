@@ -37,6 +37,7 @@ package edu.brown.cs.rose.thorn;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
@@ -75,6 +76,7 @@ import edu.brown.cs.rose.root.RootControl;
 import edu.brown.cs.rose.root.RootProblem;
 import edu.brown.cs.rose.root.RootTestCase;
 import edu.brown.cs.rose.root.RoseLog;
+import edu.brown.cs.rose.root.RootControl.AssertionData;
 
 class ThornChangedFinder implements ThornConstants
 {
@@ -87,6 +89,8 @@ class ThornChangedFinder implements ThornConstants
 /********************************************************************************/
 
 private RootControl     for_control;
+private Map<ASTNode,ThornChangeMap>  known_methods;
+
 
 
 /********************************************************************************/
@@ -98,6 +102,7 @@ private RootControl     for_control;
 ThornChangedFinder(RootControl ctrl)
 {
    for_control = ctrl;
+   known_methods = null;
 }
 
 
@@ -111,6 +116,7 @@ ThornChangeData process(BudLaunch bl,RootProblem rp,String topframe)
 {
    ThornChangeData rslt = new ThornChangeData();
    
+   known_methods = new HashMap<>();
    // need to find correct starting frame
    BudStackFrame bf0 = bl.getStack().getTopFrame();
    ASTNode stmt0 = getNodeForFrame(bf0);
@@ -143,6 +149,8 @@ ThornChangeData process(BudLaunch bl,RootProblem rp,String topframe)
       else if (havefirst) return null;
     }
    
+   known_methods = null;
+   
    return rslt;
 }
 
@@ -161,6 +169,14 @@ private ASTNode getNodeForFrame(BudStackFrame bf)
 
 private ThornChangeMap processMethod(ASTNode stmt0,ThornChangeMap initmap)
 {
+   ThornChangeMap rslt = null;
+   if (initmap == null && known_methods != null && known_methods.containsKey(stmt0)) {
+      rslt = known_methods.get(stmt0);
+      return rslt;
+    }
+   
+   known_methods.put(stmt0,new ThornChangeMap());
+   
    ChangedVisitor visitor = new ChangedVisitor(initmap);
    
    for (ASTNode stmt = stmt0; stmt != null; ) {   
@@ -179,7 +195,12 @@ private ThornChangeMap processMethod(ASTNode stmt0,ThornChangeMap initmap)
        }
     }
    
-   return visitor.getChanges();
+   rslt = visitor.getChanges();
+   if (known_methods != null && initmap == null) {
+      known_methods.put(stmt0,rslt);
+    }
+   
+   return rslt;
 }
 
 
@@ -209,7 +230,8 @@ ThornChangeMap findProblemVariables(ASTNode base,RootProblem rp)
    ASTNode n = null;
    switch (rp.getProblemType()) {
       case ASSERTION :
-         n = for_control.getAssertionData(rp).getExpression();
+         AssertionData ad = for_control.getAssertionData(rp);
+         if (ad != null) n = ad.getExpression();
          break;
       case EXCEPTION :
          n = for_control.getExceptionNode(rp);

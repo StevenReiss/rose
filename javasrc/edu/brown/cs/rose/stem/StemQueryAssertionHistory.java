@@ -61,6 +61,8 @@ class StemQueryAssertionHistory extends StemQueryHistory
 /*                                                                              */
 /********************************************************************************/
 
+private static int THIS_INDEX = 999999;
+
 
 
 /********************************************************************************/
@@ -181,6 +183,10 @@ private class AssertionChecker extends ASTVisitor implements AssertionData {
       int givenidx = -1;
       int targetidx = -1;
       switch (nm) {
+         case "equals" :
+            givenidx = THIS_INDEX;
+            targetidx = 0;
+            break;
          case "assertArrayEquals" :
             break;
          case "assertEquals" :
@@ -218,7 +224,7 @@ private class AssertionChecker extends ASTVisitor implements AssertionData {
             break;
          case "assertThat" :
             if (ct == 2) {
-               ASTNode arg1 = (ASTNode) mi.arguments().get(1);
+               ASTNode arg1 = getArgument(1,mi); 
                JcompType t1 = JcompAst.getExprType(arg1);
                if (t1.isBooleanType()) givenidx = 1;
                else givenidx = 0;
@@ -232,7 +238,7 @@ private class AssertionChecker extends ASTVisitor implements AssertionData {
        }
       
       if (givenidx >= 0 && targetidx >= 0) {
-         ASTNode ng = (ASTNode) mi.arguments().get(givenidx);
+         ASTNode ng = getArgument(givenidx,mi);
          switch (ng.getNodeType()) {
             case ASTNode.NUMBER_LITERAL :
             case ASTNode.STRING_LITERAL :
@@ -280,10 +286,15 @@ private class AssertionChecker extends ASTVisitor implements AssertionData {
          default :
             break;
        }
-      Expression ex = (Expression) mi.arguments().get(givenidx);
+      Expression ex = getArgument(givenidx,mi);
       useNode(ex,given,target);
       
       return false;
+    }
+   
+   private Expression getArgument(int idx,MethodInvocation mi) {
+      if (idx == THIS_INDEX) return mi.getExpression();
+      return (Expression) mi.arguments().get(idx);
     }
    
    @Override public boolean visit(AssertStatement stmt) {
@@ -305,7 +316,7 @@ private class AssertionChecker extends ASTVisitor implements AssertionData {
    
    private BudValue getBudValue(MethodInvocation mi,int idx) {
       if (idx < 0) return null;
-      Expression ex = (Expression) mi.arguments().get(idx);
+      Expression ex = getArgument(idx,mi);
       BudValue bv = bud_launch.evaluate(ex.toString());
       return bv;
     }

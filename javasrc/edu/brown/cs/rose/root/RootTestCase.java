@@ -61,6 +61,7 @@ private Map<String,String> initial_values;
 private TestType        test_type;
 private String          return_value;
 private Map<String,String> check_values;
+private long            max_ticks;
 
 
 
@@ -78,6 +79,7 @@ public RootTestCase(Element xml)
    return_value = IvyXml.getTextElement(xml,"RETURNS");
    initial_values = loadVarMap(xml,"INITIALIZE");
    check_values = loadVarMap(xml,"CHECK");
+   max_ticks = IvyXml.getAttrLong(xml,"MAXTIME");
 }
 
 
@@ -90,6 +92,7 @@ public RootTestCase(String fid,String rtn)
    test_type = TestType.RETURNS;
    return_value = null;
    check_values = null;
+   max_ticks = -1;
 }
 
 
@@ -116,6 +119,7 @@ public String getThrowType()
    return return_value;
 }
 
+public long getMaxTime()                { return max_ticks; }
 
 
 public void setThrows(String exc)
@@ -131,6 +135,12 @@ public void setReturns(String val)
    test_type = TestType.RETURNS;
    if (val != null && val.trim().length() == 0) val = null;
    return_value = val;
+}
+
+
+public void setMaxTime(long t)
+{
+   max_ticks = t;
 }
 
 
@@ -161,6 +171,7 @@ public void outputXml(IvyXmlWriter xw)
    xw.field("FRAME",entry_frame);
    xw.field("ROUTINE",entry_routine);
    xw.field("ACTION",test_type);
+   if (max_ticks > 0) xw.field("MAXTIME",max_ticks);
    if (return_value != null) xw.textElement("RETURNS",return_value);
    outputVarMap(xw,"INITIALIZE",initial_values);
    outputVarMap(xw,"CHECK",check_values);

@@ -88,6 +88,7 @@ import edu.brown.cs.ivy.swing.SwingComboBox;
 import edu.brown.cs.ivy.swing.SwingGridPanel;
 import edu.brown.cs.ivy.swing.SwingListPanel;
 import edu.brown.cs.ivy.swing.SwingListSet;
+import edu.brown.cs.ivy.swing.SwingNumericField;
 import edu.brown.cs.ivy.swing.SwingText;
 import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
@@ -1184,6 +1185,7 @@ private class AdvancedPanel extends SwingGridPanel implements ActionListener {
    private JComboBox<String> should_box;
    private JTextField return_field;
    private JTextField except_field;
+   private SwingNumericField time_field;
    private VariableValuePanel check_panel;
    private RootTestCase default_test;
    
@@ -1209,6 +1211,8 @@ private class AdvancedPanel extends SwingGridPanel implements ActionListener {
       return_field = addTextField("Return Value",null,32,this,null);
       except_field = addTextField("Exception Type",null,32,this,null);
       showField(except_field,false);
+      time_field = addNumericField("Max Time (ticks)",10000,1000000,100000,this);
+      
       check_panel = new VariableValuePanel();
       addRawComponent("Checks",check_panel);
       showField(check_panel,false);
@@ -1244,6 +1248,8 @@ private class AdvancedPanel extends SwingGridPanel implements ActionListener {
              break;
           case "Exception Value" :
              break;
+          case "Max Time (ticks)" :
+             break;
           default :
              BoardLog.logE("BUSH","Unknown action command for advanced panel " + 
                    evt.getActionCommand());
@@ -1258,6 +1264,7 @@ private class AdvancedPanel extends SwingGridPanel implements ActionListener {
        if (return_field.isVisible()) default_test.setReturns(return_field.getText());
        else if (except_field.isVisible()) default_test.setThrows(except_field.getText());
        else default_test.setLoops();
+       default_test.setMaxTime((long) time_field.getValue());
        VariableValueSet vset = (VariableValueSet) check_panel.getListModel();
        for (int i = 0; i < vset.getSize(); ++i) {
           VariableValue vv = vset.getElementAt(i);

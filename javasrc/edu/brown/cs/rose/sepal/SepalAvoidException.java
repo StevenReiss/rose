@@ -35,6 +35,7 @@
 
 package edu.brown.cs.rose.sepal;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -51,6 +52,7 @@ import org.eclipse.jdt.core.dom.ForStatement;
 import org.eclipse.jdt.core.dom.IfStatement;
 import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.MethodInvocation;
+import org.eclipse.jdt.core.dom.NumberLiteral;
 import org.eclipse.jdt.core.dom.ParenthesizedExpression;
 import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.jdt.core.dom.ReturnStatement;
@@ -119,11 +121,6 @@ public SepalAvoidException()
    ASTNode n = getProcessor().getController().getExceptionNode(rp);
    if (n == null) return;
    
-   if (stmt != bstmt) {
-      // if the erroreous value is a variable computed here, then can add check afterwards
-      // If this is a call passing in the erroreous value, skip the call
-      return;
-    }  
    Object o1 = null;
    switch (rp.getProblemDetail()) {
       case "java.lang.NullPointerException" :
@@ -133,7 +130,11 @@ public SepalAvoidException()
          o1 = new BoundsCondition();
          break;
       case "java.lang.IndexOutOfBoundsException" :
+      case "java.util.NoSuchElementException" :
          o1 = new ListBounds();
+         break;
+      case "java.lang.StringIndexOutOfBoundsException" :
+         o1 = new StringBounds();
          break;
       default :
          return;
@@ -167,8 +168,8 @@ public SepalAvoidException()
     }
    ASTRewrite rw3 = condReturn(cm,base,stmt);
    if (rw3 != null) {
-      String desc = "Add 'if (" + cm.getEqlCondition(base).toString() + ") return;' before " + stmtdesc;
-      addRepair(rw3,desc,logdata + "@RETURN",0.5);
+      String desc = "Add 'if (" + cm.getEqlCondition(base).toString() + ") return ...' before " + stmtdesc;
+      addRepair(rw3,desc,logdata + "@RETURN",0.75);
     }
    ASTRewrite rw4 = ifcondRepair(cm,base,stmt);
    if (rw4 != null) {
@@ -178,7 +179,7 @@ public SepalAvoidException()
    ASTRewrite rw5 = nullReturn(cm,base,stmt);
    if (rw5 != null) {
       String desc = "Add '(" + cm.getEqlCondition(base).toString() + ") ||' to " + stmtdesc;
-      addRepair(rw5,desc,logdata + "@NULLRETURN",0.5);
+      addRepair(rw5,desc,logdata + "@NULLRETURN",0.75);
     } 
 }
 
@@ -415,20 +416,20 @@ private ASTRewrite addToConditionalAnd(ConditionMaker cm,Expression base,
    ASTRewrite rw = ASTRewrite.create(ast);
    Expression nbase = cm.getCheckExpression(ast,base,true);
    
+   InfixExpression inf = null;
    if (cond instanceof InfixExpression) {
-      InfixExpression inf = (InfixExpression) cond;
-      if (inf.getOperator() == InfixExpression.Operator.CONDITIONAL_AND) {
-         ListRewrite lrw = rw.getListRewrite(cond,InfixExpression.EXTENDED_OPERANDS_PROPERTY);
-         if (before == null) lrw.insertLast(nbase,null);
-         else lrw.insertBefore(nbase,before,null);
-         return rw;
+      InfixExpression ninf = (InfixExpression) cond;
+      if (ninf.getOperator() == InfixExpression.Operator.CONDITIONAL_AND) {
+         inf = addToCond(ninf,nbase,base,before);
        }
     }
    
-   InfixExpression inf = ast.newInfixExpression();
-   inf.setOperator(InfixExpression.Operator.CONDITIONAL_AND);
-   inf.setLeftOperand(nbase);
-   inf.setRightOperand((Expression) ASTNode.copySubtree(ast,cond));
+   if (inf == null) {
+      inf = ast.newInfixExpression();
+      inf.setOperator(InfixExpression.Operator.CONDITIONAL_AND);
+      inf.setLeftOperand(nbase);
+      inf.setRightOperand((Expression) ASTNode.copySubtree(ast,cond));
+    }
    
    rw.replace(cond,inf,null);
    
@@ -443,25 +444,59 @@ private ASTRewrite addToConditionalOr(ConditionMaker cm,Expression base,Expressi
    ASTRewrite rw = ASTRewrite.create(ast);
    Expression nbase = cm.getCheckExpression(ast,base,false);
    
+   InfixExpression inf = null;
    if (cond instanceof InfixExpression) {
-      InfixExpression inf = (InfixExpression) cond;
-      if (inf.getOperator() == InfixExpression.Operator.CONDITIONAL_OR) {
-         ListRewrite lrw = rw.getListRewrite(cond,InfixExpression.EXTENDED_OPERANDS_PROPERTY);
-         if (before == null) lrw.insertLast(nbase,null);
-         else lrw.insertBefore(nbase,before,null);
-         return rw;
+      InfixExpression ninf = (InfixExpression) cond;
+      if (ninf.getOperator() == InfixExpression.Operator.CONDITIONAL_OR) {
+         inf = addToCond(ninf,nbase,base,before);
        }
     }
    
-   InfixExpression inf = ast.newInfixExpression();
-   inf.setOperator(InfixExpression.Operator.CONDITIONAL_OR);
-   inf.setLeftOperand(nbase);
-   inf.setRightOperand((Expression) ASTNode.copySubtree(ast,cond));
+   if (inf == null) {
+      inf = ast.newInfixExpression();
+      inf.setOperator(InfixExpression.Operator.CONDITIONAL_OR);
+      inf.setLeftOperand(nbase);
+      inf.setRightOperand((Expression) ASTNode.copySubtree(ast,cond));
+    }
    
    rw.replace(cond,inf,null);
    
    return rw;
 }
+
+
+
+@SuppressWarnings("unchecked")
+private InfixExpression addToCond(InfixExpression cond,Expression nbase,Expression base,Expression before)
+{
+   AST ast = cond.getAST();
+   InfixExpression ncond = ast.newInfixExpression();
+   ncond.setOperator(cond.getOperator());
+   
+   List<Expression> opnds = new ArrayList<>();
+   int idx = 0;
+   opnds.add(cond.getLeftOperand());
+   opnds.add(cond.getRightOperand());
+   if (cond.getRightOperand() == before) idx = 1;
+   int ct = 2;
+   for (Object o : cond.extendedOperands()) {
+      Expression e = (Expression) o;
+      if (before == e) idx = ct;
+      ++ct;
+      opnds.add(e);
+    }
+   opnds.add(idx,nbase);
+   
+   ncond.setLeftOperand(opnds.get(0));
+   ncond.setRightOperand(opnds.get(1));
+   for (int i = 2; i < opnds.size(); ++i) {
+      ncond.extendedOperands().add(opnds.get(i));
+    }
+
+   return ncond;
+}
+
+
 
 
 
@@ -532,16 +567,37 @@ private static class BoundsCondition extends ConditionMaker {
    Expression getCheckExpression(AST ast,Expression base,boolean neq) {
       if (base.getNodeType() != ASTNode.ARRAY_ACCESS) return null;
       ArrayAccess aa = (ArrayAccess) base;
+      Expression idxexp = aa.getIndex();
+      if (idxexp instanceof NumberLiteral) {
+         NumberLiteral nl = (NumberLiteral) idxexp;
+         try {
+            int ivl = Integer.parseInt(nl.getToken());
+            if (ivl < 0) return null;
+            InfixExpression e4 = ast.newInfixExpression();
+            e4.setLeftOperand((Expression) ASTNode.copySubtree(ast,idxexp));
+            if (neq) e4.setOperator(InfixExpression.Operator.LESS);
+            else e4.setOperator(InfixExpression.Operator.GREATER_EQUALS);
+            FieldAccess fa = ast.newFieldAccess();
+            fa.setExpression((Expression) ASTNode.copySubtree(ast,aa.getArray()));
+            fa.setName(ast.newSimpleName("length"));
+            e4.setRightOperand(fa);
+            ParenthesizedExpression pe = ast.newParenthesizedExpression();
+            pe.setExpression(e4);
+            return pe;
+          }
+         catch (NumberFormatException e) { }
+       }
+      
       InfixExpression e1 = ast.newInfixExpression();
-      e1.setLeftOperand((Expression) ASTNode.copySubtree(ast,aa.getIndex()));
-      if (neq) e1.setOperator(InfixExpression.Operator.LESS_EQUALS);
-      else e1.setOperator(InfixExpression.Operator.GREATER);
+      e1.setLeftOperand((Expression) ASTNode.copySubtree(ast,idxexp));
+      if (neq) e1.setOperator(InfixExpression.Operator.LESS);
+      else e1.setOperator(InfixExpression.Operator.GREATER_EQUALS);
       FieldAccess fa = ast.newFieldAccess();
       fa.setExpression((Expression) ASTNode.copySubtree(ast,aa.getArray()));
       fa.setName(ast.newSimpleName("length"));
       e1.setRightOperand(fa);
       InfixExpression e2 = ast.newInfixExpression();
-      e2.setLeftOperand((Expression) ASTNode.copySubtree(ast,aa.getIndex()));
+      e2.setLeftOperand((Expression) ASTNode.copySubtree(ast,idxexp));
       if (neq) e2.setOperator(InfixExpression.Operator.GREATER_EQUALS);
       else e2.setOperator(InfixExpression.Operator.LESS);
       e2.setRightOperand(ast.newNumberLiteral("0"));
@@ -603,6 +659,54 @@ private static class ListBounds extends ConditionMaker {
     }
    
 }       // end of inner class ListBounds
+
+
+
+private static class StringBounds extends ConditionMaker {
+   
+   StringBounds() { }
+   
+   Expression getCheckExpression(AST ast,Expression base,boolean neq) {
+      if (base.getNodeType() != ASTNode.METHOD_INVOCATION) return null;
+      MethodInvocation mi = (MethodInvocation) base;
+      Expression idx = null;
+      List<?> args = mi.arguments();
+      if (args.size() > 0) idx = (Expression) args.get(0);
+      
+      MethodInvocation e4 = ast.newMethodInvocation();
+      e4.setExpression((Expression) ASTNode.copySubtree(ast,mi.getExpression()));
+      e4.setName(ast.newSimpleName("length"));
+      
+      if (idx == null) {
+         InfixExpression e5 = ast.newInfixExpression();
+         e5.setLeftOperand(e4);
+         if (neq) e5.setOperator(InfixExpression.Operator.NOT_EQUALS);
+         else e5.setOperator(InfixExpression.Operator.EQUALS);
+         e5.setRightOperand(ast.newNumberLiteral("0"));
+         return e5;
+       }
+      
+      InfixExpression e1 = ast.newInfixExpression();
+      e1.setLeftOperand((Expression) ASTNode.copySubtree(ast,idx));
+      if (neq) e1.setOperator(InfixExpression.Operator.LESS_EQUALS);
+      else e1.setOperator(InfixExpression.Operator.GREATER);
+      e1.setRightOperand(e4);
+      InfixExpression e2 = ast.newInfixExpression();
+      e2.setLeftOperand((Expression) ASTNode.copySubtree(ast,idx));
+      if (neq) e2.setOperator(InfixExpression.Operator.GREATER_EQUALS);
+      else e2.setOperator(InfixExpression.Operator.LESS);
+      e2.setRightOperand(ast.newNumberLiteral("0"));
+      InfixExpression e3 = ast.newInfixExpression();
+      e3.setLeftOperand(e1);
+      if (neq) e3.setOperator(InfixExpression.Operator.CONDITIONAL_AND);
+      else e3.setOperator(InfixExpression.Operator.CONDITIONAL_OR);
+      e3.setRightOperand(e2);
+      ParenthesizedExpression pe = ast.newParenthesizedExpression();
+      pe.setExpression(e3);
+      return pe;
+    }
+   
+}       // end of inner class StringBounds
 
 
 /********************************************************************************/

@@ -42,6 +42,7 @@ import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.BooleanLiteral;
 import org.eclipse.jdt.core.dom.DoStatement;
 import org.eclipse.jdt.core.dom.Expression;
+import org.eclipse.jdt.core.dom.ForStatement;
 import org.eclipse.jdt.core.dom.IfStatement;
 import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.ParenthesizedExpression;
@@ -95,6 +96,9 @@ public SepalIfCondition()
          break;
       case ASTNode.DO_STATEMENT :
          cond = ((DoStatement) stmt).getExpression();
+         break;
+      case ASTNode.FOR_STATEMENT :
+         cond = ((ForStatement) stmt).getExpression();
          break;
       default :
          break;

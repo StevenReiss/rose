@@ -62,6 +62,7 @@ private double          validate_score;
 private RootEdit        repair_edit;
 private RootLocation    repair_location;
 private RootLineMap     line_map;
+private long            repair_time;
 
 
 
@@ -81,6 +82,7 @@ protected RootRepair(RootRepairFinder finder,String desc,double pri,
    repair_edit = edit;
    repair_location = loc;
    validate_score = 0.5;
+   repair_time = 0;
    line_map = linemap;
    if (logdata == null) logdata = repair_finder;
    else repair_logdata = logdata;
@@ -98,6 +100,7 @@ protected RootRepair(Element xml,RootLocation loc)
    validate_score = IvyXml.getAttrDouble(xml,"VALIDATE",0.5);
    repair_logdata = IvyXml.getTextElement(xml,"LOGDATA");
    repair_id = IvyXml.getAttrString(xml,"ID");
+   repair_time = IvyXml.getAttrLong(xml,"TIME",0);
    repair_location = loc;
 }
 
@@ -172,6 +175,11 @@ public String getId()
 }
 
 
+public void setTime(long time)
+{
+   repair_time = time;
+}
+
 
 /********************************************************************************/
 /*                                                                              */
@@ -186,6 +194,7 @@ public void outputXml(IvyXmlWriter xw)
    if (validate_score > 0) xw.field("VALIDATE",validate_score);
    xw.field("FINDER",repair_finder);
    xw.field("ID",repair_id);
+   if (repair_time > 0) xw.field("TIME",repair_time);
    localOutputXml(xw);
    repair_edit.outputXml(xw);
    xw.cdataElement("DESCRIPTION",repair_description);

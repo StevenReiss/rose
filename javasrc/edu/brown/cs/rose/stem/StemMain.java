@@ -718,7 +718,7 @@ private boolean startSeede()
    File seedejar = new File(f2,"seede.jar");
    File fjar = IvyFile.getJarFile(StemMain.class);
    if (fjar == null || fjar.getName().endsWith(".class")) {
-      File f3 = new File("ls ");
+      File f3 = new File("/Users/spr/Eclipse/seede/seede/bin");
       if (!f3.exists()) f3 = new File("/pro/seede/java");
       if (!f3.exists()) f3 = new File("/research/people/spr/seede/java");
       if (f3.exists()) seedejar = f3;
@@ -1151,15 +1151,16 @@ private class EclipseHandler implements MintHandler {
          case "FILECHANGE" :
          case "PROJECTDATA" :
          case "PROJECTOPEN" :
+         case "PRIVATEERROR" :
             break;
          case "EVALUATION" :
             String id = IvyXml.getAttrString(e,"ID");
             if (id != null && id.startsWith("ROSE")) {
                EvalData ed = new EvalData(e);
                synchronized (eval_handlers) {
-        	  eval_handlers.put(id,ed);
-        	  eval_handlers.notifyAll();
-        	}
+                  eval_handlers.put(id,ed);
+                  eval_handlers.notifyAll();
+                }
              }
             msg.replyTo();
             break;

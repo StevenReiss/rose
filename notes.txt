@@ -1,0 +1,20 @@
+Possible Problems:
+
+1)  Seede doesn't like classes defined inside methods.
+
+2)  Location error caused by recursive calls don't work -- need to handle calling locations.
+        This is unlike case where we are looking for variables and none are affected by the
+        call.
+
+3)  Return value need doesn't propogate to return? (Levenshtein)
+
+4)  Need ability to specify test case (main) shouldn't be changed
+
+
+
+
+
+
+
+
+

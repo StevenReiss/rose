@@ -96,10 +96,12 @@ void process(StemMain sm,IvyXmlWriter xw) throws RoseException
       String nm = ent.getKey();
       if (parameter_set != null && !parameter_set.contains(nm)) continue;
       BudValue bv = ent.getValue();
-      xw.begin("PARAMETER");
-      xw.field("NAME",nm);
-      bv.outputXml(xw);
-      xw.end("PARAMETER");
+      if (bv != null) {
+         xw.begin("PARAMETER");
+         xw.field("NAME",nm);
+         bv.outputXml(xw);
+         xw.end("PARAMETER");
+       }
     }
    xw.end("RESULT");
 }

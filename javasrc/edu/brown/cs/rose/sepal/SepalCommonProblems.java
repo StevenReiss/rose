@@ -338,6 +338,7 @@ private void checkSimplePattern(ASTNode stmt,BractAstPattern p1,BractAstPattern 
    Map<ASTNode,PatternMap> rslt = p1.matchAll(stmt,null);
    if (rslt == null || rslt.isEmpty()) return;
    for (ASTNode n : rslt.keySet()) {
+      if (!isSameLine(stmt,n)) continue;
       PatternMap pmap = rslt.get(n);
       ASTRewrite rw = p2.replace(n,pmap);
       if (rw != null) {

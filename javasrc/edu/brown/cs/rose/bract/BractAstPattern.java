@@ -255,13 +255,17 @@ private class SubtreeMatcher extends ASTVisitor {
 
 private boolean matchPattern(ASTNode pat,ASTNode orig,PatternMap values)
 {
-   if (pat == null) return false;
+   if (pat == null){
+      if (orig == null) return true;
+      return false;
+    }  
    else if (values != null && isVariableNode(pat)) {
       return matchVariable(pat,orig,values);
     }
    else if (values != null && isSubPattern(pat)) {
       return matchSubpattern(pat,orig,values);
     }
+   else if (orig == null) return false;
    else if (pat.getNodeType() != orig.getNodeType()) return false;
    
    for (Object o1 : pat.structuralPropertiesForType()) {
@@ -344,6 +348,9 @@ private boolean matchSubpattern(ASTNode pat,ASTNode orig,PatternMap values)
    if (s == null) return false;
    BractAstPattern p0 = (BractAstPattern) values.get(s);
    if (p0 == null) return false;
+   for (String key : p0.default_values.keySet()) {
+      if (values.get(key) == null) values.put(key,p0.default_values.get(key));
+    }
    
    for (ASTNode base : p0.base_nodes) {
       if (matchPattern(base,orig,values)) {

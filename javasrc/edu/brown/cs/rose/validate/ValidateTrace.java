@@ -216,6 +216,11 @@ long getExceptionTime()
    return -1;
 }
 
+long getExecutionTime()
+{
+   return IvyXml.getAttrLong(seede_result,"TICKS");
+}
+
 
 private Element getRunner()
 {

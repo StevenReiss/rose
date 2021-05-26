@@ -150,6 +150,8 @@ ValidateSetup(ValidateSetup par,ValidateCall vc,Map<String,String> varmap)
 
 List<ValidateAction> findResets()
 {
+   if (active_call == null) return null;
+   
    ASTNode mdcl = getAstNodeForCall(active_call);
    
    ValidateTrace vt = active_call.getTrace();
@@ -247,10 +249,6 @@ private void processSpecialCall(JcompSymbol mthd,Expression thisexpr,
    if (thisexpr == null) return;
    JcompSymbol js = JcompAst.getReference(thisexpr);
    if (js == null) return;
-   
-   System.err.println("CHECK " + mthd.getFullName());
-   if (mthd.getFullName().contains("get"))
-      System.err.println("CHECK HERE");
    
    switch (mthd.getFullName()) {
       default :
@@ -469,7 +467,8 @@ private ASTNode getAstNodeForCall(ValidateCall vc)
    ValidateVariable vv = vc.getLineNumbers();
    if (vv == null || vc.getFile() == null) return null;
    int lno = vv.getLineAtTime(vc.getStartTime()+1);
-   ASTNode n = base_context.getControl().getSourceNode(null,
+   String proj = base_context.getProblem().getBugLocation().getProject();
+   ASTNode n = base_context.getControl().getSourceNode(proj,
          vc.getFile(),-1,lno,true,false);
    while (n != null) {
       switch (n.getNodeType()) {
@@ -643,9 +642,11 @@ private class ExprRewriter extends ASTVisitor {
    
    
    @Override public boolean visit(QualifiedName n) {
-      gen(n.getQualifier());
-      output(".");
-      gen(n.getName());
+   // JcompSymbol js = JcompAst.getReference(n);
+      output(n.toString());
+   // gen(n.getQualifier());
+   // output(".");
+   // gen(n.getName());
       return false;
     }
    
@@ -660,7 +661,7 @@ private class ExprRewriter extends ASTVisitor {
          output(r);
          output(")");
        }
-      else if (js.isFieldSymbol()) {
+      else if (js != null && js.isFieldSymbol()) {
          ASTNode par = n.getParent();
          if (par instanceof FieldAccess || par instanceof QualifiedName) {
             output(s);

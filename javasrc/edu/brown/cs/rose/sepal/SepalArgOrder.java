@@ -66,7 +66,7 @@ public class SepalArgOrder extends RootRepairFinderDefault implements BractConst
 private static final BractAstPattern call_pattern;
 
 static {
-   call_pattern = BractAstPattern.expression("Vrtn(Ea,Eb)");
+   call_pattern = BractAstPattern.expression("Vrtn(Ea,Eb)","Vx.Vrtn(Ea,Eb)");
 }
 
 /********************************************************************************/
@@ -116,9 +116,9 @@ public SepalArgOrder()
 private boolean isCalleeRelevant(JcompSymbol callee)
 {
    if (callee == null) return false;
-   if (callee.isBinarySymbol()) return false;
    JcompType jt = callee.getType();
    while (jt.isParameterizedType()) jt = jt.getBaseType();
+// if (callee.isBinarySymbol()) return false;
    JcompType t0 = null;
    for (JcompType jt1 : jt.getComponents()) {
       if (t0 == null) t0 = jt1;
@@ -143,7 +143,11 @@ private void flipArgs(MethodInvocation mi,int arg0,int arg1)
    AST ast = mi.getAST();
    MethodInvocation rslt = ast.newMethodInvocation();
    rslt.setName(ast.newSimpleName(mi.getName().getIdentifier()));
+   if (mi.getExpression() != null) {
+      rslt.setExpression((Expression) ASTNode.copySubtree(ast,mi.getExpression()));
+    }
    List<?> args = mi.arguments();
+   
    for (int i = 0; i < args.size(); ++i) {
       Expression a = null;
       if (i == arg0) {
@@ -153,7 +157,7 @@ private void flipArgs(MethodInvocation mi,int arg0,int arg1)
          a = (Expression) args.get(arg0);
        }
       else a = (Expression) args.get(i);
-      rslt.arguments().set(i,ASTNode.copySubtree(ast,a));
+      rslt.arguments().add(ASTNode.copySubtree(ast,a));
     }
    ASTRewrite rw = ASTRewrite.create(ast);
    rw.replace(mi,rslt,null);

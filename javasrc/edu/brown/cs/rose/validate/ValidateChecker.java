@@ -235,7 +235,8 @@ private class ValidateCheckerVariable extends ValidateProblemChecker {
       String var = prob.getProblemDetail();
       String oval = prob.getOriginalValue();
       String otyp = null;
-      int idx = oval.indexOf(" ");
+      int idx = -1;
+      if (oval != null) idx = oval.indexOf(" ");
       if (idx > 0) {
          otyp = oval.substring(0,idx);
          oval = oval.substring(idx+1);
@@ -256,7 +257,8 @@ private class ValidateCheckerVariable extends ValidateProblemChecker {
          ValidateValue vval = vv.getValueAtTime(check_execution,t0);
          if (vval != null) {
             String vvalstr = vval.getValue();
-            if (oval.equals(vvalstr)) return 0.0;
+            if (oval == null && vvalstr == null) return 0;
+            if (oval != null && oval.equals(vvalstr)) return 0.0;
             if (nval == null) return 0.9;
             if (nval.equals(vvalstr)) return 1.0;
           }
@@ -264,7 +266,8 @@ private class ValidateCheckerVariable extends ValidateProblemChecker {
       boolean haveold = false;
       for (ValidateValue vval : vv.getValues(check_execution)) {
          String vvalstr = vval.getValue();
-         if (oval.equals(vvalstr)) haveold = true;
+         if (oval == null && vvalstr == null) haveold = true;
+         else if (oval != null && oval.equals(vvalstr)) haveold = true;
          else if (nval == null || nval.equals(vvalstr)) {
             if (haveold) return 0.60;
             return 0.75;
@@ -319,7 +322,7 @@ private class ValidateCheckerLocation extends ValidateProblemChecker {
       ValidateCall vc = execution_matcher.getMatchChangeContext();
       if (vc == null) return 0.7;
       long t0 = execution_matcher.getMatchProblemTime();
-      if (t0 < 0) return 0.7;
+      if (t0 <= 0) return 0.7;
       ValidateVariable vv = vc.getLineNumbers();
       int lmatch = vv.getLineAtTime(t0);
       if (lmatch <= 0) return 0.7;

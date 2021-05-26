@@ -40,6 +40,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.Statement;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
@@ -240,6 +242,34 @@ private boolean isRepairDone(String text)
    if (done_repairs.add(rslt)) return false;
    return true;
 }
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Helper methods                                                          */
+/*                                                                              */
+/********************************************************************************/
+
+protected boolean isSameLine(ASTNode stmt,ASTNode node)
+{
+   ASTNode nodestmt = node;
+   while (nodestmt != null) {
+      if (nodestmt instanceof Statement) break;
+      nodestmt = nodestmt.getParent();
+    }
+   if (nodestmt == null) return true;
+   if (nodestmt == stmt) return true;
+   
+   CompilationUnit cu = (CompilationUnit) stmt.getRoot();
+   int lno = cu.getLineNumber(stmt.getStartPosition());
+   int lno1 = cu.getLineNumber(nodestmt.getStartPosition());
+   
+   return lno == lno1;
+}
+
+
+
 
 
 
