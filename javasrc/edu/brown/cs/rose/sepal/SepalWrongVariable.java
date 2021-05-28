@@ -104,6 +104,7 @@ public SepalWrongVariable()
    Map<JcompType,List<UserVariable>> types = findTypes(vars);
    
    int ct = findReplacements(stmt,types);
+   ct += findMethodReplacements(vars);
    if (ct == 0) return;
    
    for (UserVariable uv : vars) {
@@ -161,7 +162,7 @@ private class VariableFinder extends ASTVisitor {
          int ln = base_unit.getLineNumber(n.getStartPosition());
          if (ln > base_line) return false;
        }
-
+   
       return true;
     }
    
@@ -249,6 +250,31 @@ private int findReplacements(ASTNode base,Map<JcompType,List<UserVariable>> type
     }
   
   return ct;
+}
+
+
+private int findMethodReplacements(Collection<UserVariable> vars)
+{
+   int ct = 0;
+   
+   for (UserVariable uv : vars) {
+      JcompSymbol js = uv.getSymbol();
+      if (!js.isMethodSymbol()) continue;
+      if (js.isConstructorSymbol()) continue;
+      if (js.isBinarySymbol()) continue;
+      JcompType jt = js.getClassType();
+      JcompScope jscp = jt.getScope();
+      for (JcompSymbol js1 : jscp.getDefinedMethods()) {
+         if (js1.getName().equals(js.getName())) continue;
+         if (js1.getType().getName().equals(js.getType().getName())) {
+            uv.addReplacement(js1);
+            ++ct;
+          }
+         
+       }
+    }
+   
+   return ct;
 }
 
 

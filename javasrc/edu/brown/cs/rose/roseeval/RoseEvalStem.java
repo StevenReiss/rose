@@ -61,6 +61,7 @@ public static void main(String [] args)
 /*                                                                              */
 /********************************************************************************/
 
+private static final int MAX_TIME = 100000;
 
 
 /********************************************************************************/
@@ -105,15 +106,15 @@ private void process()
    startEvaluations();
    try {
       // do a dummy run first
-      runEvaluation("test01",p1,0,null);
+      runEvaluation("test01",p1,0,null,MAX_TIME);
       
-      runEvaluation("test01",p1,0,sol1);
-      runEvaluation("test02",p2,0,sol2);
-      runEvaluation("test03",p3,0,sol3);
-      runEvaluation("test04",p4,0,sol4);
-      runEvaluation("test05",p5,0,sol5);
-      runEvaluation("test06",p6,0,sol6);
-      runEvaluation("test07",p7,0,sol7);
+      runEvaluation("test01",p1,0,sol1,MAX_TIME);
+      runEvaluation("test02",p2,0,sol2,MAX_TIME);
+      runEvaluation("test03",p3,0,sol3,MAX_TIME);
+      runEvaluation("test04",p4,0,sol4,MAX_TIME);
+      runEvaluation("test05",p5,0,sol5,MAX_TIME);
+      runEvaluation("test06",p6,0,sol6,MAX_TIME);
+      runEvaluation("test07",p7,0,sol7,MAX_TIME);
     }
    finally {
       finishEvaluations();

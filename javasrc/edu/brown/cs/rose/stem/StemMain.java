@@ -48,6 +48,7 @@ import java.util.StringTokenizer;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jface.text.IDocument;
 import org.w3c.dom.Element;
 
@@ -56,6 +57,9 @@ import edu.brown.cs.bubbles.board.BoardSetup;
 import edu.brown.cs.ivy.exec.IvyExec;
 import edu.brown.cs.ivy.exec.IvyExecQuery;
 import edu.brown.cs.ivy.file.IvyFile;
+import edu.brown.cs.ivy.jcomp.JcompAnnotation;
+import edu.brown.cs.ivy.jcomp.JcompAst;
+import edu.brown.cs.ivy.jcomp.JcompSymbol;
 import edu.brown.cs.ivy.leash.LeashIndex;
 import edu.brown.cs.ivy.mint.MintArguments;
 import edu.brown.cs.ivy.mint.MintConstants;
@@ -176,7 +180,7 @@ private void scanArgs(String [] args)
 {
    for (int i = 0; i < args.length; ++i) {
       if (args[i].startsWith("-")) {
-	 if (args[i].startsWith("-m") && i+1 < args.length) {            // -m <msgid>
+	 if (args[i].startsWith("-m") && i+1 < args.length) {           // -m <msgid>
 	    String mid = args[++i];
 	    mint_control = edu.brown.cs.ivy.mint.MintControl.create(mid,
 		  MintSyncMode.ONLY_REPLIES);
@@ -190,10 +194,13 @@ private void scanArgs(String [] args)
 	 else if (args[i].startsWith("-D")) {                           // -Debug
 	    RoseLog.setLogLevel(RoseLog.LogLevel.DEBUG);
 	  }
-         else if (args[i].startsWith("-NoD")) {                           // -Debug
+         else if (args[i].startsWith("-NoD")) {                         // -NoDebug
 	    RoseLog.setLogLevel(RoseLog.LogLevel.INFO);
             run_debug = false;
 	  }
+         else if (args[i].startsWith("-NoS")) {                         // -NoSeedeDebug
+            run_debug = false;
+          }
 	 else if (args[i].startsWith("-local")) {                       // -local
 	    local_fait = true;
 	  }
@@ -502,11 +509,14 @@ private void handleParameterValuesCommand(MintMessage msg) throws RoseException
       Map<String,RootLocation> done = new HashMap<>();
       for (Element n : IvyXml.children(nodes,"NODE")) {
          double p = IvyXml.getAttrDouble(n,"PRIORITY");
+         String reason = IvyXml.getAttrString(n,"REASON");
          Element locelt = IvyXml.getChild(n,"LOCATION");
          RootLocation loc = bf.createLocation(this,locelt);
          double p1 = loc.getPriority();
          p1 = p1 * p;
          loc.setPriority(p1);
+         loc.setReason(reason);
+         if (!isLocationRelevant(loc,prob)) continue;
          String s = loc.getFile().getPath() + "@" + loc.getLineNumber();
          RootLocation oloc = done.putIfAbsent(s,loc);
          if (oloc != null) {
@@ -520,6 +530,45 @@ private void handleParameterValuesCommand(MintMessage msg) throws RoseException
     }
    
    return rslt;
+}
+
+
+
+private boolean isLocationRelevant(RootLocation loc,RootProblem prob)
+{
+   for (String s : prob.ignorePatterns()) {
+      String nm = loc.getMethod();
+      if (nm.matches(s)) return false;
+    }
+   
+   if (prob.ignoreMain() || prob.ignoreTests()) {
+      ASTNode n = getSourceNode(loc.getProject(),loc.getFile(),loc.getStartOffset(),
+            loc.getLineNumber(),true,false);
+      while (n != null) {
+         if (n instanceof MethodDeclaration) break;
+         n = n.getParent();
+       }
+      if (n != null) {
+         JcompSymbol js = JcompAst.getDefinition(n);
+         if (js != null) {
+            if (prob.ignoreMain()) {
+               if (js.getName().equals("main") && js.isStatic() &&
+                     js.getType().getBaseType().isVoidType()) 
+                  return false;
+             }
+            if (prob.ignoreTests() && js.getAnnotations() != null) {
+               for (JcompAnnotation ja : js.getAnnotations()) {
+                  if (ja.getAnnotationType().getName().equals("org.junit.Test"))
+                     return false;
+                }
+               if (js.isPublic() && js.getName().startsWith("test")) 
+                  return false;
+             }
+          }
+       }
+    }
+   
+   return true;
 }
 
 
@@ -572,6 +621,31 @@ private void handleHistoryCommand(MintMessage msg) throws RoseException
       msg.replyTo();
     }
    RootMetrics.noteCommand("STEM","HISTORYTIME",System.currentTimeMillis()-start);
+}
+
+
+
+private void handleLocationCommand(MintMessage msg) throws RoseException
+{
+   Element msgxml = msg.getXml();
+   String tid = IvyXml.getAttrString(msgxml,"THREAD");
+   if (tid != null) loadFilesIntoFait(tid);
+   waitForAnalysis();
+   long start = System.currentTimeMillis();
+   Element probxml = IvyXml.getChild(msgxml,"PROBLEM");
+   RootProblem prob = BractFactory.getFactory().createProblemDescription(this,probxml);
+   List<RootLocation> locs = getLocations(prob);
+   if (locs == null) {
+      msg.replyTo();
+    }
+   else {
+      IvyXmlWriter xw = new IvyXmlWriter();
+      for (RootLocation loc : locs) {
+         loc.outputXml(xw);
+       }
+      msg.replyTo(xw.toString());
+    }
+   RootMetrics.noteCommand("STEM","LCOATIONTIME",System.currentTimeMillis()-start);
 }
 
 
@@ -1074,6 +1148,9 @@ private class CommandHandler implements MintHandler {
                break;
             case "HISTORY" :
                handleHistoryCommand(msg);
+               break;
+            case "LOCATIONS" :
+               handleLocationCommand(msg);
                break;
             case "EXPRESSIONS" :
                handleExpressionsCommand(msg);

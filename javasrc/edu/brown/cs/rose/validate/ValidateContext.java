@@ -108,15 +108,21 @@ ValidateExecution getBaseExecution()                    { return base_execution;
 long getMaxTime()
 {
    long dflt = 100000;
+   
    if (for_problem.getCurrentTest() != null) {
       long ticks = for_problem.getCurrentTest().getMaxTime();
       if (ticks > 0) dflt = ticks;
     }
    if (base_execution == null) return dflt;
+   
    long time = base_execution.getExecutionTime();
    if (time <= 0) time = dflt;
-   else time = 10*time;
-// time = Math.min(time,dflt);
+   else if (time < dflt) {
+      time = 10*time;
+      if (time > dflt*2) time = dflt*2;
+    }   
+   else time = dflt;
+
    return time;
 }
 

@@ -64,6 +64,9 @@ private RootLocation    bug_location;
 private RootNodeContext node_context;
 private RootTestCase    current_test;
 private List<RootTestCase> other_tests; 
+private boolean         ignore_main;
+private boolean         ignore_tests;
+private List<String>    ignore_patterns;
 
 
 
@@ -87,6 +90,9 @@ protected RootProblem(RoseProblemType typ,String item,String orig,String tgt,
    node_context = ctx;
    current_test = null;
    other_tests = null;
+   ignore_main = false;
+   ignore_tests = false;
+   ignore_patterns = new ArrayList<>();
 }
 
 
@@ -118,6 +124,14 @@ protected RootProblem(RootControl ctrl,Element xml)
          other_tests.add(new RootTestCase(telt));
        }
     }
+   
+   ignore_main = IvyXml.getAttrBool(xml,"IGNOREMAIN");
+   ignore_tests = IvyXml.getAttrBool(xml,"IGNORETESTS");
+   ignore_patterns = new ArrayList<>();
+   for (Element telt : IvyXml.children(xml,"IGNORE")) {
+      ignore_patterns.add(IvyXml.getText(telt));
+    }
+         
 }
 
 
@@ -187,6 +201,14 @@ public void setCurrentTest(RootTestCase rtc)    { current_test = rtc; }
 
 public List<RootTestCase> getOtherTests()       { return other_tests; }
 
+public boolean ignoreMain()                     { return ignore_main; }
+public boolean ignoreTests()                    { return ignore_tests; }
+public List<String> ignorePatterns()            { return ignore_patterns; }
+public void setIgnoreMain(boolean fg)           { ignore_main = fg; }
+public void setIgnoreTests(boolean fg)          { ignore_tests = fg; }
+public void addIgnorePattern(String pat)        { ignore_patterns.add(pat); }
+
+ 
 
 
 
@@ -218,6 +240,12 @@ public String getDescription()
 
 
 
+/********************************************************************************/
+/*                                                                              */
+/*      Output methods                                                          */
+/*                                                                              */
+/********************************************************************************/
+
 public void outputXml(IvyXmlWriter xw) 
 {
    xw.begin("PROBLEM");
@@ -225,6 +253,8 @@ public void outputXml(IvyXmlWriter xw)
    if (launch_id != null) xw.field("LAUNCH",launch_id);
    if (frame_id != null) xw.field("FRAME",frame_id);
    if (thread_id != null) xw.field("THREAD",thread_id);
+   if (ignore_main) xw.field("IGNOREMAIN",ignore_main);
+   if (ignore_tests) xw.field("IGNORETESTS",ignore_tests);
    if (problem_item != null) xw.textElement("ITEM",problem_item);
    if (original_value != null) xw.textElement("ORIGINAL",original_value);
    if (target_value != null) xw.textElement("TARGET",target_value);
@@ -237,6 +267,9 @@ public void outputXml(IvyXmlWriter xw)
          rtc.outputXml(xw);
        }
       xw.end("CHECKS");
+    }
+   for (String s : ignore_patterns) {
+      xw.textElement("IGNORE",s);
     }
    xw.end("PROBLEM");
 }

@@ -125,7 +125,7 @@ protected RoseEvalBase(String workspace,String project)
 /********************************************************************************/
 
 protected void runSingleEvalaution(String launch,
-      RoseEvalProblem problem,String expect)
+      RoseEvalProblem problem,String expect,int max)
 {
    MintControl mc = setupBedrock();
    
@@ -134,7 +134,7 @@ protected void runSingleEvalaution(String launch,
       
       String cnts = problem.getDescription(fd);  
       
-      runTest(mc,fd,cnts,true);
+      runTest(mc,fd,cnts,max,true);
     }
    catch (Throwable t) {
       RoseLog.logE("Problem processing evaluation test",t);
@@ -160,6 +160,7 @@ protected void startEvaluations()
    File f3 = new File(f2,fnm);
    try {
       output_file = new PrintWriter(f3);
+      output_file.println("Name,# Results,# Displayed,Correct Rank,Total Time,Fix Time");
     }
    catch (IOException e) {
       System.err.println("Can't create " + fnm);
@@ -169,7 +170,7 @@ protected void startEvaluations()
 
 
 
-protected void runEvaluation(String launch,RoseEvalProblem problem,int ct,String expect)
+protected void runEvaluation(String launch,RoseEvalProblem problem,int ct,String expect,int max)
 {
    MintControl mc = setupBedrock();
    
@@ -178,8 +179,10 @@ protected void runEvaluation(String launch,RoseEvalProblem problem,int ct,String
    try {
       String cnts = problem.getDescription(fd);  
       
+      System.err.println("START " + launch);
+      
       long starttime = System.currentTimeMillis();
-      SuggestionSet ss = runTest(mc,fd,cnts,false);
+      SuggestionSet ss = runTest(mc,fd,cnts,max,false);
       long time = System.currentTimeMillis() - starttime;
       processSuggestions(launch,ss,expect,time);
     }
@@ -232,10 +235,10 @@ private RoseEvalFrameData setupTest(String launch,int cont)
 
 
 private SuggestionSet runTest(MintControl ctrl,RoseEvalFrameData fd,
-      String oprob,boolean lines)
+      String oprob,int max,boolean lines)
 {
 // getChangedVariables(ctrl,fd,oprob);
-   String prob = getStartFrame(ctrl,oprob,null);
+   String prob = getStartFrame(ctrl,oprob,null,max);
    SuggestionSet ss = getSuggestionsFor(ctrl,fd,prob,null);
    
    if (lines) {
@@ -253,7 +256,7 @@ private SuggestionSet runTest(MintControl ctrl,RoseEvalFrameData fd,
          if (line <= 0 || line == lline) continue;
          lline = line;
          String loccnts = IvyXml.convertXmlToString(loc);
-         String locprob = getStartFrame(ctrl,oprob,loccnts);
+         String locprob = getStartFrame(ctrl,oprob,loccnts,max);
          
          getSuggestionsFor(ctrl,fd,locprob,node);
        }
@@ -329,7 +332,7 @@ protected void getChangedVariables(MintControl ctrl,RoseEvalFrameData fd,String 
 }
 
 
-private String getStartFrame(MintControl ctrl,String prob,String loc)
+private String getStartFrame(MintControl ctrl,String prob,String loc,int max)
 {
    CommandArgs args = new CommandArgs();
    String cnts = prob;
@@ -340,7 +343,7 @@ private String getStartFrame(MintControl ctrl,String prob,String loc)
    startrtn += "." + IvyXml.getAttrString(rslt,"METHOD");
    startrtn += IvyXml.getAttrString(rslt,"SIGNATURE");
    RootTestCase rtc = new RootTestCase(startframe,startrtn);
-   rtc.setMaxTime(10000);
+   rtc.setMaxTime(max);
    Element xml = IvyXml.convertStringToXml(prob);
    RootProblem rp = BractFactory.getFactory().createProblemDescription(null,xml);
    rp.setCurrentTest(rtc);

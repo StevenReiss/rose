@@ -100,7 +100,7 @@ public SepalAvoidException()
 
 @Override public double getFinderPriority()
 {
-   return 0.5;
+   return 0.6;
 }
 
 

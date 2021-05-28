@@ -236,7 +236,7 @@ private class SubtreeMatcher extends ASTVisitor {
             if (matchPattern(base,n,nmap)) {
                addDefaults(nmap);
                match_results.put(n,nmap);
-               return false;
+//             return false;
              }
           }
        }

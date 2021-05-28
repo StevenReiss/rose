@@ -247,7 +247,7 @@ private JPanel createDisplay()
    problem_panel = pnl.addChoice("Problem",choices,0,false,new PanelSelector());
    problem_panel.setEnabled(false);
    
-   show_button = pnl.addBottomButton("Show Locations","HISTORY",new ShowHandler());
+   show_button = pnl.addBottomButton("Show Locations","HISTORY",new ShowLocationsHandler());
    show_button.setEnabled(false);
    suggest_button = pnl.addBottomButton("Suggest Repairs","SUGGEST",new SuggestHandler());
    EnableWhenReady ewr = new EnableWhenReady();
@@ -376,12 +376,12 @@ private BushProblem getActiveProblem()
 /*                                                                              */
 /********************************************************************************/
 
-private class ShowHandler implements ActionListener, Runnable {
+private class ShowLocationsHandler implements ActionListener, Runnable {
 
    private Element show_result;
    private boolean is_active;
    
-   ShowHandler() {
+   ShowLocationsHandler() {
       show_result = null;
       is_active = false;
     }
@@ -414,11 +414,11 @@ private class ShowHandler implements ActionListener, Runnable {
          String body = xw.toString();
          xw.close();
          
-         BushFactory.metrics("SHOW",getMetricId(),bp.getProblemType(),bp.getProblemDetail(),
+         BushFactory.metrics("SHOWLOCATIONS",getMetricId(),bp.getProblemType(),bp.getProblemDetail(),
                bp.getOriginalValue(),bp.getTargetValue());
          
          BushFactory bush = BushFactory.getFactory();
-         Element rslt = bush.sendRoseMessage("HISTORY",args,body);
+         Element rslt = bush.sendRoseMessage("LOCATIONS",args,body);
          if (IvyXml.isElement(rslt,"RESULT")) {
             BoardLog.logD("BUSH","Handling ROSE result: " + IvyXml.convertXmlToString(rslt));
             show_result = rslt;
@@ -439,16 +439,13 @@ private class ShowHandler implements ActionListener, Runnable {
       Map<BumpLocation,String> locs = new HashMap<>();
       List<BumpLocation> loclist = new ArrayList<>();
       List<BushLocation> bloclist = new ArrayList<>();
-      Element gelt = IvyXml.getChild(show_result,"NODES");
-      for (Element nelt : IvyXml.children(gelt,"NODE")) {
-         Element locelt = IvyXml.getChild(nelt,"LOCATION");
-         if (locelt == null) continue;
+      for (Element locelt : IvyXml.children(show_result,"LOCATION")) {
          BumpLocation loc = BumpLocation.getLocationFromXml(locelt);
-         String reason = IvyXml.getAttrString(nelt,"REASON");
+         String reason = IvyXml.getTextElement(locelt,"REASON");
          if (loc != null) {
             if (reason != null) locs.put(loc,reason);
             loclist.add(loc);
-            double pri = IvyXml.getAttrDouble(nelt,"PRIORITY");
+            double pri = IvyXml.getAttrDouble(locelt,"PRIORITY");
             BushLocation bloc = new BushLocation(loc,pri);
             bloclist.add(bloc);
           }       

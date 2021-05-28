@@ -386,6 +386,9 @@ private class DeferredLookup implements BudDeferredValue {
          cnm = fnm.substring(0,idx);
          fnm = fnm.substring(idx+1);
        }
+      if (cnm == null) {
+         cnm = getType();
+       }
       String lookup = getKey(fnm,cnm);
       BudValueData svd = sub_values.get(lookup);
       svd = bud_launch.getUniqueValue(svd);

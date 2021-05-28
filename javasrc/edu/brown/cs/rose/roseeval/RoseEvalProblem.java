@@ -123,6 +123,8 @@ String getDescription(RoseEvalFrameData fd)
    xw.field("FRAME",fd.getId());
    xw.field("THREAD",fd.getThreadId());
    xw.field("TYPE",problem_type);
+   xw.field("IGNOREMAIN",true);
+   xw.field("IGNORETESTS",true);
    if (problem_item != null) xw.textElement("ITEM",problem_item);
    if (original_value != null) xw.textElement("ORIGINAL",original_value);
    if (target_value != null) xw.textElement("TARGET",target_value);

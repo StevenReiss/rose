@@ -66,6 +66,7 @@ private String          in_method;
 private String          full_method;
 private int             method_offset;
 private int             method_length;
+private String          location_reason;
 
 
 
@@ -94,6 +95,7 @@ protected RootLocation(RootControl ctrl,Element xml)
     
    line_number = IvyXml.getAttrInt(xml,"LINE");
    location_priority = IvyXml.getAttrDouble(xml,"PRIORITY",DEFAULT_PRIORITY);
+   location_reason = IvyXml.getTextElement(xml,"REASON");
    full_method = null;
    method_offset = 0;
    method_length = 0;
@@ -146,6 +148,9 @@ public int getMethodEndOffset()                 { return method_offset + method_
 
 public double getPriority()                     { return location_priority; }
 public void setPriority(double v)               { location_priority = v; }
+
+public String getReason()                       { return location_reason; }
+public void setReason(String r)                 { location_reason = r; }
 
 public String getMethod()    
 {
@@ -229,6 +234,7 @@ public void outputXml(IvyXmlWriter xw)
       xw.field("PROJECT",project_name);
       xw.end("ITEM");
     }
+   if (location_reason != null) xw.textElement("REASON",location_reason);
    xw.end("LOCATION");
 }
 

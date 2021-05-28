@@ -38,13 +38,17 @@ package edu.brown.cs.rose.sepal;
 import edu.brown.cs.rose.root.RootRepairFinderDefault;
 
 import java.awt.Point;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.MethodInvocation;
+import org.eclipse.jdt.core.dom.Statement;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 
 import edu.brown.cs.ivy.jcomp.JcompAst;
@@ -64,9 +68,13 @@ public class SepalArgOrder extends RootRepairFinderDefault implements BractConst
 /********************************************************************************/
 
 private static final BractAstPattern call_pattern;
+private static final Set<String> symmetric_methods;
 
 static {
    call_pattern = BractAstPattern.expression("Vrtn(Ea,Eb)","Vx.Vrtn(Ea,Eb)");
+   symmetric_methods = new HashSet<>();
+   symmetric_methods.add("java.lang.Math.min");
+   symmetric_methods.add("java.lang.Math.max");
 }
 
 /********************************************************************************/
@@ -87,7 +95,7 @@ public SepalArgOrder()
 
 @Override public double getFinderPriority()
 {
-   return 0.33;
+   return 0.5;
 }
 
 
@@ -97,16 +105,29 @@ public SepalArgOrder()
 {
    ASTNode stmt = getResolvedStatementForLocation(null);
    if (stmt == null) return;
-   
+   CompilationUnit cu = (CompilationUnit) stmt.getRoot();
+   int ln0 = cu.getLineNumber(stmt.getStartPosition());
+     
    Map<ASTNode,PatternMap> matches = call_pattern.matchAll(stmt,null);
    if (matches == null || matches.isEmpty()) return;
    
    for (ASTNode n : matches.keySet()) {
       MethodInvocation mi = (MethodInvocation) n;
+      ASTNode mistmt = null;
+      for (ASTNode p = mi; p != null; p = p.getParent()) {
+         if (p instanceof Statement) {
+            mistmt = p;
+            break;
+          }
+       }
+      if (mistmt != null && mistmt != stmt) {
+         int ln1 = cu.getLineNumber(mistmt.getStartPosition());
+         if (ln1 > ln0) continue;
+       }
       JcompSymbol callee = JcompAst.getReference(mi);
       if (!isCalleeRelevant(callee)) continue;
-      for (Point p : getSwaps(mi)) {
-         flipArgs(mi,p.x,p.y);
+      for (Point pt : getSwaps(mi)) {
+         flipArgs(mi,pt.x,pt.y);
        }
     }
 }
@@ -118,9 +139,11 @@ private boolean isCalleeRelevant(JcompSymbol callee)
    if (callee == null) return false;
    JcompType jt = callee.getType();
    while (jt.isParameterizedType()) jt = jt.getBaseType();
+   if (symmetric_methods.contains(callee.getFullName())) return false;
 // if (callee.isBinarySymbol()) return false;
    JcompType t0 = null;
    for (JcompType jt1 : jt.getComponents()) {
+//    if (jt1.isJavaLangObject()) return false;
       if (t0 == null) t0 = jt1;
       else if (t0 != jt1) return false;
     }
@@ -161,8 +184,7 @@ private void flipArgs(MethodInvocation mi,int arg0,int arg1)
     }
    ASTRewrite rw = ASTRewrite.create(ast);
    rw.replace(mi,rslt,null);
-   addRepair(rw,"Change argument order in call to " + mi.getName(),null,0.5);
-
+   addRepair(rw,"Change args in call to " + rslt.toString(),null,0.5);
 }
 
 
