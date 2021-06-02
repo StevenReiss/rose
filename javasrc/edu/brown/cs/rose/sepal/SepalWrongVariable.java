@@ -293,6 +293,7 @@ private boolean isRelevant(JcompSymbol rep,JcompSymbol orig,ASTNode base)
    if (rep.isFinal() != rep.isFinal()) return false;
    if (rep.getName().equals(orig.getName())) return false;
    if (rep.getSymbolKind() != orig.getSymbolKind()) return false;
+   if (rep.isConstructorSymbol()) return false;
    if (rep.getSymbolKind() == JcompSymbolKind.LOCAL) {
       if (rep.getDefinitionNode().getStartPosition() >= base.getStartPosition()) return false;
     }

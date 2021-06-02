@@ -439,7 +439,7 @@ private class ShowLocationsHandler implements ActionListener, Runnable {
       Map<BumpLocation,String> locs = new HashMap<>();
       List<BumpLocation> loclist = new ArrayList<>();
       List<BushLocation> bloclist = new ArrayList<>();
-      for (Element locelt : IvyXml.children(show_result,"LOCATION")) {
+      for (Element locelt : IvyXml.children(show_result,"LOCATION")) { 
          BumpLocation loc = BumpLocation.getLocationFromXml(locelt);
          String reason = IvyXml.getTextElement(locelt,"REASON");
          if (loc != null) {

@@ -640,9 +640,11 @@ private void handleLocationCommand(MintMessage msg) throws RoseException
     }
    else {
       IvyXmlWriter xw = new IvyXmlWriter();
+      xw.begin("RESULT");
       for (RootLocation loc : locs) {
          loc.outputXml(xw);
        }
+      xw.end("RESULT");
       msg.replyTo(xw.toString());
     }
    RootMetrics.noteCommand("STEM","LCOATIONTIME",System.currentTimeMillis()-start);

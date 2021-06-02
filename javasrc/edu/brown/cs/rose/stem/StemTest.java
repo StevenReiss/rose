@@ -454,11 +454,10 @@ private void runTest(MintControl ctrl,FrameData fd,String oprob)
    String prob = getStartFrame(ctrl,oprob,null);
    getSuggestionsFor(ctrl,fd,prob,null);
    
-   Element locs = getHistory(ctrl,fd,prob);
+   Element locs = getLocations(ctrl,fd,prob);
    
    int lline = 0;
-   for (Element node : IvyXml.children(locs,"NODE")) {
-      Element loc = IvyXml.getChild(node,"LOCATION");
+   for (Element loc : IvyXml.children(locs,"LOCATION")) {
       String m = IvyXml.getAttrString(loc,"METHOD");
       if (m == null) continue;
       int idx = m.lastIndexOf(".");
@@ -470,14 +469,14 @@ private void runTest(MintControl ctrl,FrameData fd,String oprob)
       String loccnts = IvyXml.convertXmlToString(loc);
       String locprob = getStartFrame(ctrl,oprob,loccnts);
      
-      getSuggestionsFor(ctrl,fd,locprob,node);
+      getSuggestionsFor(ctrl,fd,locprob,loc);
     }
 }
    
 
 
 
-private Element getHistory(MintControl ctrl,FrameData fd,String prob)
+private Element getLocations(MintControl ctrl,FrameData fd,String prob)
 {
    CommandArgs args = new CommandArgs("TYPE","EXCEPTION",
          "METHOD",fd.getMethod(),
@@ -488,10 +487,10 @@ private Element getHistory(MintControl ctrl,FrameData fd,String prob)
          "LAUNCH",fd.getLaunchId(),
          "FRAME",fd.getId(),
          "THREAD",fd.getThreadId() );
-   Element xml = sendStemReply(ctrl,"HISTORY",args,prob);
+   Element xml = sendStemReply(ctrl,"LOCATIONS",args,prob);
    Assert.assertTrue(IvyXml.isElement(xml,"RESULT"));
    
-   return IvyXml.getChild(xml,"NODES");
+   return xml;
 }
 
 
@@ -560,16 +559,13 @@ private String getStartFrame(MintControl ctrl,String prob,String loc)
 }
 
 
-private void getSuggestionsFor(MintControl ctrl,FrameData fd,String prob,Element node) 
+private void getSuggestionsFor(MintControl ctrl,FrameData fd,String prob,Element locelt) 
 {
    String id = "SUGGEST_" + source_id + "_" + random_gen.nextInt(100000);
    CommandArgs args = new CommandArgs("NAME",id);
     
    String loc = null;
-   if (node != null) {
-      Element locelt = IvyXml.getChild(node,"LOCATION");
-      if (locelt != null) loc = IvyXml.convertXmlToString(locelt);
-    }
+   if (locelt != null) loc = IvyXml.convertXmlToString(locelt);
    String cnts = prob;
    if (loc != null) {
       if (cnts == null) cnts = loc;
