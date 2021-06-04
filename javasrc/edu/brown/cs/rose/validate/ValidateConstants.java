@@ -41,6 +41,11 @@ public interface ValidateConstants
 
 double DEFAULT_SCORE = 0.25;
 
+// set to 0 to include all possible validations
+// set to 0.105 to forbid most possible validations
+// set to 0.205 to be a bit more selective, but not too
+double MINIMUM_SCORE = 0.0105;           // can be 0
+
 }	// end of interface ValidateConstants
 
 

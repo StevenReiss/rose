@@ -143,7 +143,7 @@ BudaBubble createBubble()
    BudaBubbleArea bba = BudaRoot.findBudaBubbleArea(from_panel);
    BudaBubble bbl = new PanelBubble(content_pane);
    bba.addBubble(bbl,from_panel,null,
-         BudaConstants.PLACEMENT_LOGICAL|BudaConstants.PLACEMENT_BELOW);
+         BudaConstants.PLACEMENT_LOGICAL|BudaConstants.PLACEMENT_BELOW|BudaConstants.PLACEMENT_GROUPED);
    bbl.setVisible(true);
    
    return bbl;

@@ -1109,7 +1109,7 @@ private String waitForStop()
       for (int i = 0; i < 100; ++i) {
          if (stopped_thread != null) break;
 	 try {
-	    wait(3000);
+	    wait(300);
 	  }
 	 catch (InterruptedException e) { }
        }

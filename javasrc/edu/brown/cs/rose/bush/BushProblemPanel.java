@@ -522,10 +522,6 @@ private abstract static class DataPanel extends SwingGridPanel {
    
    abstract boolean isReady();
    
-   
-   
-   
-   
    abstract BushProblem getProblem();
    
 }

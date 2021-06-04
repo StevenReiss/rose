@@ -122,7 +122,7 @@ ValidateRunner(ValidateContext ctx,RootProcessor rp,RootRepair rr)
             score *= tscore;
           }
        }
-      if (score > 0) {
+      if (score > MINIMUM_SCORE) {
          for_repair.noteValidateScore(score);
          sendRepair();
        }

@@ -172,6 +172,8 @@ private String getExceptionCause() throws RoseException
 {
   ASTNode stmt = getSourceStatement();
   
+  if (exception_type == null) return null;
+  
   ExceptionChecker checker = null;
   switch (exception_type) {
      case "java.lang.NullPointerException" :

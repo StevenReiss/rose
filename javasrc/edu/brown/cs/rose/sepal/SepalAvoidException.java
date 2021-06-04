@@ -174,12 +174,12 @@ public SepalAvoidException()
    ASTRewrite rw4 = ifcondRepair(cm,base,stmt);
    if (rw4 != null) {
       String desc = "Add '(" + cm.getNeqCondition(base).toString() + ") &&' to " + stmtdesc;
-      addRepair(rw4,desc,logdata + "@CONDRETURN",0.7);
+      addRepair(rw4,desc,logdata + "@CONDRETURN",0.80);
     }
    ASTRewrite rw5 = nullReturn(cm,base,stmt);
    if (rw5 != null) {
       String desc = "Add '(" + cm.getEqlCondition(base).toString() + ") ||' to " + stmtdesc;
-      addRepair(rw5,desc,logdata + "@NULLRETURN",0.75);
+      addRepair(rw5,desc,logdata + "@NULLRETURN",0.80);
     } 
 }
 
