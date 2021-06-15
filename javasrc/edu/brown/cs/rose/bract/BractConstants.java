@@ -35,6 +35,7 @@
 
 package edu.brown.cs.rose.bract;
 
+import java.io.File;
 import java.util.HashMap;
 
 public interface BractConstants
@@ -78,6 +79,11 @@ public class PatternMap extends HashMap<String,Object> {
 
 
 public interface BractSearchResult {
+   
+   double getScore();
+   File getFile();
+   String getFileContents();
+   int getLineNumber();
    
 }
 

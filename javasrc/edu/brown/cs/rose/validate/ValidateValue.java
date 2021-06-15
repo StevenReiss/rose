@@ -116,6 +116,26 @@ String getValue()
 }
 
 
+ValidateValue getFieldValue(ValidateTrace vtr,String fld,long when)
+{
+   Element use = null;
+   for (Element flde : IvyXml.children(value_element,"FIELD")) {
+      String nm = IvyXml.getAttrString(flde,"NAME");
+      if (nm.equals(fld)) {
+         use = flde;
+         break;
+       }
+      else if (nm.endsWith("." + fld)) use = flde;
+    }
+   
+   if (use != null) {
+      ValidateVariable vvar = new ValidateVariable(use);
+      return vvar.getValueAtTime(vtr,when);
+    }
+   
+   return null;
+}
+
 
 }       // end of class ValidateValue
 

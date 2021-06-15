@@ -37,11 +37,14 @@ package edu.brown.cs.rose.sepal;
 
 import java.util.List;
 
+import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.Statement;
 
 import edu.brown.cs.rose.bract.BractSearch;
 import edu.brown.cs.rose.bract.BractConstants.BractSearchResult;
+import edu.brown.cs.rose.root.RootControl;
 import edu.brown.cs.rose.root.RootRepairFinderDefault;
+import edu.brown.cs.rose.root.RoseLog;
 
 public class SepalLocalSearch extends RootRepairFinderDefault
 {
@@ -54,6 +57,7 @@ public class SepalLocalSearch extends RootRepairFinderDefault
 /********************************************************************************/
 
 private BractSearch     search_engine;
+// private LocalPatchGenerator  patch_generator;
 
 
 
@@ -89,13 +93,25 @@ public SepalLocalSearch()
 
 
 
-
+@SuppressWarnings("unused")
 @Override public void process()
 {
-    Statement stmt = (Statement) getResolvedStatementForLocation(null);
-    List<BractSearchResult> rslts = search_engine.getResults(stmt);
-    if (rslts == null) return;
-    // handle results here
+   RootControl ctrl = getProcessor().getController();
+   Statement stmt = (Statement) getResolvedStatementForLocation(null);
+   List<BractSearchResult> rslts = search_engine.getResults(stmt);
+   if (rslts == null) return;
+   
+   String bfpath = getLocation().getFile().getPath();
+   ASTNode bnode = stmt;
+   
+   for (BractSearchResult sr : rslts) {
+      if (sr.getFile().getPath().equals(bfpath) && sr.getLineNumber() == getLocation().getLineNumber()) continue;
+      String cfpath = sr.getFile().getPath();
+      ASTNode cnode = ctrl.getSourceNode(null,sr.getFile(),-1,sr.getLineNumber(),false,true);
+      // List<PatchAsAstRewriteWithScore> rslt = patch_generator.makePatches(bfpath,bnode,cfpath,cnode);
+      // add repair for each returned patch
+      RoseLog.logD("SEPAL","Find local search results");
+    }
 }
 
 

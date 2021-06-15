@@ -107,6 +107,7 @@ class BushProblemPanel implements BushConstants
 
 private BumpThread	for_thread;
 private BumpStackFrame	for_frame;
+private String          exception_type;
 private Component	base_editor;
 private BaleFileOverview bale_file;
 private VariablePanel	variable_panel;
@@ -155,6 +156,7 @@ BushProblemPanel(BumpThread th,BumpStackFrame frm,Component base,BaleFileOvervie
    usage_monitor = null;
    expression_data = null;
    rose_ready = false;
+   exception_type = for_thread.getExceptionType();
    
    BushFactory.metrics("START",getMetricId());
 }
@@ -569,7 +571,7 @@ private class ExceptionPanel extends DataPanel {
    @Override public boolean isReady()                           { return true; }
    
    @Override public BushProblem getProblem() {
-      return new BushProblem(for_frame,RoseProblemType.EXCEPTION,for_thread.getExceptionType(),null,null,null);
+      return new BushProblem(for_frame,RoseProblemType.EXCEPTION,exception_type,null,null,null);
     }
 
 }       // end of inner class ExceptionPanel

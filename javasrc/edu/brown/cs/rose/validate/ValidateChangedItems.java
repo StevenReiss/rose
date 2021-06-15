@@ -143,7 +143,6 @@ List<ValidateAction> getResetActions(ValidateContext ctx)
        }
     }
    
-   
    ValidateExecution ve = ctx.getBaseExecution();
    ValidateTrace vt = ve.getSeedeResult();
    ValidateCall vc = vt.getRootContext();

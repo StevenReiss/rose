@@ -93,6 +93,8 @@ private static BractSearch global_engine;
 private static final String	GLOBAL_HOST = "cocker.cs.brown.edu";
 private static final int	GLOBAL_PORT = 10268;		// STMTSEARCHGLOBAL
 
+private static final double     THRESHOLD_SCORE = 0.5;
+
 
 
 /********************************************************************************/
@@ -143,7 +145,7 @@ public List<BractSearchResult> getResults(ASTNode stmt)
       RoseLog.logD("BRACT","Leash result: " + lr.getFilePath() + " " +
 	    lr.getLines() + " " + lr.getColumns() + " " + lr.getScore());
       if (file.equals(lr.getFilePath()) && lr.getLines().contains(line)) continue;
-      if (lr.getScore() > 0.5) {
+      if (lr.getScore() > THRESHOLD_SCORE) {
          SearchResult sr = new SearchResult(lr);
          rslt.add(sr);
        }
@@ -162,8 +164,16 @@ public List<BractSearchResult> getResults(ASTNode stmt)
 
 private class SearchResult implements BractSearchResult {
    
+   private LeashResult  leash_result;
+   
    SearchResult(LeashResult lr) { 
+      leash_result = lr;
     }
+   
+   @Override public double getScore()           { return leash_result.getScore(); }
+   @Override public File getFile()              { return leash_result.getFilePath(); }
+   @Override public String getFileContents()    { return leash_result.getFileContents(); }
+   @Override public int getLineNumber()         { return leash_result.getLines().get(0); }
    
 }       // end of inner class SearchResult
 

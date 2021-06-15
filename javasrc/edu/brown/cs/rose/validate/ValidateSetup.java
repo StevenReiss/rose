@@ -48,6 +48,7 @@ import org.eclipse.jdt.core.dom.ArrayCreation;
 import org.eclipse.jdt.core.dom.ArrayInitializer;
 import org.eclipse.jdt.core.dom.Assignment;
 import org.eclipse.jdt.core.dom.Block;
+import org.eclipse.jdt.core.dom.BooleanLiteral;
 import org.eclipse.jdt.core.dom.CastExpression;
 import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.CompilationUnit;
@@ -63,6 +64,8 @@ import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.InstanceofExpression;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
+import org.eclipse.jdt.core.dom.NullLiteral;
+import org.eclipse.jdt.core.dom.NumberLiteral;
 import org.eclipse.jdt.core.dom.ParenthesizedExpression;
 import org.eclipse.jdt.core.dom.PostfixExpression;
 import org.eclipse.jdt.core.dom.PrefixExpression;
@@ -77,8 +80,10 @@ import org.eclipse.jdt.core.dom.SwitchStatement;
 import org.eclipse.jdt.core.dom.SynchronizedStatement;
 import org.eclipse.jdt.core.dom.ThisExpression;
 import org.eclipse.jdt.core.dom.TryStatement;
+import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.WhileStatement;
 
+import edu.brown.cs.ivy.file.IvyFormat;
 import edu.brown.cs.ivy.jcomp.JcompAst;
 import edu.brown.cs.ivy.jcomp.JcompSymbol;
 import edu.brown.cs.ivy.jcomp.JcompType;
@@ -187,12 +192,12 @@ private void processStatement(int lno,Statement n,long start,long end)
 }
 
 
-private void processCall(JcompSymbol js,Expression thisexpr,List<?> args,
-      long start,long end)
+private long processCall(JcompSymbol js,Expression thisexpr,List<?> args,
+      long time)
 {
-   if (js == null) return;
+   if (js == null) return time;
    
-   List<String> argvals = getArguments(js,thisexpr,args);
+   List<String> argvals = getArguments(js,thisexpr,args,time);
    
    processSpecialCall(js,thisexpr,args,argvals);
    
@@ -216,16 +221,20 @@ private void processCall(JcompSymbol js,Expression thisexpr,List<?> args,
       break;
     }
    
-   if (usecall == null) return;
+   if (usecall == null) return time;
+   
+   long etime = usecall.getEndTime(); 
    
    ASTNode mthdast = getAstNodeForCall(usecall);
-   if (mthdast == null || !(mthdast instanceof MethodDeclaration)) return;
+   if (mthdast == null || !(mthdast instanceof MethodDeclaration)) return etime;
    MethodDeclaration mthd = (MethodDeclaration) mthdast;
    
    Map<String,String> varmap = new HashMap<>();
    int argidx = 0;
    if (!js.isStatic()) {
       String thisv = argvals.get(argidx++);
+      if (thisv != null && thisv.length() == 0)
+         System.err.println("CHECK HERE");
       if (thisv != null) varmap.put("this",thisv);
     }
       
@@ -239,6 +248,8 @@ private void processCall(JcompSymbol js,Expression thisexpr,List<?> args,
    
    ValidateSetup nsetup = new ValidateSetup(this,usecall,varmap);
    nsetup.findResets();
+   
+   return etime;
 }
 
 
@@ -250,8 +261,18 @@ private void processSpecialCall(JcompSymbol mthd,Expression thisexpr,
    JcompSymbol js = JcompAst.getReference(thisexpr);
    if (js == null) return;
    
-   switch (mthd.getFullName()) {
+   switch (mthd.getNongenericName()) {
+      case "java.util.Map.get" :
+      case "java.util.Map.remove" :
+      case "java.util.Map.containsKey" :
+      case "java.util.Collections.contains" :
+      case "java.util.Collections.add" :
+      case "java.util.Collections.remove" :
+         // check if thisexpr is changed; if so, add to action set
+         System.err.println("USE " + mthd.getNongenericName() +  argvals);
+         break;
       default :
+         System.err.println("CHECK " + mthd.getNongenericName());
          break;
     }
 }
@@ -261,18 +282,42 @@ private void processSpecialCall(JcompSymbol mthd,Expression thisexpr,
 private void processAssignment(Assignment a,long start,long end)
 {
    JcompSymbol js = JcompAst.getReference(a.getLeftHandSide());
-   if (js == null) return;
+   if (a.getOperator() == Assignment.Operator.ASSIGN) {
+      assignVariable(js,a.getRightHandSide(),start);
+    }
+   else if (js != null) {
+      String rval = getRelativeExpression(a.getRightHandSide(),start);
+      String lval = getRelativeExpression(a.getLeftHandSide(),start);
+      String expr = "(" + lval + a.getOperator().toString() + rval + ")";
+      variable_map.put(js.getName(),expr);
+    }
 }
 
 
 
-private List<String> getArguments(JcompSymbol js,Expression thisexpr,List<?> args)
+private void processAssignment(VariableDeclarationFragment vdf,long start,long end)
+{
+   JcompSymbol js = JcompAst.getDefinition(vdf);
+   assignVariable(js,vdf.getInitializer(),start);
+}
+
+
+private void assignVariable(JcompSymbol js,ASTNode value,long time)
+{
+   if (js == null) return;
+   String sval = getRelativeExpression(value,time);
+   variable_map.put(js.getName(),sval);
+}
+
+
+
+private List<String> getArguments(JcompSymbol js,Expression thisexpr,List<?> args,long time)
 {
    List<String> rslt = new ArrayList<>();
    
    if (!js.isStatic()) {
       if (thisexpr != null) {
-         String nthis = getRelativeExpression(thisexpr);
+         String nthis = getRelativeExpression(thisexpr,time);
          if (nthis != null) rslt.add(nthis);
        }
       else {
@@ -283,7 +328,7 @@ private List<String> getArguments(JcompSymbol js,Expression thisexpr,List<?> arg
    
    for (Object o : args) {
       Expression e = (Expression) o;
-      String nexpr = getRelativeExpression(e); 
+      String nexpr = getRelativeExpression(e,time); 
       rslt.add(nexpr);
     }
    
@@ -306,6 +351,108 @@ private void updateVariableMap(long when)
        }
     }
 }
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Methods to assist in rewriting                                          */
+/*                                                                              */
+/********************************************************************************/
+
+private String getNameTag(ASTNode n,long time)
+{
+   if (n instanceof SimpleName) {
+      JcompSymbol js = JcompAst.getReference(n);
+      if (js == null) js = JcompAst.getDefinition(n);
+      if (js == null) return null;
+      if (js.isFieldSymbol()) {
+         return "this." + js.getName();
+       }
+      if (js.isMethodSymbol() || js.isTypeSymbol()) return null;
+      return js.getName();
+    }
+   else if (n instanceof FieldAccess) {
+      FieldAccess fa = (FieldAccess) n;
+      String pfx = getRelativeExpression(fa.getExpression(),time);
+      return pfx + "." + fa.getName().getIdentifier();
+    }
+   else if (n instanceof QualifiedName) {
+      QualifiedName qn = (QualifiedName) n;
+      JcompSymbol js = JcompAst.getReference(n);
+      if (js.isMethodSymbol() || js.isTypeSymbol()) return null;
+      if (js.isFieldSymbol()) {
+         String pfx = getRelativeExpression(qn.getQualifier(),time);
+         return pfx + "." + qn.getName().getIdentifier();
+       }
+    }
+   return null;
+}
+
+
+
+private ValidateValue getValueAtTime(ASTNode n,long time)
+{
+   Expression lhs = null;
+   ValidateValue lval = null;
+   ValidateValue rval = null;
+   
+   JcompSymbol js = JcompAst.getReference(n);
+   if (js == null) js = JcompAst.getDefinition(n);
+   if (js == null) return null;
+   
+   if (n instanceof SimpleName) {
+      if (js.isMethodSymbol() || js.isTypeSymbol()) return null;
+      else if (js.isFieldSymbol()) {
+         ValidateVariable vv = active_call.getVariables().get("this");
+         if (vv == null) return null;
+         lval = vv.getValueAtTime(active_call.getTrace(),time);
+       }
+      else {
+         ValidateVariable vv = active_call.getVariables().get(js.getName());
+         rval = vv.getValueAtTime(active_call.getTrace(),time);
+       }
+    }
+   else if (n instanceof QualifiedName && js.isFieldSymbol()) {
+      QualifiedName qn = (QualifiedName) n;
+      lhs = qn.getQualifier();
+    }
+   else if (n instanceof FieldAccess) {
+      FieldAccess fa = (FieldAccess) n;
+      lhs = fa.getExpression();
+    }
+   else if (n instanceof ArrayAccess) {
+      ArrayAccess aa = (ArrayAccess) n;
+      lval = getValueAtTime(aa.getArray(),time);
+      ValidateValue ival = getValueAtTime(aa.getIndex(),time);
+      if (lval != null && ival != null) {
+         // acccess array here
+       }
+    }
+   else if (n instanceof NumberLiteral) { }
+   else if (n instanceof NullLiteral) { }
+   else if (n instanceof BooleanLiteral) { } 
+   
+   if (lhs != null && lval == null) {
+      lval = getValueAtTime(lhs,time);
+    }
+   if (lval != null && js.isFieldSymbol()) {
+      rval = lval.getFieldValue(active_call.getTrace(),js.getFullName(),time);
+    }
+   
+   if (rval != null) {
+      // if new setting, return it
+      if (rval.getStartTime() > 0) return rval;
+      // original setting -- use constant anyway?
+      return rval;                                      
+    }
+   
+   return null;
+}
+
+
+
+
 /********************************************************************************/
 /*                                                                              */
 /*      Processing visitor                                                      */
@@ -327,14 +474,14 @@ private class SetupProcessor extends ASTVisitor {
    @Override public boolean visit(ConstructorInvocation n) {
       process(n.arguments());
       JcompSymbol mthd = JcompAst.getReference(n);
-      processCall(mthd,null,n.arguments(),start_time,end_time);
+      processCall(mthd,null,n.arguments(),start_time);
       return false;
     }
    
    @Override public boolean visit(SuperConstructorInvocation n) {
       process(n.arguments());
       JcompSymbol mthd = JcompAst.getReference(n);
-      processCall(mthd,null,n.arguments(),start_time,end_time);
+      processCall(mthd,null,n.arguments(),start_time);
       return false;
     }
    
@@ -342,7 +489,7 @@ private class SetupProcessor extends ASTVisitor {
       process(n.getExpression());
       process(n.arguments());
       JcompSymbol mthd = JcompAst.getReference(n.getName());
-      processCall(mthd,n.getExpression(),n.arguments(),start_time,end_time);
+      start_time = processCall(mthd,n.getExpression(),n.arguments(),start_time);
       return false;
     }
    
@@ -360,6 +507,15 @@ private class SetupProcessor extends ASTVisitor {
       process(n.getRightHandSide());
       process(n.getLeftHandSide());
       processAssignment(n,start_time,end_time);
+      return false;
+    }
+   
+   @Override public boolean visit(VariableDeclarationFragment n) {
+      process(n.getName());
+      if (n.getInitializer() != null) {
+         process(n.getInitializer());
+         processAssignment(n,start_time,end_time);
+       }
       return false;
     }
    
@@ -511,9 +667,11 @@ private Statement getStatementAtLine(ASTNode base,int line)
 /*                                                                              */
 /********************************************************************************/
 
-private String getRelativeExpression(ASTNode n) 
+private String getRelativeExpression(ASTNode n,long time) 
 {
-   ExprRewriter er = new ExprRewriter();
+   if (n == null) return null;
+   
+   ExprRewriter er = new ExprRewriter(time);
    n.accept(er);
    return er.getRewrite();
 }
@@ -523,12 +681,14 @@ private class ExprRewriter extends ASTVisitor {
    
    private StringBuffer output_buffer;
    private boolean      is_valid;
+   private long         start_time;
    
-   ExprRewriter() {
+   ExprRewriter(long time) {
       output_buffer = new StringBuffer();
       is_valid = true;
+      start_time = time;
     }
-   
+    
    String getRewrite()  {
       if (is_valid && output_buffer != null) return output_buffer.toString();
       return null;
@@ -591,9 +751,38 @@ private class ExprRewriter extends ASTVisitor {
     }
    
    @Override public boolean visit(FieldAccess n) {
-      gen(n.getExpression());
-      output(".");
-      gen(n.getName());
+      ValidateValue vv = getValueAtTime(n,start_time);
+      if (vv != null) output(vv);
+      else {
+         String tag = getNameTag(n,start_time);
+         if (tag != null && variable_map.get(tag) != null) {
+            output(variable_map.get(tag));
+          }
+         else {
+            gen(n.getExpression());
+            output(".");
+            output(n.getName().getIdentifier());
+          }
+       }
+      return false;
+    }
+   
+   @Override public boolean visit(QualifiedName n) {
+      ValidateValue vv = getValueAtTime(n,start_time);
+      if (vv != null) output(vv);
+      else {
+         JcompSymbol js = JcompAst.getReference(n);
+         String tag = getNameTag(n,start_time);
+         if (tag != null && variable_map.get(tag) != null) {
+            output(variable_map.get(tag));
+          }
+         else if (js.isFieldSymbol() && !js.isStatic()) {
+            gen(n.getQualifier());
+            output(".");
+            output(n.getName().getIdentifier());
+          }
+         else output(n.toString());
+       }
       return false;
     }
    
@@ -614,6 +803,7 @@ private class ExprRewriter extends ASTVisitor {
    
    @Override public boolean visit(MethodInvocation n) {
       gen(n.getExpression());
+      output(".");
       gen(n.getName());
       output("(");
       gen(n.arguments(),",",null,null);
@@ -640,43 +830,28 @@ private class ExprRewriter extends ASTVisitor {
       return false;
     }
    
-   
-   @Override public boolean visit(QualifiedName n) {
-   // JcompSymbol js = JcompAst.getReference(n);
-      output(n.toString());
-   // gen(n.getQualifier());
-   // output(".");
-   // gen(n.getName());
-      return false;
-    }
-   
    @Override public boolean visit(SimpleName n) {
       String s = n.getIdentifier();
-      JcompSymbol js = JcompAst.getReference(n);
-      // should use JcompSymbol here
       String r = variable_map.get(s);
-      if (r != null && !r.equals(s) && js != null && !js.isFieldSymbol() &&
+      JcompSymbol js = JcompAst.getReference(n);
+      ValidateValue vv = getValueAtTime(n,start_time);
+      if (vv != null && output(vv)) ;
+      else if (r != null && !r.equals(s) && js != null && !js.isFieldSymbol() &&
             !js.isMethodSymbol() && !js.isTypeSymbol()) {
          output("(");
          output(r);
          output(")");
        }
       else if (js != null && js.isFieldSymbol()) {
-         ASTNode par = n.getParent();
-         if (par instanceof FieldAccess || par instanceof QualifiedName) {
+         String rthis = variable_map.get("this");
+         if (rthis != null && !rthis.equals("this")) {
+            output("(");
+            output(rthis);
+            output(".");
             output(s);
+            output(")");
           }
-         else {
-             String rthis = variable_map.get("this");
-             if (rthis != null && !rthis.equals("this")) {
-                output("(");
-                output(rthis);
-                output(".");
-                output(s);
-                output(")");
-              }
-             else output(s);
-          }
+         else output(s);
        }
       else output(s);
       return false;
@@ -779,6 +954,52 @@ private class ExprRewriter extends ASTVisitor {
       return false;
     }
    
+   private boolean output(ValidateValue vv) {
+      if (vv.isNull()) {
+         output("null");
+         return true;
+       }
+      Long nv = null;
+      switch (vv.getDataType()) {
+         case "boolean" :
+            nv = vv.getNumericValue();
+            if (nv != null && nv == 1) output("true");
+            else output("false");
+            break;
+         case "int" :
+         case "byte" :
+         case "short" :
+         case "long" :
+         case "double" :
+         case "float" :
+            output(vv.getValue());
+            break;
+         case "java.lang.Integer" :
+         case "java.lang.Byte" :
+         case "java.lang.Short" :
+         case "java.lang.Double" :
+         case "java.lang.Float" :
+            output(vv.getDataType() + ".valueOf(" + vv.getValue() + ")");
+            break;
+         case "char" :
+            nv = vv.getNumericValue();
+            if (nv != null) output("((char) " + IvyFormat.formatChar(vv.getValue()) + ")");
+            else output("'" + vv.getValue() + "'");
+            break;
+         case "java.lang.Character" :
+            nv = vv.getNumericValue();
+            if (nv != null) output("Character.valueOf(" + IvyFormat.formatChar(vv.getValue()) + ")");
+            output("'" + vv.getValue() + "'");
+            break;
+         case "java.lang.String" :
+            output("\"" + IvyFormat.formatString(vv.getValue()) + "\"");
+            break;
+         default :
+            return false;
+       }
+      
+      return true;
+    }
 }
 
 
