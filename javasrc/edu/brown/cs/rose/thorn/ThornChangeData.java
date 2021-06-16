@@ -88,7 +88,7 @@ void setChanges(BudStackFrame f,ThornChangeMap tcm)
 
 
 
-ThornChangeMap getChanges(BudStackFrame f)
+public ThornChangeMap getChanges(BudStackFrame f)
 {
    return frame_changes.get(f);
 }

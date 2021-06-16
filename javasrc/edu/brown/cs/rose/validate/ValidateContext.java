@@ -36,6 +36,7 @@
 package edu.brown.cs.rose.validate;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.w3c.dom.Element;
@@ -67,6 +68,7 @@ private String          frame_id;
 private BudLaunch	for_launch;
 private String          base_session;
 private ValidateExecution base_execution;
+private List<ValidateAction> setup_actions;
 
 
 
@@ -83,6 +85,7 @@ ValidateContext(RootControl ctrl,RootProblem p,String fid)
    for_launch = new BudLaunch(root_control,for_problem);
    frame_id = fid;
    if (frame_id == null) frame_id = for_launch.getFrame();
+   setup_actions = new ArrayList<>();
 }
 
 
@@ -180,31 +183,56 @@ void setupBaseExecution()
    root_control.sendSeedeMessage(base_session,"ADDFILE",null,cnts);
    
    ValidateChangedItems valuechanges = new ValidateChangedItems(for_launch,frame_id,for_problem);
-   List<ValidateAction> changes = valuechanges.getParameterActions();
-   for (ValidateAction va : changes) {
-      va.perform(root_control,base_session);
-    }
-   runBaseExecution();
+   runBaseExecution(null);
    if (base_execution.getSeedeResult().getProblemTime() >= 0) return;
    
-   for ( ; ; ) {
-      changes = valuechanges.getResetActions(this);
-      if (changes == null || changes.isEmpty()) break;
+   List<ValidateAction> pchanges = valuechanges.getParameterActions();
+   if (pchanges != null) setup_actions.addAll(pchanges);
+   if (setup_actions.size() > 0 && checkBaseExecution(null)) return;
+   
+   // this needs to be more sophisticated to try multiple changes in series
+   List<ValidateAction> changes = valuechanges.getResetActions(this);
+   if (changes != null) {
       for (ValidateAction va : changes) {
-         va.perform(root_control,base_session);
+         if (checkBaseExecution(va)) {
+            setup_actions.add(va);
+            return;
+          }
        }
-      runBaseExecution();
-      if (base_execution.getSeedeResult().getProblemTime() >= 0) break;
     }
 }
+
+
+
+private boolean checkBaseExecution(ValidateAction va)
+{
+   Element rslt = root_control.sendSeedeMessage(base_session,"SUBSESSION",null,null);
+   if (!IvyXml.isElement(rslt,"RESULT")) return true;
+   Element sessxml = IvyXml.getChild(rslt,"SESSION");
+   String ssid = IvyXml.getAttrString(sessxml,"ID");
+   boolean first = true;
+   for (ValidateAction vs : setup_actions) {
+      vs.perform(root_control,ssid,for_launch.getThread(),first);
+      first = false;
+    }
+   if (va != null) {
+      va.perform(root_control,ssid,for_launch.getThread(),first);
+      first = false;
+    }
+   runBaseExecution(ssid);
+   if (base_execution.getSeedeResult().getProblemTime() >= 0) return true;
+   return false;
+}
+
    
 
 
 
 
-void runBaseExecution()
+void runBaseExecution(String sid)
 {
-   base_execution = new ValidateExecution(base_session,this,null);
+   if (sid == null) sid = base_session;
+   base_execution = new ValidateExecution(sid,this,null);
    base_execution.start(root_control);
    
    base_execution.getSeedeResult().setupForLaunch(getLaunch());
@@ -220,6 +248,13 @@ ValidateExecution getSubsession(RootRepair repair)
    Element sessxml = IvyXml.getChild(rslt,"SESSION");
    String ssid = IvyXml.getAttrString(sessxml,"ID");
    if (ssid == null) return null;
+   if (setup_actions != null) {
+      boolean first = true;
+      for (ValidateAction va : setup_actions) {
+         va.perform(root_control,ssid,for_launch.getThread(),first);
+         first = false;
+       }
+    }
    
    ValidateExecution ve = new ValidateExecution(ssid,this,repair);
    

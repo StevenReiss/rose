@@ -59,11 +59,10 @@ static ValidateAction createSetAction(String nm,BudValue bv)
 
 
 
-/********************************************************************************/
-/*                                                                              */
-/*      Private Storage                                                         */
-/*                                                                              */
-/********************************************************************************/
+static ValidateAction createInitAction(String expr)
+{
+   return new InitAction(expr);
+}
 
 
 
@@ -85,7 +84,18 @@ protected ValidateAction()
 /*                                                                              */
 /********************************************************************************/
 
-abstract void perform(RootControl ctrl,String session);
+abstract void perform(RootControl ctrl,String session,String tid,boolean first);
+
+
+private static void sendInitialization(String init,RootControl rc,String session,String tid,boolean first) 
+{
+   CommandArgs args = new CommandArgs("THREAD",tid,"REMOVE",first);
+   IvyXmlWriter xw = new IvyXmlWriter();
+   xw.cdataElement("EXPRESSION",init);
+   String cnts = xw.toString();
+   xw.close();
+   rc.sendSeedeMessage(session,"INITIALIZATION",args,cnts);
+}
 
 
 
@@ -109,18 +119,44 @@ private static class SetAction extends ValidateAction {
       return var_name + "=" + set_value;
     }
    
-   @Override void perform(RootControl rc,String session) {
-      CommandArgs args = new CommandArgs("VAR",var_name);
-      IvyXmlWriter xw = new IvyXmlWriter();
-      set_value.outputXml(xw);
-      String cnts = xw.toString();
-      xw.close();
-      rc.sendSeedeMessage(session,"SETVALUE",args,cnts);
+   @Override void perform(RootControl rc,String session,String tid,boolean first) {
+      String expr = var_name + " = " + set_value.getJavaValue();
+      sendInitialization(expr,rc,session,tid,first);
+//    CommandArgs args = new CommandArgs("VAR",var_name);
+//    IvyXmlWriter xw = new IvyXmlWriter();
+//    set_value.outputXml(xw);
+//    String cnts = xw.toString();
+//    xw.close();
+//    rc.sendSeedeMessage(session,"SETVALUE",args,cnts);
     }
    
 }       // end of inner class SetAction
 
 
+
+/********************************************************************************/
+/*                                                                              */
+/*      Initialization action                                                   */
+/*                                                                              */
+/********************************************************************************/
+
+private static class InitAction extends ValidateAction {
+   
+   private String init_expression;
+   
+   InitAction(String expr) {
+      init_expression = expr;
+    }
+   
+   @Override public String toString() {
+      return init_expression;
+    }
+   
+   @Override void perform(RootControl rc,String session,String tid,boolean first) {
+      sendInitialization(init_expression,rc,session,tid,first);
+    }
+   
+}       // end of inner class InitAction
 
 
 

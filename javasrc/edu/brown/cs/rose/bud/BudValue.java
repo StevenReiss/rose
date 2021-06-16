@@ -39,6 +39,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import edu.brown.cs.rose.root.RoseException;
+import edu.brown.cs.ivy.file.IvyFormat;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
 import edu.brown.cs.rose.root.RootValue;
 
@@ -178,6 +179,9 @@ public String getString()
 public BudType getDataType()                   { return value_type; }
 
 
+public String getJavaValue()                    { return toString(); }
+
+
 
 /********************************************************************************/
 /*                                                                              */
@@ -279,6 +283,27 @@ private static class NumericValue extends BudValue {
       xw.field("VALUE",cur_value);
     }
    
+   @Override public String getJavaValue() {
+      switch (getDataType().getName()) {
+         case "int" :
+            return Integer.toString(cur_value.intValue());
+         case "short" :
+            return "((short) " + Short.toString(cur_value.shortValue()) + ")";
+         case "byte" :
+            return "((byte) " + Byte.toString(cur_value.byteValue()) + ")";
+         case "long" :
+            return Long.toString(cur_value.longValue()) + "L";
+         case "float" :
+            return Float.toString(cur_value.floatValue()) + "F";
+         case "double" :
+            return Double.toString(cur_value.doubleValue());
+         case "char" :
+            return "((char) " +  Short.toString(cur_value.shortValue()) + ")";
+         default :
+            break;
+       }
+      return toString();
+    }
    @Override public String toString()           { return cur_value.toString(); }
    
 }       // end of inner class IntegerValue
@@ -308,6 +333,10 @@ private static class StringValue extends BudValue {
       xw.field("STRING",true);
       xw.cdataElement("CONTENTS",cur_value);
       xw.cdataElement("VALUE",cur_value);
+    }
+   
+   @Override public String getJavaValue() {
+      return "\"" + IvyFormat.formatString(cur_value) + "\"";
     }
    
    @Override public String toString()           { return "\"" + cur_value + "\""; }
@@ -368,6 +397,11 @@ private static class ObjectValue extends BudValue {
           }
          xw.end("FIELD");
        }
+    }
+   
+   @Override public String getJavaValue() {
+      // this doesn't work -- is it needed?
+      return toString();
     }
    
    @Override public String toString() {

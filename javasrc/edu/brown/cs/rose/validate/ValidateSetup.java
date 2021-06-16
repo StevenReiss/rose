@@ -89,6 +89,7 @@ import edu.brown.cs.ivy.jcomp.JcompSymbol;
 import edu.brown.cs.ivy.jcomp.JcompType;
 import edu.brown.cs.rose.bud.BudStackFrame;
 import edu.brown.cs.rose.thorn.ThornChangeData;
+import edu.brown.cs.rose.thorn.ThornChangeMap;
 
 class ValidateSetup implements ValidateConstants
 {
@@ -258,24 +259,37 @@ private void processSpecialCall(JcompSymbol mthd,Expression thisexpr,
       List<?> args,List<String> argvals)
 {
    if (thisexpr == null) return;
-   JcompSymbol js = JcompAst.getReference(thisexpr);
-   if (js == null) return;
+   if (!mthd.isBinarySymbol()) return;
+   ThornChangeMap tcm = changed_items.getChanges(active_frame);
+   if (tcm == null || !tcm.shouldBeUsed(thisexpr)) return;
    
+   String useexpr = null;
    switch (mthd.getNongenericName()) {
       case "java.util.Map.get" :
-      case "java.util.Map.remove" :
       case "java.util.Map.containsKey" :
+         useexpr = argvals.get(0) + ".remove(" + argvals.get(1) + ")";
+         break;
+      case "java.util.Map.remove" :
+         break;
       case "java.util.Collections.contains" :
       case "java.util.Collections.add" :
+         useexpr = argvals.get(0) + ".remove(" + argvals.get(1) + ")";
+         break;
       case "java.util.Collections.remove" :
-         // check if thisexpr is changed; if so, add to action set
-         System.err.println("USE " + mthd.getNongenericName() +  argvals);
+         useexpr = argvals.get(0) + ".add(" + argvals.get(1) + ")";
          break;
       default :
          System.err.println("CHECK " + mthd.getNongenericName());
          break;
     }
+   
+   if (useexpr != null) {
+      ValidateAction act = ValidateAction.createInitAction(useexpr);
+      action_set.add(act);
+    }
 }
+
+
 
 
 
