@@ -91,6 +91,7 @@ private RoseEvalQuixBugs(String [] args)
    super("quixspr","quixbugs");
    run_local = true;
    run_debug = true;
+   seede_debug = true;
 
    setupTests();
 
@@ -224,7 +225,7 @@ private void setupTests()
    test_skip[14] = 0;
 
    test_names[15] = "Kth";
-   test_problem[15] = RoseEvalProblem.createException("java.lang.ArrayIndexOutOfBoundsException");
+   test_problem[15] = RoseEvalProblem.createException("java.lang.IndexOutOfBoundsException");
    test_solution[15] = "39@k - num_lessoreq";
    test_time[15] = TEST_TIME;
    test_skip[15] = 0;

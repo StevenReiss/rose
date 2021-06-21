@@ -114,8 +114,14 @@ public default ASTNode getSourceStatement(String proj,File f,int offset,int line
  *      return document to be used to create text edit for a change
  **/
  
-IDocument getSourceDocument(String proj,File f);
+IDocument getSourceDocument(File f);
 
+
+/**
+ *      Return the contents of the given file (cached)
+ **/
+
+String getSourceContents(File file);
 
 
 /**

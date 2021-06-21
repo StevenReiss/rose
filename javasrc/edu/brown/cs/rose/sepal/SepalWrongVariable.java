@@ -318,6 +318,8 @@ private void createRepair(UserVariable uv,JcompSymbol js,ASTNode where)
       if (where instanceof SimpleName) {
          rw = ASTRewrite.create(ast);
          String nnm = js.getName();
+         if (js.isConstructorSymbol()) return;
+         if (nnm.startsWith("<")) return;
          RoseLog.logD("SEPAL","Use replacement name " + nnm + " for " + where);
          ASTNode rep = ast.newSimpleName(nnm);
          rw.replace(where,rep,null);

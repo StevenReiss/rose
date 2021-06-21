@@ -191,7 +191,11 @@ private void scanArgs(String [] args)
 	 else if (args[i].startsWith("-L") && i+1 < args.length) {      // -L <logfile>
 	    RoseLog.setLogFile(args[++i]);
 	  }
-	 else if (args[i].startsWith("-D")) {                           // -Debug
+         else if (args[i].startsWith("-DD")) {
+            RoseLog.setLogLevel(RoseLog.LogLevel.DEBUG);
+            run_debug = true;
+          }
+         else if (args[i].startsWith("-D")) {                           // -Debug
 	    RoseLog.setLogLevel(RoseLog.LogLevel.DEBUG);
 	  }
          else if (args[i].startsWith("-NoD")) {                         // -NoDebug
@@ -1600,13 +1604,24 @@ private static class EvalData {
 }
 
 
-@Override public IDocument getSourceDocument(String proj,File f)
+@Override public IDocument getSourceDocument(File f)
 {
    synchronized (this) {
       if (stem_compiler == null) stem_compiler = new StemCompiler(this);
     }
    
-   return stem_compiler.getSourceDocument(proj,f);
+   return stem_compiler.getSourceDocument(f);
+}
+
+
+
+@Override public String getSourceContents(File f)
+{
+   synchronized (this) {
+      if (stem_compiler == null) stem_compiler = new StemCompiler(this);
+    }
+   
+   return stem_compiler.getSourceContents(f);
 }
 
 

@@ -72,6 +72,7 @@ private List<Class<?>> location_classes;
 private RootValidate base_validator;
 private List<RootTask> sub_tasks;
 private long    start_time;
+private int     num_checked;
 
 
 
@@ -119,6 +120,7 @@ public RootControl getController()              { return rose_control; }
 {
    List<ProcessorTask> tasks = new ArrayList<>();
    start_time = System.currentTimeMillis();
+   num_checked = 0;
    
    List<RootLocation> uselocs = null;
    if (at_location == null && location_classes.size() > 0) {
@@ -156,8 +158,8 @@ public RootControl getController()              { return rose_control; }
     }
    
    long t1 = System.currentTimeMillis();
-   RootMetrics.noteCommand("BRACT","ENDREPAIR",t1-start_time);
-   CommandArgs args = new CommandArgs("NAME",reply_id);
+   RootMetrics.noteCommand("BRACT","ENDREPAIR",t1-start_time,num_checked);
+   CommandArgs args = new CommandArgs("NAME",reply_id,"CHECKED",num_checked);
    rose_control.sendRoseMessage("ENDSUGGEST",args,null,-1);
 }
 
@@ -209,6 +211,8 @@ private List<RootLocation> getLocations()
 
 @Override public void validateRepair(RootRepair br)
 {
+   ++num_checked;
+   
    if (base_validator != null) {
       base_validator.validateAndSend(this,br);
     }

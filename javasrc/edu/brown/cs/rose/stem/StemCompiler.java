@@ -133,10 +133,17 @@ ASTNode getStatementOfNode(ASTNode node)
 
 
 
-IDocument getSourceDocument(String proj,File file)
+IDocument getSourceDocument(File file)
 {
    SourceFile sf = getSourceFile(file);
    return sf.getDocument();
+}
+
+
+String getSourceContents(File f)
+{
+   SourceFile sf = getSourceFile(f);
+   return sf.getFileContents();
 }
 
 

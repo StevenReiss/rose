@@ -95,6 +95,7 @@ private static Random           random_gen = new Random();
 
 protected static boolean        run_local = false;
 protected static boolean        run_debug = false;
+protected static boolean        seede_debug = false;
 
 static {
    int rint = random_gen.nextInt(1000000);
@@ -160,7 +161,7 @@ protected void startEvaluations()
    File f3 = new File(f2,fnm);
    try {
       output_file = new PrintWriter(f3);
-      output_file.println("Name,# Results,# Displayed,Correct Rank,Total Time,Fix Time");
+      output_file.println("Name,# Results,# Displayed,Correct Rank,Total Time,Fix Time,# Checked");
     }
    catch (IOException e) {
       System.err.println("Can't create " + fnm);
@@ -425,12 +426,15 @@ private void processSuggestions(String name,SuggestionSet ss,String expect,long 
       if (sug.getPriority() >= max) ++showctr;
     }
    
+   int ct = ss.getNumChecked();
+   
    if (output_file != null) {
-      output_file.println(name + "," + ctr + "," + showctr + "," + fnd + "," + time + "," + fixtime);
+      output_file.println(name + "," + ctr + "," + showctr + "," + fnd + "," + 
+            time + "," + fixtime + "," + ct);
     }
    
    System.err.println("PROCESS SUGGESTIONS: " + name +": " + ctr + " " + showctr + " " + 
-         fnd + " " + time + " " + fixtime);
+         fnd + " " + time + " " + fixtime + " " + ct);
 }
 
 
@@ -454,12 +458,13 @@ private void setupStem(String workspace)
    args.add(mc.getMintName());
    args.add("-w");
    args.add(workspace_path.get(workspace));
-   if (run_debug) args.add("-D");
+   if (seede_debug) args.add("-DD");
+   else if (run_debug) args.add("-D");
    else args.add("-NoD");
    if (run_local) args.add("-local");
    
    
-   if (run_debug) {
+   if (run_debug || seede_debug) {
       String [] argarr = new String[args.size()];
       argarr = args.toArray(argarr);
       StemMain.main(argarr);
@@ -623,7 +628,6 @@ private void shutdownBedrock()
       mint_map.remove(workspace_name);
     }
    
-   sendStem(mc,"EXIT",null,null,null);
    RoseLog.logI("STEM","Shut down bedrock");
    sendBubblesMessage(mc,"EXIT");
    
@@ -633,6 +637,8 @@ private void shutdownBedrock()
    File cdir = new File(bbdir,"CockerIndex");
    LeashIndex idx = new LeashIndex(ROSE_PROJECT_INDEX_TYPE,cdir);
    idx.stop();
+   
+   sendStem(mc,"EXIT",null,null,null);
 }
 
 
@@ -983,7 +989,7 @@ private class SuggestHandler implements MintHandler {
          if (ss != null) ss.addSuggestion(e);
          break;
       case "ENDSUGGEST" :
-         if (ss != null) ss.endSuggestions();
+         if (ss != null) ss.endSuggestions(IvyXml.getAttrInt(e,"CHECKED"));
          break;
     }
 }
@@ -996,6 +1002,7 @@ private static class SuggestionSet {
 
    private List<Element> suggest_nodes;
    private boolean is_done;
+   private int num_checked;
    
    SuggestionSet() {
       suggest_nodes = new ArrayList<>();
@@ -1008,7 +1015,8 @@ private static class SuggestionSet {
        }
     }
    
-   synchronized void endSuggestions() {
+   synchronized void endSuggestions(int ct) {
+      num_checked = ct;
       is_done = true;
       notifyAll();
     }
@@ -1028,7 +1036,7 @@ private static class SuggestionSet {
       return rslt;
     }
    
-   
+   int getNumChecked()          { return num_checked; }
    
 }       // end of inner class SuggestionSet
 

@@ -279,7 +279,7 @@ private void processSpecialCall(JcompSymbol mthd,Expression thisexpr,
          useexpr = argvals.get(0) + ".add(" + argvals.get(1) + ")";
          break;
       default :
-         System.err.println("CHECK " + mthd.getNongenericName());
+//       System.err.println("CHECK " + mthd.getNongenericName());
          break;
     }
    
@@ -394,7 +394,7 @@ private String getNameTag(ASTNode n,long time)
    else if (n instanceof QualifiedName) {
       QualifiedName qn = (QualifiedName) n;
       JcompSymbol js = JcompAst.getReference(n);
-      if (js.isMethodSymbol() || js.isTypeSymbol()) return null;
+      if (js == null || js.isMethodSymbol() || js.isTypeSymbol()) return null;
       if (js.isFieldSymbol()) {
          String pfx = getRelativeExpression(qn.getQualifier(),time);
          return pfx + "." + qn.getName().getIdentifier();
@@ -790,7 +790,7 @@ private class ExprRewriter extends ASTVisitor {
          if (tag != null && variable_map.get(tag) != null) {
             output(variable_map.get(tag));
           }
-         else if (js.isFieldSymbol() && !js.isStatic()) {
+         else if (js != null && js.isFieldSymbol() && !js.isStatic()) {
             gen(n.getQualifier());
             output(".");
             output(n.getName().getIdentifier());

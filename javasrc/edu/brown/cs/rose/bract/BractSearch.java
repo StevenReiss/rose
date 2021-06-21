@@ -93,8 +93,6 @@ private static BractSearch global_engine;
 private static final String	GLOBAL_HOST = "cocker.cs.brown.edu";
 private static final int	GLOBAL_PORT = 10268;		// STMTSEARCHGLOBAL
 
-private static final double     THRESHOLD_SCORE = 0.5;
-
 
 
 /********************************************************************************/
@@ -125,7 +123,7 @@ private BractSearch()
 /*										*/
 /********************************************************************************/
 
-public List<BractSearchResult> getResults(ASTNode stmt)
+public List<BractSearchResult> getResults(ASTNode stmt,double thresh)
 {
    List<BractSearchResult> rslt = new ArrayList<>();
    if (stmt == null || cocker_index == null) return rslt;
@@ -145,7 +143,7 @@ public List<BractSearchResult> getResults(ASTNode stmt)
       RoseLog.logD("BRACT","Leash result: " + lr.getFilePath() + " " +
 	    lr.getLines() + " " + lr.getColumns() + " " + lr.getScore());
       if (file.equals(lr.getFilePath()) && lr.getLines().contains(line)) continue;
-      if (lr.getScore() > THRESHOLD_SCORE) {
+      if (lr.getScore() > thresh) {
          SearchResult sr = new SearchResult(lr);
          rslt.add(sr);
        }

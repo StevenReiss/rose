@@ -35,16 +35,20 @@
 
 package edu.brown.cs.rose.sepal;
 
+import java.io.File;
 import java.util.List;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.Statement;
+import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 
 import edu.brown.cs.rose.bract.BractSearch;
 import edu.brown.cs.rose.bract.BractConstants.BractSearchResult;
 import edu.brown.cs.rose.root.RootControl;
 import edu.brown.cs.rose.root.RootRepairFinderDefault;
 import edu.brown.cs.rose.root.RoseLog;
+import sharpfix.global.PatchAsASTRewriteWithScore;
+import sharpfix.patchgen.LocalPatchGenerator;
 
 public class SepalLocalSearch extends RootRepairFinderDefault
 {
@@ -57,7 +61,10 @@ public class SepalLocalSearch extends RootRepairFinderDefault
 /********************************************************************************/
 
 private BractSearch     search_engine;
-// private LocalPatchGenerator  patch_generator;
+
+private static final int MAX_LOCAL_CHECK = 5;
+private static final double SEARCH_THRESHOLD = 1.0;
+
 
 
 
@@ -93,24 +100,36 @@ public SepalLocalSearch()
 
 
 
-@SuppressWarnings("unused")
 @Override public void process()
 {
    RootControl ctrl = getProcessor().getController();
    Statement stmt = (Statement) getResolvedStatementForLocation(null);
-   List<BractSearchResult> rslts = search_engine.getResults(stmt);
+   List<BractSearchResult> rslts = search_engine.getResults(stmt,SEARCH_THRESHOLD);
    if (rslts == null) return;
    
-   String bfpath = getLocation().getFile().getPath();
+   File bfile = getLocation().getFile();
+   String bcnts = ctrl.getSourceContents(bfile);
    ASTNode bnode = stmt;
    
    for (BractSearchResult sr : rslts) {
-      if (sr.getFile().getPath().equals(bfpath) && sr.getLineNumber() == getLocation().getLineNumber()) continue;
-      String cfpath = sr.getFile().getPath();
-      ASTNode cnode = ctrl.getSourceNode(null,sr.getFile(),-1,sr.getLineNumber(),false,true);
-      // List<PatchAsAstRewriteWithScore> rslt = patch_generator.makePatches(bfpath,bnode,cfpath,cnode);
+      if (sr.getFile().equals(bfile) && sr.getLineNumber() == getLocation().getLineNumber()) continue;
+      String proj = ctrl.getProjectForFile(sr.getFile());
+      String ccnts = ctrl.getSourceContents(sr.getFile());
+     
+      ASTNode cnode = ctrl.getSourceNode(proj,sr.getFile(),-1,sr.getLineNumber(),false,true);
+      List<PatchAsASTRewriteWithScore> rslt = LocalPatchGenerator.makePatches(bcnts,bnode,ccnts,cnode);
+      int ct = rslt.size();
+      for (int i = 0; i < ct && i < MAX_LOCAL_CHECK; ++i) {
+         PatchAsASTRewriteWithScore r = rslt.get(i);
+         ASTRewrite rw = r.getASTRewrite();
+         // need to get a description from the rewrite -- replace Search-based repair with that
+         double score = r.getScore();
+         // might want to manipulate score a bit
+         String logdata = getClass().getName() + "@" + i;
+         addRepair(rw,"Search-based repair",logdata,score);
+       }
       // add repair for each returned patch
-      RoseLog.logD("SEPAL","Find local search results");
+      RoseLog.logD("SEPAL","Find local search results " + ct);
     }
 }
 

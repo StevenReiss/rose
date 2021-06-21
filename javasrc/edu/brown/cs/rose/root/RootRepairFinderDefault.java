@@ -177,8 +177,7 @@ protected void addRepair(ASTRewrite rw,String desc,String logdata,double priorit
     }
 
    File f = getLocation().getFile();
-   String p = getLocation().getProject();
-   IDocument doc1 = getProcessor().getController().getSourceDocument(p,f);
+   IDocument doc1 = getProcessor().getController().getSourceDocument(f);
    Document doc = new Document(doc1.get());
    ASTNode stmt = getResolvedStatementForLocation(null);
    RootLocation loc = getLocation();
