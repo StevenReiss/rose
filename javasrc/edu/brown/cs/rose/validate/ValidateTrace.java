@@ -488,7 +488,17 @@ private Boolean compareObject(BudLocalVariable local,Element valelt0,BudLaunch l
       return false;
     }
    
-   if (!local.getType().equals(IvyXml.getAttrString(valelt,"TYPE"))) return false;
+   String ltyp = local.getType();
+   String vtype = IvyXml.getAttrString(valelt,"TYPE");
+   if (!ltyp.equals(vtype)) {
+      int idx = ltyp.indexOf("<");
+      if (idx > 0) {
+         ltyp = ltyp.substring(0,idx);
+         if (!ltyp.equals(vtype)) return false;
+       }
+    }
+   
+// if (!local.getType().equals(IvyXml.getAttrString(valelt,"TYPE"))) return false;
    
    BudValue localval = launch.evaluate(local.getName());
    if (localval == null) return null;
@@ -496,6 +506,7 @@ private Boolean compareObject(BudLocalVariable local,Element valelt0,BudLaunch l
    int ct = 0;
    for (Element fldelt : IvyXml.children(valelt,"FIELD")) {
       String nm = IvyXml.getAttrString(fldelt,"NAME");
+      if (nm.startsWith("@")) continue;
       try {
          BudValue fldval = localval.getFieldValue(nm);
          if (fldval == null) continue;
