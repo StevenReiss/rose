@@ -239,7 +239,7 @@ private void setupTests()
    test_names[17] = "Levenshtein";
    test_problem[17] = RoseEvalProblem.createVariable("result","8","3");
    test_solution[17] = "26@- 1";
-   test_time[17] = TEST_TIME;
+   test_time[17] = 500000;
    test_skip[17] = 0;
 
    test_names[18] = "Lis";
@@ -251,7 +251,7 @@ private void setupTests()
    test_names[19] = "LongestCommonSubsequence";
    test_problem[19] = RoseEvalProblem.createAssertion();
    test_solution[19] = "25@b.substring(1)";
-   test_time[19] = TEST_TIME;
+   test_time[19] = 50000;
    test_skip[19] = 0;
 
    test_names[20] = "MaxSublistSum";
@@ -335,7 +335,7 @@ private void setupTests()
    test_names[33] = "ShortestPaths";
    test_problem[33] = RoseEvalProblem.createAssertion();
    test_solution[33] = "40@edge.get(i)";
-   test_time[33] = TEST_TIME;
+   test_time[33] = 500000;
    test_skip[33] = 0;
 
    test_names[34] = "ShuntingYard";

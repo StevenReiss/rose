@@ -70,7 +70,6 @@ import edu.brown.cs.ivy.jcomp.JcompType;
 import edu.brown.cs.rose.root.RootLocation;
 import edu.brown.cs.rose.root.RootProblem;
 import edu.brown.cs.rose.root.RootRepairFinderDefault;
-import edu.brown.cs.rose.root.RoseLog;
 
 public class SepalAvoidException extends RootRepairFinderDefault
 {
@@ -476,8 +475,8 @@ private InfixExpression addToCond(InfixExpression cond,Expression nbase,Expressi
    
    List<Expression> opnds = new ArrayList<>();
    int idx = 0;
-   opnds.add(cond.getLeftOperand());
-   opnds.add(cond.getRightOperand());
+   opnds.add((Expression) ASTNode.copySubtree(ast,cond.getLeftOperand()));
+   opnds.add((Expression) ASTNode.copySubtree(ast,cond.getRightOperand()));
    if (cond.getRightOperand() == before) idx = 1;
    int ct = 2;
    for (Object o : cond.extendedOperands()) {
@@ -488,7 +487,6 @@ private InfixExpression addToCond(InfixExpression cond,Expression nbase,Expressi
     }
    opnds.add(idx,nbase);
    
-   RoseLog.logD("SEPAL","Set arguments " + opnds);
    ncond.setLeftOperand(opnds.get(0));
    ncond.setRightOperand(opnds.get(1));
    for (int i = 2; i < opnds.size(); ++i) {

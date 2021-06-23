@@ -113,6 +113,7 @@ public SepalLocalSearch()
    
    for (BractSearchResult sr : rslts) {
       if (sr.getFile().equals(bfile) && sr.getLineNumber() == getLocation().getLineNumber()) continue;
+      if (!sr.getFile().exists() || !sr.getFile().canRead()) continue;
       String proj = ctrl.getProjectForFile(sr.getFile());
       String ccnts = ctrl.getSourceContents(sr.getFile());
      

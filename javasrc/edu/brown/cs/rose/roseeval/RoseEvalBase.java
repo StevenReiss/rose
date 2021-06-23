@@ -545,6 +545,23 @@ private void sendStem(MintControl mc,String cmd,CommandArgs args,String xml,Mint
 
 
 
+protected void stopSeede(MintControl mc)
+{
+   IvyXmlWriter xw = new IvyXmlWriter();
+   xw.begin("SEEDE");
+   xw.field("DO","EXIT");
+   xw.field("SID","*");
+   xw.end("SEEDE");
+   String msg = xw.toString();
+   xw.close();
+   
+   RoseLog.logD("STEM","Send to SEEDE: " + msg);
+   
+   mc.send(msg);
+}
+
+
+
 /********************************************************************************/
 /*										*/
 /*	Bedrock setup / shutdown methods					*/
@@ -629,7 +646,6 @@ private void shutdownBedrock()
     }
    
    RoseLog.logI("STEM","Shut down bedrock");
-   sendBubblesMessage(mc,"EXIT");
    
    String path = workspace_path.get(workspace_name);
    File bdir = new File(path);
@@ -638,7 +654,11 @@ private void shutdownBedrock()
    LeashIndex idx = new LeashIndex(ROSE_PROJECT_INDEX_TYPE,cdir);
    idx.stop();
    
-   sendStem(mc,"EXIT",null,null,null);
+   if (!run_local) sendStem(mc,"EXIT",null,null,null);
+   
+   stopSeede(mc);
+   
+   sendBubblesMessage(mc,"EXIT");
 }
 
 

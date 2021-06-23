@@ -210,18 +210,24 @@ private boolean checkBaseExecution(ValidateAction va)
    if (!IvyXml.isElement(rslt,"RESULT")) return true;
    Element sessxml = IvyXml.getChild(rslt,"SESSION");
    String ssid = IvyXml.getAttrString(sessxml,"ID");
-   boolean first = true;
-   for (ValidateAction vs : setup_actions) {
-      vs.perform(root_control,ssid,for_launch.getThread(),first);
-      first = false;
+   try {
+      boolean first = true;
+      for (ValidateAction vs : setup_actions) {
+         vs.perform(root_control,ssid,for_launch.getThread(),first);
+         first = false;
+       }
+      if (va != null) {
+         va.perform(root_control,ssid,for_launch.getThread(),first);
+         first = false;
+       }
+      runBaseExecution(ssid);
+      
+      if (base_execution.getSeedeResult().getProblemTime() >= 0) return true;
+      return false;
     }
-   if (va != null) {
-      va.perform(root_control,ssid,for_launch.getThread(),first);
-      first = false;
+   finally {
+      removeSubsession(ssid);
     }
-   runBaseExecution(ssid);
-   if (base_execution.getSeedeResult().getProblemTime() >= 0) return true;
-   return false;
 }
 
    

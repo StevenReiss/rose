@@ -108,6 +108,7 @@ ASTNode getSourceNode(String proj,File f,int offset,int line,boolean resolve)
 {
    SourceFile sf = getSourceFile(f);
    CompilationUnit cu = getAstForFile(proj,sf,resolve);
+   if (cu == null) return null;
    
    if (offset <= 0 && line <= 0) return cu;
    if (offset < 0) {
@@ -298,6 +299,7 @@ private int getLineOffset(CompilationUnit cu,SourceFile sf,int line)
 {
    if (line <= 0) return 0;
    String text = sf.getFileContents();
+   if (text == null) return 0;
    int off = cu.getPosition(line,0);
    while (off < text.length()) {
       char c = text.charAt(off);

@@ -262,7 +262,7 @@ void setupForLaunch(BudLaunch launch)
 private void findProblemTime(Element ctx,BudLaunch launch,Stack<String> stack)
 {
    String mthd = IvyXml.getAttrString(ctx,"METHOD");
-   stack.push(mthd);
+   stack.push(normalizeName(mthd));
    
    if (checkStack(launch,stack)) {
       findContextTime(ctx,launch);
@@ -287,11 +287,35 @@ private boolean checkStack(BudLaunch launch,Stack<String> stack)
       BudStackFrame frame = frms.get(i);
       String sgn = frame.getFormatSignature();
       String id = frame.getClassName() + "." + frame.getMethodName() + sgn;
+      id = normalizeName(id);
       if (id.equals(base)) {
          return checkStack(launch,stack,i);
        }
     }
    return false;
+}
+
+
+
+private String normalizeName(String mthd)
+{
+   StringBuffer buf = new StringBuffer();
+   int lvl = 0;
+   for (int i = 0; i < mthd.length(); ++i) {
+      char c = mthd.charAt(i);
+      if (c == '<') {
+         ++lvl;
+         continue;
+       }
+      else if (c == '>') {
+         --lvl;
+         continue;
+       }
+      else if (lvl > 0) continue;
+      else if (c == '$') c = '.';
+      buf.append(c);
+    }
+   return buf.toString();
 }
 
 
@@ -304,6 +328,7 @@ private boolean checkStack(BudLaunch launch,Stack<String> stack,int start)
       BudStackFrame frm = frms.get(i);
       String id = frm.getClassName() + "." + frm.getMethodName() + 
             frm.getFormatSignature();
+      id = normalizeName(id);
       if (start-i >= stack.size()) return false;
       if (!id.equals(stack.get(start-i))) return false;
       if (frm == topframe) return true;
@@ -456,8 +481,29 @@ private Boolean compareVariable(BudLocalVariable local,Element valelt,BudLaunch 
 {
    switch (local.getKind()) {
       case "PRIMITIVE" :
-      case "STRING" :
+         String typ = IvyXml.getAttrString(valelt,"TYPE");
          String valtxt = IvyXml.getText(valelt);
+         String lclval = local.getValue();
+         switch (typ) {
+            case "boolean" :
+               if (valtxt.equals("0") && lclval.equals("false")) return true;
+               if (valtxt.equals("1") && lclval.equals("true")) return true;
+               return false;
+            case "double" :
+            case "float" :
+               if (lclval.equals(valtxt)) return true;
+               try {
+                  double v1 = Double.valueOf(lclval);
+                  double v2 = Double.valueOf(valtxt);
+                  if (Math.abs(v1-v2) < 0.0000001) return true;
+                }
+               catch (NumberFormatException e) { }
+               return false;
+            default :
+               return lclval.equals(valtxt);
+          }
+      case "STRING" :
+         valtxt = IvyXml.getText(valelt);
          return local.getValue().equals(valtxt);
       case "ARRAY" :
          if (local.getType().equals("null")) {
