@@ -35,15 +35,21 @@
 
 package edu.brown.cs.rose.sepal;
 
+import java.util.List;
 import java.util.Map;
 
+import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.ExpressionStatement;
+import org.eclipse.jdt.core.dom.InfixExpression;
+import org.eclipse.jdt.core.dom.MethodInvocation;
+import org.eclipse.jdt.core.dom.NumberLiteral;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 
 import edu.brown.cs.ivy.jcomp.JcompAst;
+import edu.brown.cs.ivy.jcomp.JcompSymbol;
 import edu.brown.cs.ivy.jcomp.JcompType;
 import edu.brown.cs.rose.bract.BractAstPattern;
 import edu.brown.cs.rose.bract.BractConstants;
@@ -82,6 +88,13 @@ private static final BractAstPattern mult_result;
 private static final BractAstPattern and_pattern;
 private static final BractAstPattern and_result;
 
+private static final BractAstPattern overflow_pattern;
+private static final BractAstPattern overflow_result;
+
+private static final BractAstPattern int_double_pattern;
+private static final BractAstPattern int_double_result;
+
+
 static {
    cond_pattern = BractAstPattern.expression("Ex = Ey");
    cond_result = BractAstPattern.expression("Ex == Ey");
@@ -109,6 +122,12 @@ static {
    
    and_pattern = BractAstPattern.expression("Ex^(Ex-1)");
    and_result = BractAstPattern.expression("Ex&(Ex-1)");
+   
+   overflow_pattern = BractAstPattern.expression("(double) (Ex*Ey)/Ez","((double) (Ex*Ey))/Ez");
+   overflow_result = BractAstPattern.expression("Ex * (((double) Ey)/Ez)");
+   
+   int_double_pattern = BractAstPattern.expression("Ex / Ic");
+   int_double_result = BractAstPattern.expression("Ex / Ecf");
 }
 
 
@@ -126,10 +145,9 @@ public SepalCommonProblems()
 
 /********************************************************************************/
 /*                                                                              */
-/*      <comment here>                                                          */
+/*      Handle common problem based suggestions                                 */
 /*                                                                              */
 /********************************************************************************/
-
 
 @Override public void process()
 {
@@ -143,6 +161,8 @@ public SepalCommonProblems()
    checkNonAssignment(stmt);
    checkSimplePattern(stmt,mult_pattern,mult_result,0.9);
    checkSimplePattern(stmt,and_pattern,and_result,0.75);
+   checkSimplePattern(stmt,overflow_pattern,overflow_result,0.75);
+   checkConversion(stmt);
 }
 
 
@@ -352,7 +372,80 @@ private void checkSimplePattern(ASTNode stmt,BractAstPattern p1,BractAstPattern 
 
 
 
+/********************************************************************************/
+/*                                                                              */
+/*      Handle conversion errors                                                */
+/*                                                                              */
+/********************************************************************************/
 
+private void checkConversion(ASTNode stmt)
+{
+   String logdata = getClass().getName();
+   Map<ASTNode,PatternMap> rslt = int_double_pattern.matchAll(stmt,null);
+   if (rslt != null) {
+      for (ASTNode n : rslt.keySet()) {
+         JcompType otyp = JcompAst.getExprType(n);
+         if (!otyp.isIntType()) continue;
+         JcompType typ = getExpectedType(n);
+         if (typ == null || !typ.isFloatingType()) continue;
+         PatternMap omap = rslt.get(n);
+         int iv = ((Integer) omap.get("c"));
+         String newcon = null;
+         if (typ.isFloatType()) newcon = String.valueOf(iv) + "f";
+         else newcon = String.valueOf(iv) + ".0";
+         AST ast = n.getAST();
+         NumberLiteral nc = ast.newNumberLiteral(newcon);
+         omap.put("nv",nc);
+         ASTRewrite rw = int_double_result.replace(n,omap);
+         String desc = "Replace " + iv + " with " + newcon;
+         if (rw != null) addRepair(rw,desc,logdata + "@INT_DOUBLE",0.75);
+       }
+    }
+}
+
+
+
+private JcompType getExpectedType(ASTNode n)
+{
+   ASTNode par = n.getParent();
+   if (par == null) return null;
+   JcompSymbol js = null;
+   
+   switch (par.getNodeType()) {
+      case ASTNode.VARIABLE_DECLARATION_FRAGMENT :
+        js = JcompAst.getDefinition(par);
+        if (js != null) return js.getType();
+        break;
+      case ASTNode.PARENTHESIZED_EXPRESSION :
+         return getExpectedType(par);
+      case ASTNode.METHOD_INVOCATION :
+         MethodInvocation mi = (MethodInvocation) par;
+         if (n.getLocationInParent() == MethodInvocation.ARGUMENTS_PROPERTY) {
+            js = JcompAst.getReference(par);
+            int idx = mi.arguments().indexOf(n);
+            if (idx >= 0) {
+               List<JcompType> argtypes = js.getType().getComponents();
+               if (idx < argtypes.size()) {
+                  return argtypes.get(idx);
+                }
+             }
+          }
+         break;
+      case ASTNode.INFIX_EXPRESSION :
+         InfixExpression ie = (InfixExpression) par;
+         Expression alt = null;
+         if (n.getLocationInParent() == InfixExpression.LEFT_OPERAND_PROPERTY) 
+            alt = ie.getRightOperand();
+         else if (n.getLocationInParent() == InfixExpression.RIGHT_OPERAND_PROPERTY)
+            alt = ie.getLeftOperand();
+         if (alt != null) {
+            JcompType t1 = JcompAst.getExprType(alt);
+            if (t1!= null && t1.isFloatingType()) return t1;
+          }
+         break;
+    }
+   return null;
+}
 
 }       // end of class SepalCommonProblems
 

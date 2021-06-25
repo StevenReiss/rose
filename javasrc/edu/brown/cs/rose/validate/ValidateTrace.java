@@ -173,6 +173,15 @@ boolean isReturn()
 }
 
 
+boolean isCompilerError()
+{
+   Element runner = getRunner();
+   Element ret = IvyXml.getChild(runner,"RETURN");
+   String reason = IvyXml.getAttrString(ret,"REASON");
+   return reason.equals("COMPILER_ERROR");
+}
+
+
 
 ValidateValue getReturnValue()
 {
@@ -352,54 +361,41 @@ private void findContextTime(Element ctx,BudLaunch launch)
    
    BudStackFrame frame = launch.getStack().getTopFrame();
    String lno = Integer.toString(frame.getLineNumber());
-   long atline = -1;
+   int lnoi = Integer.parseInt(lno);
+   long linetime = -1;
    for (Element val : IvyXml.children(linevar,"VALUE")) {
       long time = IvyXml.getAttrLong(val,"TIME");
       if (time == 0) time = IvyXml.getAttrLong(ctx,"START"); 
-      if (atline > 0) {
-         findContextTime(ctx,launch,atline,time-1);
-         atline = -1;
+      if (linetime > 0) {
+         findContextTime(ctx,launch,lnoi,linetime,time-1);
+         linetime = -1;
        }
       if (lno.equals(IvyXml.getText(val))) {
-         atline = time;
+         linetime = time;
        }
     }
-   if (atline > 0) {
-      findContextTime(ctx,launch,atline,IvyXml.getAttrLong(ctx,"END"));
+   if (linetime > 0) {
+      findContextTime(ctx,launch,lnoi,linetime,IvyXml.getAttrLong(ctx,"END"));
     }
 }
 
 
 
-private void findContextTime(Element ctx,BudLaunch launch,long from,long to)
+private void findContextTime(Element ctx,BudLaunch launch,int line,long from,long to)
 {
    // check local variables in the context vs those of the launch
    BudStackFrame frame = launch.getStack().getTopFrame();
    for (String var : frame.getLocals()) {
       BudLocalVariable local = frame.getLocal(var);
-      for (Element varelt : IvyXml.children(ctx,"VARIABLE")) {
-         String varnam = IvyXml.getAttrString(varelt,"NAME");
-         if (varnam.equals(var)) {
-            long prev = -1;
-            Element prevval = null;
-            boolean found = false;
-            int foundct = 0;
-            for (Element valelt : IvyXml.children(varelt,"VALUE")) {
-               long time = IvyXml.getAttrLong(valelt,"TIME");
-               if (prev > 0) {
-                  if (time >= from && prev <= to) {
-                     Boolean fg = compareVariable(local,prevval,launch,from,to);
-                     if (fg != null) {
-                        ++foundct;
-                        found |= fg;
-                      }
-                   }
-                }
-               prev = time;
-               prevval = dereference(valelt);
-             }
+      Element varelt = findVariableInContext(ctx,var,line);
+      if (varelt != null) {
+         long prev = -1;
+         Element prevval = null;
+         boolean found = false;
+         int foundct = 0;
+         for (Element valelt : IvyXml.children(varelt,"VALUE")) {
+            long time = IvyXml.getAttrLong(valelt,"TIME");
             if (prev > 0) {
-               long time = IvyXml.getAttrLong(ctx,"END");
                if (time >= from && prev <= to) {
                   Boolean fg = compareVariable(local,prevval,launch,from,to);
                   if (fg != null) {
@@ -408,16 +404,28 @@ private void findContextTime(Element ctx,BudLaunch launch,long from,long to)
                    }
                 }
              }
-            else if (prev == -1) {
+            prev = time;
+            prevval = dereference(valelt);
+          }
+         if (prev > 0) {
+            long time = IvyXml.getAttrLong(ctx,"END");
+            if (time >= from && prev <= to) {
                Boolean fg = compareVariable(local,prevval,launch,from,to);
                if (fg != null) {
                   ++foundct;
                   found |= fg;
                 }
              }
-            if (foundct > 0 && !found)
-               return;
           }
+         else if (prev == -1) {
+            Boolean fg = compareVariable(local,prevval,launch,from,to);
+            if (fg != null) {
+               ++foundct;
+               found |= fg;
+             }
+          }
+         if (foundct > 0 && !found)
+            return;
        }
     }
    
@@ -427,6 +435,26 @@ private void findContextTime(Element ctx,BudLaunch launch,long from,long to)
    
    problem_time = from;
    problem_context = getCallForContext(ctx);
+}
+
+
+private Element findVariableInContext(Element ctx,String nm,int lno)
+{
+   Element best = null;
+   int bestln = -1;
+   for (Element varelt : IvyXml.children(ctx,"VARIABLE")) {
+      String varnam = IvyXml.getAttrString(varelt,"NAME");
+      if (varnam.equals(nm)) {
+         int vln = IvyXml.getAttrInt(varelt,"LINE");
+         if (vln > lno) continue;
+         if (best == null || vln > bestln) {
+            bestln = vln;
+            best = varelt;
+          }
+       }
+    }
+   
+   return best;
 }
 
 

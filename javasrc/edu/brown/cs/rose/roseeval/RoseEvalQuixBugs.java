@@ -120,6 +120,7 @@ private RoseEvalQuixBugs(String [] args)
 
    if (run_tests.isEmpty()) {
       run_debug = false;
+      seede_debug = false;
       for (int i = 0; i <= TEST_COUNT; ++i) run_tests.add(i);
     }
 }
@@ -160,7 +161,7 @@ private void setupTests()
 
    test_names[4] = "DepthFirstSearch";
    test_problem[4] = RoseEvalProblem.createLocation();
-   test_solution[4] = "48@nodesvisitied.add";
+   test_solution[4] = "49@nodesvisitied.add";
    test_time[4] = TEST_TIME;;
    test_skip[4] = 3;
 

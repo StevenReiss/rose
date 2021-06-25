@@ -272,6 +272,8 @@ private static class ProcessorTask extends RootTask implements PriorityTask {
        }
     }
    
+   
+   
    @Override public double getTaskPriority() {
       return repair_finder.getFinderPriority() * 0.5;
     }

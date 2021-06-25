@@ -220,9 +220,10 @@ private boolean checkBaseExecution(ValidateAction va)
          va.perform(root_control,ssid,for_launch.getThread(),first);
          first = false;
        }
+      ValidateExecution oexec = base_execution;
       runBaseExecution(ssid);
-      
       if (base_execution.getSeedeResult().getProblemTime() >= 0) return true;
+      if (oexec != null) base_execution = oexec;           // else ignore
       return false;
     }
    finally {
