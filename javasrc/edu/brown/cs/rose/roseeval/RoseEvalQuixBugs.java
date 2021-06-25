@@ -161,7 +161,7 @@ private void setupTests()
 
    test_names[4] = "DepthFirstSearch";
    test_problem[4] = RoseEvalProblem.createLocation();
-   test_solution[4] = "49@nodesvisitied.add";
+   test_solution[4] = "44@nodesvisitied.add";
    test_time[4] = TEST_TIME;;
    test_skip[4] = 3;
 
@@ -405,7 +405,7 @@ private void process()
    try {
       for (int tn : run_tests) {
 	 runEvaluation(test_names[tn],test_problem[tn],test_skip[tn],
-               test_solution[tn],test_time[tn]);
+	       test_solution[tn],test_time[tn]);
        }
     }
    catch (Throwable t) {
