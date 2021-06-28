@@ -161,13 +161,13 @@ private void setupTests()
 
    test_names[4] = "DepthFirstSearch";
    test_problem[4] = RoseEvalProblem.createLocation();
-   test_solution[4] = "44@nodesvisitied.add";
+   test_solution[4] = "44@nodes_visitied.add";
    test_time[4] = TEST_TIME;;
    test_skip[4] = 3;
 
    test_names[5] = "DetectCycle";
    test_problem[5] = RoseEvalProblem.createException("java.lang.NullPointerException");
-   test_solution[5] = "26@hare == null ||";
+   test_solution[5] = "26@(hare == null) ||";
    test_time[5] = TEST_TIME;
    test_skip[5] = 0;
 
@@ -191,7 +191,7 @@ private void setupTests()
 
    test_names[9] = "Gcd";
    test_problem[9] = RoseEvalProblem.createVariable("b","600",null);
-   test_solution[9] = "26@gcd(b, ";
+   test_solution[9] = "26@gcd(b,";
    test_time[9] = TEST_TIME;
    test_skip[9] = 2;
 

@@ -106,6 +106,7 @@ public SepalLocalSearch()
 {
    RootControl ctrl = getProcessor().getController();
    Statement stmt = (Statement) getResolvedStatementForLocation(null);
+   if (stmt == null) return;
    List<BractSearchResult> rslts = search_engine.getResults(stmt,SEARCH_THRESHOLD);
    if (rslts == null || rslts.isEmpty()) return; 
    
