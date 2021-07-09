@@ -140,13 +140,12 @@ public List<BractSearchResult> getResults(ASTNode stmt,double thresh)
 
    RoseLog.logD("BRACT","Leash query for " + filename + "@" + line + ":  " + stmt);
    for (LeashResult lr : base) {
+      if (lr.getScore() < thresh) continue;
       RoseLog.logD("BRACT","Leash result: " + lr.getFilePath() + " " +
 	    lr.getLines() + " " + lr.getColumns() + " " + lr.getScore());
       if (file.equals(lr.getFilePath()) && lr.getLines().contains(line)) continue;
-      if (lr.getScore() > thresh) {
-         SearchResult sr = new SearchResult(lr);
-         rslt.add(sr);
-       }
+      SearchResult sr = new SearchResult(lr);
+      rslt.add(sr);
     }
 
    return rslt;
@@ -172,6 +171,7 @@ private class SearchResult implements BractSearchResult {
    @Override public File getFile()              { return leash_result.getFilePath(); }
    @Override public String getFileContents()    { return leash_result.getFileContents(); }
    @Override public int getLineNumber()         { return leash_result.getLines().get(0); }
+   @Override public int getColumnNumber()       { return leash_result.getColumns().get(0); }
    
 }       // end of inner class SearchResult
 

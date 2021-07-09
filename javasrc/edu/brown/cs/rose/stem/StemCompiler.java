@@ -121,6 +121,19 @@ ASTNode getSourceNode(String proj,File f,int offset,int line,boolean resolve)
 }
 
 
+ASTNode getNewSourceNode(String proj,File f,int line,int col)
+{
+   SourceFile sf = getSourceFile(f);
+   CompilationUnit cu = JcompAst.parseSourceFile(sf.getFileContents());
+   if (cu == null) return null;
+   int offset = cu.getPosition(line,col);
+   
+   ASTNode n = findNode(cu,offset);
+   
+   return n;
+}
+
+
 
 ASTNode getStatementOfNode(ASTNode node)
 {

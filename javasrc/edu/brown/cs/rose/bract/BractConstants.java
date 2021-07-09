@@ -84,6 +84,7 @@ public interface BractSearchResult {
    File getFile();
    String getFileContents();
    int getLineNumber();
+   int getColumnNumber();
    
 }
 

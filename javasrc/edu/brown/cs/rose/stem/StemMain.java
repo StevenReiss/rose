@@ -38,17 +38,22 @@ package edu.brown.cs.rose.stem;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.ImportDeclaration;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.PackageDeclaration;
 import org.eclipse.jface.text.IDocument;
 import org.w3c.dom.Element;
 
@@ -128,9 +133,12 @@ private LeashIndex      project_index;
 private LeashIndex      global_index;
 private Set<File>       loaded_files;
 private boolean         run_debug;
+private boolean         no_debug;
 
 
-private static boolean	use_all_files = true;
+private static boolean	use_all_files = false;
+private static boolean  use_computed_files = false;
+private static boolean  use_fait_files = true;
 // only loaded files will be reported
 
 private static AtomicInteger id_counter = new AtomicInteger((int)(Math.random()*256000.0));
@@ -165,6 +173,7 @@ private StemMain(String [] args)
    stem_compiler = null;
    loaded_files = new HashSet<>();
    run_debug = true;
+   no_debug = false;
    scanArgs(args);
 }
 
@@ -201,6 +210,7 @@ private void scanArgs(String [] args)
          else if (args[i].startsWith("-NoD")) {                         // -NoDebug
 	    RoseLog.setLogLevel(RoseLog.LogLevel.INFO);
             run_debug = false;
+            no_debug = true;
 	  }
          else if (args[i].startsWith("-NoS")) {                         // -NoSeedeDebug
             run_debug = false;
@@ -258,7 +268,7 @@ private void handleStartCommand(MintMessage msg) throws RoseException
    boolean sts = startFaitProcess();
    RoseLog.logD("STEM","START FAIT returned " + sts);
    if (!fait_running) return;
- 
+   
    Element rslt = sendFaitMessage("BEGIN",null,null);
    if (!IvyXml.isElement(rslt,"RESULT")) {
       analysis_state = AnalysisState.NONE;
@@ -267,8 +277,10 @@ private void handleStartCommand(MintMessage msg) throws RoseException
    Element sess = IvyXml.getChild(rslt,"SESSION");
    String sid = IvyXml.getAttrString(sess,"ID");
    if (sid != null) session_id = sid;
-
-   loadFilesIntoFait(null);
+   
+   Element xml = msg.getXml();
+   String tid = IvyXml.getAttrString(xml,"THREAD");
+   loadFilesIntoFait(tid);
 
    if (sts) {
       analysis_state = AnalysisState.PENDING;
@@ -288,7 +300,31 @@ private void handleStartCommand(MintMessage msg) throws RoseException
    
    sts = startSeede();
    RoseLog.logD("STEM","START SEEDE returned " + sts);
-}									
+}	
+
+
+
+private void handleFinishedCommand(MintMessage msg)
+{
+   StringBuffer buf = new StringBuffer();
+   int ct = 0;
+   for (File f : added_files) {
+      buf.append("<FILE NAME='");
+      buf.append(f.getAbsolutePath());
+      buf.append("' />");
+      ++ct;
+    }
+   
+   if (ct > 0) {
+      loaded_files.removeAll(added_files);
+      Element xw = sendSeedeMessage(session_id,"REMOVEFILE",null,buf.toString());
+      if (!IvyXml.isElement(xw,"RESULT")) {
+         RoseLog.logE("STEM","Problem removing seede files");
+       }
+    }
+
+   msg.replyTo("<RESULT OK='true' />");
+}
 
 
 
@@ -368,7 +404,7 @@ private boolean startFaitProcess()
    args.add(mint_control.getMintName());
    args.add("-L");
    args.add(logf.getPath());
-   if (bp.getBoolean("Rose.fait.debug")) {
+   if (bp.getBoolean("Rose.fait.debug") && !no_debug) {
       args.add("-D");
       if (bp.getBoolean("Rose.fait.trace")) args.add("-T");
     }
@@ -567,6 +603,9 @@ private boolean isLocationRelevant(RootLocation loc,RootProblem prob)
                 }
                if (js.isPublic() && js.getName().startsWith("test")) 
                   return false;
+             }
+            if (prob.ignoreTests() && js.getName().startsWith("test")) {
+               return false;
              }
           }
        }
@@ -1032,7 +1071,11 @@ private boolean startSeede()
       File cdir = new File(bbdir,"CockerIndex");
       LeashIndex idx = new LeashIndex(ROSE_PROJECT_INDEX_TYPE,cdir);
       idx.start();
-      if (idx.isActive()) project_index = idx;
+      if (idx.isActive()) {
+         project_index = idx;
+         idx.update();
+       }
+
     }
    return project_index;
 }
@@ -1177,6 +1220,9 @@ private class CommandHandler implements MintHandler {
                break;
             case "STARTFRAME" :
                handleStartFrame(msg);
+               break;
+            case "FINISHED" :
+               handleFinishedCommand(msg);
                break;
             case "EXIT" :
                serverDone();
@@ -1364,10 +1410,12 @@ private class WaitForExit extends Thread {
 
 
 
-private void loadFilesIntoFait(String tid)
+private void loadFilesIntoFait(String tid) throws RoseException
 {
    Set<File> files = new HashSet<>();
    if (use_all_files) files = findAllSourceFiles();
+   else if (use_computed_files) files = findComputedFiles(tid);
+   else if (use_fait_files) files = findFaitFiles(tid);
    else files = findStackFiles(tid);
 
    StringBuffer buf = new StringBuffer();
@@ -1421,6 +1469,236 @@ private Set<File> findStackFiles(String threadid)
 
    return rslt;
 }
+
+
+
+private Set<File> findComputedFiles(String threadid)
+{
+   if (threadid == null) return findAllSourceFiles();
+   Set<File> rslt = new HashSet<>();
+   Set<File> roots = new HashSet<>();
+   
+   CommandArgs args = new CommandArgs("THREAD",threadid);
+   Element r = sendBubblesXmlReply("GETSTACKFRAMES",null,args,null);
+   Element sf = IvyXml.getChild(r,"STACKFRAMES");
+   for (Element th : IvyXml.children(sf,"THREAD")) {
+      String id = IvyXml.getAttrString(th,"ID");
+      if (threadid == null || threadid.equals(id)) {
+         boolean fnd = false;
+	 for (Element frm : IvyXml.children(th,"STACKFRAME")) {
+            String fty = IvyXml.getAttrString(frm,"FILETYPE");
+            if (!fty.equals("JAVAFILE")) {
+               if (!fnd) continue;
+               break;
+             }
+	    String fnm = IvyXml.getAttrString(frm,"FILE");
+            if (fnm == null) break;
+            int lno = IvyXml.getAttrInt(frm,"LINENO");
+            File f = new File(fnm);
+            if (!f.exists() || lno < 0) continue;
+            roots.add(f);
+	  }
+       }
+    }
+   
+   findFilesForUnits(roots,rslt);
+   
+   return rslt;
+}
+
+
+
+private Set<File> findFaitFiles(String threadid) throws RoseException
+{
+   if (threadid == null) return findAllSourceFiles();
+   
+   startFaitProcess();
+   if (!fait_running) return findAllSourceFiles();
+   
+   Element frslt = sendFaitMessage("BEGIN",null,null);
+   if (!IvyXml.isElement(frslt,"RESULT")) {
+      throw new RoseException("BEGIN for session failed");
+    }
+   
+   if (analysis_state == AnalysisState.NONE) {
+      analysis_state = AnalysisState.PENDING; 
+      CommandArgs aargs = new CommandArgs("REPORT","SOURCE");
+      BoardProperties props = BoardProperties.getProperties("Rose");
+      int nth = props.getInt("Rose.fait.threads");
+      if (nth > 0) aargs.put("THREADS",nth);
+      Element arslt = sendFaitMessage("ANALYZE",aargs,null);
+      if (!IvyXml.isElement(arslt,"RESULT")) {
+         analysis_state = AnalysisState.NONE;
+         throw new RoseException("ANALYZE for session failed");
+       }
+      waitForAnalysis();
+    }
+   
+   Set<File> rslt = new HashSet<>();
+   Set<String> mthds = new HashSet<>();
+   
+   CommandArgs args = new CommandArgs("THREAD",threadid);
+   Element r = sendBubblesXmlReply("GETSTACKFRAMES",null,args,null);
+   Element sf = IvyXml.getChild(r,"STACKFRAMES");
+   for (Element th : IvyXml.children(sf,"THREAD")) {
+      String id = IvyXml.getAttrString(th,"ID");
+      if (threadid == null || threadid.equals(id)) {
+         boolean fnd = false;
+	 for (Element frm : IvyXml.children(th,"STACKFRAME")) {
+            String fty = IvyXml.getAttrString(frm,"FILETYPE");
+            if (!fty.equals("JAVAFILE")) {
+               if (!fnd) continue;
+               break;
+             }
+	    String fnm = IvyXml.getAttrString(frm,"FILE");
+            if (fnm == null) break;
+            int lno = IvyXml.getAttrInt(frm,"LINENO");
+            File f = new File(fnm);
+            if (!f.exists() || lno < 0) continue;
+            String snm = IvyXml.getAttrString(frm,"SIGNATURE");
+            String mnm = IvyXml.getAttrString(frm,"METHOD");
+            mthds.add(mnm+snm);
+	  }
+       }
+    }
+    
+   IvyXmlWriter xw = new IvyXmlWriter();
+   for (String s : mthds) {
+      xw.textElement("METHOD",s);
+    }
+   Element clsxml = sendFaitMessage("FILEQUERY",null,xw.toString());
+   xw.close();
+   Set<String> clsset = new HashSet<>();
+   for (Element celt : IvyXml.children(clsxml,"CLASS")) {
+      String cnm = IvyXml.getText(celt);
+      clsset.add(cnm);
+    }
+   findFilesForClasses(clsset,rslt);
+   
+   return rslt; 
+}
+
+
+private void findFilesForClasses(Set<String> clsset,Set<File> rslt)
+{
+   Element r = sendBubblesXmlReply("PROJECTS",null,null,null);
+   if (!IvyXml.isElement(r,"RESULT")) {
+      RoseLog.logE("STEM","Problem getting project information: " + IvyXml.convertXmlToString(r));
+    }
+   
+   Map<String,String> classmap = new HashMap<>();
+   for (Element pe : IvyXml.children(r,"PROJECT")) {
+      String pnm = IvyXml.getAttrString(pe,"NAME");
+      CommandArgs args = new CommandArgs("CLASSES",true);
+      Element cxml = sendBubblesXmlReply("OPENPROJECT",pnm,args,null);
+      Element clss = IvyXml.getChild(IvyXml.getChild(cxml,"PROJECT"),"CLASSES");
+      
+      for (Element c : IvyXml.children(clss,"TYPE")) {
+         String tnm = IvyXml.getAttrString(c,"NAME");
+         String fnm  = IvyXml.getAttrString(c,"SOURCE");
+         if (tnm != null && fnm != null) classmap.put(tnm,fnm);
+       }
+    }
+   
+   for (String s : clsset) {
+      String fnm = classmap.get(s);
+      if (fnm != null) rslt.add(new File(fnm));
+    }
+}
+
+
+
+private void findFilesForUnits(Set<File> roots,Set<File> rslt)
+{
+   Queue<File> todo = new ArrayDeque<>(roots);
+  
+   Element r = sendBubblesXmlReply("PROJECTS",null,null,null);
+   if (!IvyXml.isElement(r,"RESULT")) {
+      RoseLog.logE("STEM","Problem getting project information: " + IvyXml.convertXmlToString(r));
+    }
+   
+   Map<String,String> classmap = new HashMap<>();
+   for (Element pe : IvyXml.children(r,"PROJECT")) {
+      String pnm = IvyXml.getAttrString(pe,"NAME");
+      CommandArgs args = new CommandArgs("CLASSES",true);
+      Element cxml = sendBubblesXmlReply("OPENPROJECT",pnm,args,null);
+      Element clss = IvyXml.getChild(IvyXml.getChild(cxml,"PROJECT"),"CLASSES");
+
+      for (Element c : IvyXml.children(clss,"TYPE")) {
+         String tnm = IvyXml.getAttrString(c,"NAME");
+         String fnm  = IvyXml.getAttrString(c,"SOURCE");
+         if (tnm != null && fnm != null) classmap.put(tnm,fnm);
+       }
+    }
+   
+   while (!todo.isEmpty()) {
+      File work = todo.remove();
+      if (rslt.add(work)) {
+         Set<String> nf = getFilesForFile(work,classmap);
+         for (String fnm : nf) {
+            File f1 = new File(fnm);
+            if (f1.exists() && !rslt.contains(f1)) todo.add(f1);
+          }
+       }
+    }
+}
+
+
+
+private Set<String> getFilesForFile(File f,Map<String,String> classmap)
+{
+   Set<String> use = new HashSet<>();
+   try {
+      String src = IvyFile.loadFile(f);
+      CompilationUnit cu = JcompAst.parseSourceFile(src);
+      PackageDeclaration pd = cu.getPackage();
+      if (pd != null) {
+         addAllFilesForPackage(pd.getName().getFullyQualifiedName(),classmap,use);
+       }
+      for (Object o : cu.imports()) {
+         ImportDeclaration id = (ImportDeclaration) o;
+         String nm = id.getName().getFullyQualifiedName();
+         int nln = nm.length();
+         if (id.isOnDemand()) {
+            addAllFilesForPackage(nm,classmap,use);
+          }
+         else {
+            for (int i = nln; i > 0; i = nm.lastIndexOf(".",i-1)) {
+               String s1 = nm.substring(0,i);
+               String r = classmap.get(s1);
+               if (r != null) {
+                  use.add(r);
+                  break;
+                }
+             }
+          }
+       }
+    }
+   catch (IOException e) { }
+   
+   return use;
+}
+
+
+
+private void addAllFilesForPackage(String pkg,Map<String,String> classmap,Set<String> use)
+{
+   int nln = pkg.length();
+   for (String s : classmap.keySet()) {
+      if (s.startsWith(pkg)) {
+         int idx = s.lastIndexOf(".");
+         if (idx == nln) use.add(classmap.get(s));
+       }
+    }
+}
+
+
+
+
+
+
+
+
 
 
 
@@ -1599,6 +1877,21 @@ private static class EvalData {
    ASTNode n = stem_compiler.getSourceNode(proj,f,offset,line,resolve);
    
    if (stmt) n = stem_compiler.getStatementOfNode(n);
+   
+   return n;
+}
+
+
+@Override public ASTNode getNewSourceStatement(File f,int line,int col)
+{
+   synchronized (this) {
+      if (stem_compiler == null) stem_compiler = new StemCompiler(this);
+    }
+   
+   String proj = getProjectForFile(f);
+   ASTNode n = stem_compiler.getNewSourceNode(proj,f,line,col);
+   
+   n = stem_compiler.getStatementOfNode(n);
    
    return n;
 }

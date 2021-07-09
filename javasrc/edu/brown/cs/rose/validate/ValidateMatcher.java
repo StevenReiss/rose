@@ -324,6 +324,9 @@ private void matchVariable(ValidateCall origctx,ValidateCall matchctx,
    int sz = Math.max(ovals.size(),mvals.size());
    long difftime = -1;
    long lastdiff = origctx.getStartTime();
+   
+   // might want to match arrays and objects a bit better
+
    for (int i = 0; i < sz; ++i) {
       ValidateValue oval = null;
       if (i < ovals.size()) oval = ovals.get(i);

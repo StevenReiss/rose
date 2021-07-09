@@ -177,6 +177,12 @@ void register(ValidateExecution ve)
 }
 
 
+void unregister(String ssid)
+{
+   exec_map.remove(ssid);
+}
+
+
 
 /********************************************************************************/
 /*                                                                              */

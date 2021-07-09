@@ -69,6 +69,12 @@ private BudLaunch	for_launch;
 private String          base_session;
 private ValidateExecution base_execution;
 private List<ValidateAction> setup_actions;
+private int             num_checked;
+private long            seede_total;
+
+private static final int        MAX_CHECKED = 200;
+private static final long       MAX_SEEDE_TOTAL = 100000000;
+private static final long       TIME_MULTIPLIER = 10;
 
 
 
@@ -86,6 +92,8 @@ ValidateContext(RootControl ctrl,RootProblem p,String fid)
    frame_id = fid;
    if (frame_id == null) frame_id = for_launch.getFrame();
    setup_actions = new ArrayList<>();
+   num_checked = 0;
+   seede_total = 0;
 }
 
 
@@ -121,7 +129,7 @@ long getMaxTime()
    long time = base_execution.getExecutionTime();
    if (time <= 0) time = dflt;
    else if (time < dflt) {
-      time = 10*time;
+      time = TIME_MULTIPLIER*time;
       if (time > dflt*2) time = dflt*2;
     }   
    else time = dflt;
@@ -272,6 +280,8 @@ ValidateExecution getSubsession(RootRepair repair)
 void removeSubsession(String ssid)
 {
    root_control.sendSeedeMessage(ssid,"REMOVE",null,null);
+   ValidateFactory vf = ValidateFactory.getFactory(root_control);
+   vf.unregister(ssid);
 }
 
 
@@ -301,6 +311,23 @@ double checkValidResult(ValidateExecution ve)
    
    return checker.check();
 }
+
+
+synchronized boolean canCheckResult()
+{
+   if (num_checked > MAX_CHECKED) return false;
+   if (seede_total > MAX_SEEDE_TOTAL) return false;
+   return true;
+}
+
+synchronized void noteSeedeLength(long t,RootRepair repair) 
+{
+   num_checked++;
+   seede_total += t;
+   repair.setCount(num_checked);
+}
+
+
 
 }	// end of class ValidateContext
 

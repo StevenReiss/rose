@@ -568,7 +568,7 @@ private class SubtreeSubst extends ASTVisitor {
       if (val instanceof ASTNode) {
          rep = ASTNode.copySubtree(base_ast,(ASTNode) val);
        }
-      else if (val instanceof Integer) {
+      else if (val instanceof Number) {
          rep = base_ast.newNumberLiteral(val.toString());
        }
       else if (val instanceof String) {

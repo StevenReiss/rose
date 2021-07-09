@@ -43,6 +43,7 @@ import java.util.Map;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.ArrayAccess;
+import org.eclipse.jdt.core.dom.CastExpression;
 import org.eclipse.jdt.core.dom.ConditionalExpression;
 import org.eclipse.jdt.core.dom.DoStatement;
 import org.eclipse.jdt.core.dom.EnhancedForStatement;
@@ -63,6 +64,7 @@ import edu.brown.cs.ivy.mint.MintConstants.CommandArgs;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
 import edu.brown.cs.rose.bud.BudStack;
 import edu.brown.cs.rose.bud.BudStackFrame;
+import edu.brown.cs.rose.bud.BudType;
 import edu.brown.cs.rose.bud.BudValue;
 import edu.brown.cs.rose.root.RootProblem;
 import edu.brown.cs.rose.root.RoseException;
@@ -153,6 +155,9 @@ ASTNode getExceptionNode()
             break;
          case "java.lang.StackOverflowError" :
             checker = new StackOverflowChecker();
+            break;
+         case "java.lang.ClassCastException" :
+            checker = new ClassCastChecker();
             break;
        }
       
@@ -513,6 +518,27 @@ private class StringIndexOutOfBoundsChecker extends ExceptionChecker {
    
    
 }
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Class Cast Exception checker                                            */
+/*                                                                              */
+/********************************************************************************/
+
+private class ClassCastChecker extends ExceptionChecker {
+   
+   @Override public void endVisit(CastExpression c) {
+      BudValue cbv = evaluate(c.getExpression().toString());
+      if (cbv == null) return;
+      BudType bt = cbv.getDataType();
+      JcompType jt = JcompAst.getJavaType(c.getType());
+      if (jt.getName().equals(bt.getName())) return;
+      useNode(c.getExpression(),bt.toString(),null);   
+    }
+
+}       // end of inner class ClassCastChecker
+
 
 
 

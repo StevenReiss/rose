@@ -47,6 +47,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.StringTokenizer;
 
 import org.w3c.dom.Element;
 
@@ -126,7 +127,7 @@ protected RoseEvalBase(String workspace,String project)
 /********************************************************************************/
 
 protected void runSingleEvalaution(String launch,
-      RoseEvalProblem problem,String expect,int max)
+      RoseEvalProblem problem,String expect,int max,boolean lines)
 {
    MintControl mc = setupBedrock();
    
@@ -135,7 +136,7 @@ protected void runSingleEvalaution(String launch,
       
       String cnts = problem.getDescription(fd);  
       
-      runTest(mc,fd,cnts,max,true);
+      runTest(mc,fd,cnts,max,lines);
     }
    catch (Throwable t) {
       RoseLog.logE("Problem processing evaluation test",t);
@@ -161,7 +162,7 @@ protected void startEvaluations()
    File f3 = new File(f2,fnm);
    try {
       output_file = new PrintWriter(f3);
-      output_file.println("Name,# Results,# Displayed,Correct Rank,Total Time,Fix Time,# Checked");
+      output_file.println("Name,# Results,# Displayed,Correct Rank,Total Time,Fix Time,Fix Count,# Checked");
     }
    catch (IOException e) {
       System.err.println("Can't create " + fnm);
@@ -226,7 +227,9 @@ private RoseEvalFrameData setupTest(String launch,int cont)
    RoseEvalFrameData fd = getTopFrame(ctrl,project_name,ld);
    setupStem(workspace_name);
    
-   Element xml = sendStemReply(ctrl,"START",null,null);
+   CommandArgs args = new CommandArgs("THREAD",ld.getThreadId(),
+         "LAUNCH",ld.getLaunchId());
+   Element xml = sendStemReply(ctrl,"START",args,null);
    
    assert IvyXml.isElement(xml,"RESULT");
    
@@ -262,6 +265,8 @@ private SuggestionSet runTest(MintControl ctrl,RoseEvalFrameData fd,
          getSuggestionsFor(ctrl,fd,locprob,node);
        }
     }
+   
+   sendStemReply(ctrl,"FINISHED",null,null);
    
    return ss;
 }
@@ -398,28 +403,31 @@ private void processSuggestions(String name,SuggestionSet ss,String expect,long 
 {
    if (expect == null) return;
    String [] elts = expect.split("@");
-   int line = 0;
-   try {
-      line = Integer.parseInt(elts[0]);
-    }
-   catch (NumberFormatException e) { }
+   List<Integer> lines = parseLines(elts[0]);
    String find = elts[1];
+   String file = null;
+   if (elts.length > 2) file = elts[2];
    
    int ctr = 0;
    int showctr = 0;
    int fnd = -1;
    long fixtime = 0;
+   int fixcnt = 0;
    double max = 0;
    for (Suggestion sug : ss.getSuggestions()) {
       if (max == 0) max = sug.getPriority()*0.1;
       if (fnd < 0) {
-         System.err.println("CHECK " + sug.getPriority() + " " + sug.getLine() + " " + sug.getDescription());
+         System.err.println("CHECK " + sug.getPriority() + " " + sug.getLine() + " " + sug.getDescription() +
+               " " + sug.getTime() + " " + sug.getCount());
        }
-      if (sug.getLine() == line) {
-         int idx = sug.getDescription().indexOf(find);
-         if (idx >= 0 && fnd < 0) {
-            fnd = ctr+1;
-            fixtime = sug.getTime();
+      if (lines.isEmpty() || lines.contains(sug.getLine())) {
+         if (file == null || sug.getFile().contains(file)) {
+            int idx = sug.getDescription().indexOf(find);
+            if (idx >= 0 && fnd < 0) {
+               fnd = ctr+1;
+               fixtime = sug.getTime();
+               fixcnt = sug.getCount();
+             }
           }
        }
       ++ctr;
@@ -430,11 +438,41 @@ private void processSuggestions(String name,SuggestionSet ss,String expect,long 
    
    if (output_file != null) {
       output_file.println(name + "," + ctr + "," + showctr + "," + fnd + "," + 
-            time + "," + fixtime + "," + ct);
+            time + "," + fixtime + "," + fixcnt + "," + ct);
     }
    
    System.err.println("PROCESS SUGGESTIONS: " + name +": " + ctr + " " + showctr + " " + 
-         fnd + " " + time + " " + fixtime + " " + ct);
+         fnd + " " + time + " " + fixtime + " " + fixcnt + " " + ct);
+}
+
+
+
+private List<Integer> parseLines(String cnts)
+{
+   List<Integer> rslt = new ArrayList<>();
+   StringTokenizer tok = new StringTokenizer(cnts,",-",true);
+   int last = -1;
+   int from = -1;
+   while (tok.hasMoreTokens()) {
+      String s = tok.nextToken();
+      if (Character.isDigit(s.charAt(0))) {
+         int v = Integer.parseInt(s);
+         if (from > 0) {
+            for (int i = from+1; i <= v; ++i) {
+               rslt.add(i);
+             }
+          }
+         else {
+            rslt.add(v);
+            last = v;
+          }
+         from = -1;
+       }
+      else if (s.equals("-")) from = last;
+      else from = -1;
+    }
+
+   return rslt;
 }
 
 
@@ -464,7 +502,7 @@ private void setupStem(String workspace)
    if (run_local) args.add("-local");
    
    
-   if (run_debug || seede_debug) {
+   if (run_debug || seede_debug || run_local) {
       String [] argarr = new String[args.size()];
       argarr = args.toArray(argarr);
       StemMain.main(argarr);
@@ -1068,12 +1106,16 @@ private static class Suggestion implements Comparable<Suggestion> {
    private double fix_priority;
    private String fix_description;
    private long fix_time;
+   private int fix_count;
+   private String fix_file;
    
    Suggestion(Element xml) {
       fix_description = IvyXml.getTextElement(xml,"DESCRIPTION");
       Element loc = IvyXml.getChild(xml,"LOCATION");
+      fix_file = IvyXml.getAttrString(loc,"FILE");
       line_number = IvyXml.getAttrInt(loc,"LINE");
       fix_time = IvyXml.getAttrLong(xml,"TIME");
+      fix_count = IvyXml.getAttrInt(xml,"COUNT");
       double reppri = IvyXml.getAttrDouble(xml,"PRIORITY");
       double valpri = IvyXml.getAttrDouble(xml,"VALIDATE");
       fix_priority = reppri * valpri;
@@ -1083,6 +1125,8 @@ private static class Suggestion implements Comparable<Suggestion> {
    String getDescription()              { return fix_description; }
    double getPriority()                 { return fix_priority; }
    long getTime()                       { return fix_time; }
+   int getCount()                       { return fix_count; }
+   String getFile()                     { return fix_file; }
    
    @Override public int compareTo(Suggestion s) {
       return Double.compare(s.fix_priority,fix_priority);

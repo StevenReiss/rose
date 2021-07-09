@@ -55,6 +55,13 @@ public interface RootRepairFinder
    
    
 /**
+ *      Return the location if it is present, null otherwise
+ **/
+   
+   default RootLocation getLocation()           { return null; }
+   
+   
+/**
  *      Process to find repair suggestions.
  **/
 

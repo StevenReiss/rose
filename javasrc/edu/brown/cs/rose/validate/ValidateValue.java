@@ -112,6 +112,16 @@ int getLineValue()
 
 String getValue()
 {
+   if (IvyXml.getAttrBool(value_element,"NULL")) return null;
+   else if (IvyXml.getAttrBool(value_element,"OBJECT")) {
+      // getting more detailed info requires handling REFS
+      return "{" + getDataType() + "}";
+    }
+   else if (IvyXml.getAttrBool(value_element,"ARRAY")) {
+      // getting more detailed info requires handling REFS
+      return "[" + getDataType() + "]";
+    }
+   
    return IvyXml.getText(value_element);
 }
 

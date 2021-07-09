@@ -384,23 +384,51 @@ private void checkConversion(ASTNode stmt)
    Map<ASTNode,PatternMap> rslt = int_double_pattern.matchAll(stmt,null);
    if (rslt != null) {
       for (ASTNode n : rslt.keySet()) {
-         JcompType otyp = JcompAst.getExprType(n);
-         if (!otyp.isIntType()) continue;
-         JcompType typ = getExpectedType(n);
-         if (typ == null || !typ.isFloatingType()) continue;
+         if (!isDivideConversionRelevant(n)) continue;
          PatternMap omap = rslt.get(n);
          int iv = ((Integer) omap.get("c"));
          String newcon = null;
-         if (typ.isFloatType()) newcon = String.valueOf(iv) + "f";
+         JcompType typ = getExpectedType(n);
+         if (typ != null && typ.isFloatType()) newcon = String.valueOf(iv) + "f";
          else newcon = String.valueOf(iv) + ".0";
          AST ast = n.getAST();
          NumberLiteral nc = ast.newNumberLiteral(newcon);
-         omap.put("nv",nc);
+         omap.put("cf",nc);
          ASTRewrite rw = int_double_result.replace(n,omap);
          String desc = "Replace " + iv + " with " + newcon;
          if (rw != null) addRepair(rw,desc,logdata + "@INT_DOUBLE",0.75);
        }
     }
+}
+
+
+private boolean isDivideConversionRelevant(ASTNode n)
+{
+   // this is made complicated since compilation is local, not global
+   if (!(n instanceof InfixExpression)) return false;
+   InfixExpression infix = (InfixExpression) n;
+   JcompType typl = JcompAst.getExprType(infix.getLeftOperand());
+   if (!typl.isIntType()) return false;
+   
+   JcompType typrslt = getExpectedType(n);
+   if (typrslt != null && typrslt.isFloatingType()) return true; 
+ 
+   typrslt = JcompAst.getExprType(infix);
+   if (typrslt != null && typrslt.isFloatingType()) return true;
+   ASTNode par = infix.getParent();
+   if (par instanceof MethodInvocation) {
+      MethodInvocation pmi = (MethodInvocation) par;
+      for (Object o : pmi.arguments()) {
+         ASTNode argv = (ASTNode) o;
+         JcompType atyp = JcompAst.getExprType(argv);
+         if (atyp.isFloatingType()) return true;
+         if (atyp.isErrorType()) return true;
+       }
+      if (pmi.arguments().size() > 1) return true;
+    }
+   if (typrslt != null && typrslt.isNumericType()) return false;
+   
+   return false;
 }
 
 
@@ -422,13 +450,16 @@ private JcompType getExpectedType(ASTNode n)
          MethodInvocation mi = (MethodInvocation) par;
          if (n.getLocationInParent() == MethodInvocation.ARGUMENTS_PROPERTY) {
             js = JcompAst.getReference(par);
-            int idx = mi.arguments().indexOf(n);
-            if (idx >= 0) {
-               List<JcompType> argtypes = js.getType().getComponents();
-               if (idx < argtypes.size()) {
-                  return argtypes.get(idx);
+            if (js != null) {
+               int idx = mi.arguments().indexOf(n);
+               if (idx >= 0) {
+                  List<JcompType> argtypes = js.getType().getComponents();
+                  if (idx < argtypes.size()) {
+                     return argtypes.get(idx);
+                   }
                 }
              }
+            return JcompAst.getJavaType(mi);            // ERROR or null
           }
          break;
       case ASTNode.INFIX_EXPRESSION :

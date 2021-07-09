@@ -540,7 +540,7 @@ private Boolean compareVariable(BudLocalVariable local,Element valelt,BudLaunch 
           }   
          return compareArray(local,valelt,launch,from,to);
       case "OBJECT" :
-         if (local.getType().equals("null")) {
+         if (local.getType().equals("null") || local.getType().equals("*ANY*")) {
             if (IvyXml.getAttrBool(valelt,"NULL")) return true;
             return false;
           }

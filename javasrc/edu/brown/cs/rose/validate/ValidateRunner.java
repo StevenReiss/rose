@@ -82,6 +82,12 @@ ValidateRunner(ValidateContext ctx,RootProcessor rp,RootRepair rr)
 
 @Override public void run()
 {
+   // check if we want to use SEEDE here rather than after edit
+   if (!base_context.canCheckResult()) {
+      noteDone();
+      return;
+    }
+   
    ValidateExecution ve = base_context.getSubsession(for_repair);
    if (ve == null) {
       sendRepair();
@@ -114,6 +120,8 @@ ValidateRunner(ValidateContext ctx,RootProcessor rp,RootRepair rr)
       ve.start(root_processor.getController());
       
       double score = base_context.checkValidResult(ve);
+      base_context.noteSeedeLength(ve.getExecutionTime(),for_repair);
+      
       if (score > 0) {
          RootTestCase tc = base_context.getProblem().getCurrentTest();
          RoseLog.logD("VALIDATE","Use test case " + tc);

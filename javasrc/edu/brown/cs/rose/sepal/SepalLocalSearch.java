@@ -63,6 +63,7 @@ public class SepalLocalSearch extends RootRepairFinderDefault
 private BractSearch     search_engine;
 
 private static final int MAX_LOCAL_CHECK = 5;
+private static final int MAX_LOCAL_RESULTS = 5;
 private static final double SEARCH_THRESHOLD = 1.0;
 
 
@@ -115,14 +116,16 @@ public SepalLocalSearch()
    String bcnts = ctrl.getSourceContents(bfile);
    ASTNode bnode = stmt;
    
+   int rct = 0;
+   int fnd = 0;
    for (BractSearchResult sr : rslts) {
       if (sr.getFile().equals(bfile) && sr.getLineNumber() == lno) continue;
       if (!sr.getFile().exists() || !sr.getFile().canRead()) continue;
-      String proj = ctrl.getProjectForFile(sr.getFile());
+      if (++rct > MAX_LOCAL_RESULTS) break;
       String ccnts = ctrl.getSourceContents(sr.getFile());
-     
-      ASTNode cnode = ctrl.getSourceNode(proj,sr.getFile(),-1,sr.getLineNumber(),false,true);
+      ASTNode cnode = ctrl.getNewSourceStatement(sr.getFile(),sr.getLineNumber(),sr.getColumnNumber());
       List<PatchAsASTRewriteWithScore> patches;
+      
       try {
          patches = LocalPatchGenerator.makePatches(bcnts,bnode,ccnts,cnode);
        }
@@ -131,14 +134,15 @@ public SepalLocalSearch()
          continue;
        }
       int ct = patches.size();
-      int fnd = 0;
       for (int i = 0; i < ct; ++i) {
          PatchAsASTRewriteWithScore r = patches.get(i);
          if (!isRelevant(lno,stmt,r)) continue;
          ASTRewrite rw = r.getASTRewrite();
+        
          // need to get a description from the rewrite -- replace Search-based repair with that
          double score = r.getScore();
          // might want to manipulate score a bit
+         // rw.rewriteAST().getLength() < MAX_CHANGE_LENGTH
          String logdata = getClass().getName() + "@" + i + "@" + r.getType();
          String desc = r.getDescription();
          addRepair(rw,desc,logdata,score);
@@ -146,6 +150,7 @@ public SepalLocalSearch()
        }
       // add repair for each returned patch
       RoseLog.logD("SEPAL","Find local search results " + ct + " " + fnd);
+      if (fnd > MAX_LOCAL_CHECK) break;
     }
 }
 
@@ -160,6 +165,8 @@ private boolean isRelevant(int lno,Statement stmt,PatchAsASTRewriteWithScore r)
    else if (r.getType().startsWith("INSERT")) {
       if (Math.abs(r.getLineNumber()-lno) > 1) return false;
     }
+   
+   if (r.getHeight() >= 3.0) return false;
    
    return true;
 }

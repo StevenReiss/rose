@@ -234,8 +234,6 @@ private long processCall(JcompSymbol js,Expression thisexpr,List<?> args,
    int argidx = 0;
    if (!js.isStatic()) {
       String thisv = argvals.get(argidx++);
-      if (thisv != null && thisv.length() == 0)
-         System.err.println("CHECK HERE");
       if (thisv != null) varmap.put("this",thisv);
     }
       

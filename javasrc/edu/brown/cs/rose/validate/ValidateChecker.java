@@ -186,9 +186,10 @@ private class ValidateCheckerException extends ValidateProblemChecker {
     }
    
    @Override double validate() {
-      if (!executionChanged()) return 0.1;
+      if (!executionChanged()) return 0;
       if (exceptionThrown()) return 0;
       
+      // note we are unlikely to match if execption not thrown
       ValidateValue origexc = original_execution.getException();
       if (origexc != null && execution_matcher.getMatchProblemContext() != null) {
          ValidateValue checkexc = check_execution.getException();
@@ -205,7 +206,8 @@ private class ValidateCheckerException extends ValidateProblemChecker {
          else return 0.1;   
        }
       else if (execution_matcher.getMatchProblemContext() != null) return 0.5;
-      
+     
+      if (check_execution.isReturn()) return 0.75;
       
       return 0.2;
     }
@@ -256,6 +258,9 @@ private class ValidateCheckerVariable extends ValidateProblemChecker {
       if (t0 > 0) {
          ValidateValue vval = vv.getValueAtTime(check_execution,t0);
          if (vval != null) {
+            // this needs to be more sophisticated, i.e.
+            // it needs to differential "null" from null,
+            // and handle non-primitives
             String vvalstr = vval.getValue();
             if (oval == null && vvalstr == null) return 0;
             if (oval != null && oval.equals(vvalstr)) return 0.0;

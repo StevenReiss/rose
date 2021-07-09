@@ -102,6 +102,7 @@ void start()
    if (!cocker_index.isActive()) return;
    
    if (did_start) {
+      cocker_index.update();
       Runtime.getRuntime().addShutdownHook(new StopOnExit());
       addInitialComponents();
     }

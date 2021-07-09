@@ -72,7 +72,7 @@ static BudValue nullValue(BudType typ)
 
 static BudValue booleanValue(BudType typ,String val)
 {
-   boolean v = Boolean.getBoolean(val);
+   boolean v = Boolean.valueOf(val);
    return new BooleanValue(typ,v);
 }
 
@@ -114,7 +114,7 @@ static BudValue objectValue(BudType typ,Map<String,BudGenericValue> inits)
 
 static BudValue arrayValue(BudType typ,int len,Map<Integer,BudGenericValue> inits)
 {
-   return null;
+   return new ArrayValue(typ,len,inits);
 }
 
 
@@ -152,6 +152,17 @@ void setFieldValue(String name,BudValue value) throws RoseException
 public BudValue getFieldValue(String name) throws RoseException
 {
    throw new RoseException("Value is not an object");
+}
+
+void setArrayElement(int idx,BudValue value) throws RoseException
+{
+   throw new RoseException("Value is not an array");
+}
+
+
+public BudValue getArrayElement(int idx) throws RoseException
+{
+   throw new RoseException("Value is not an array");
 }
 
 
@@ -425,6 +436,83 @@ private static class ObjectValue extends BudValue {
    
 }       // end of inner class ObjectValue
 
+
+/********************************************************************************/
+/*                                                                              */
+/*      Array values                                                            */
+/*                                                                              */
+/********************************************************************************/
+
+private static class ArrayValue extends BudValue {
+   
+   private Map<Integer,BudGenericValue> array_values;
+   private int dim_size;
+   
+   ArrayValue(BudType typ,int dim,Map<Integer,BudGenericValue> elts) {
+      super(typ);
+      if (elts == null) array_values = new HashMap<>();
+      else array_values = new HashMap<>(elts);
+    }
+   
+   @Override void setArrayElement(int idx,BudValue val) throws RoseException {
+      if (idx < 0 || idx >= dim_size) throw new RoseException("Index out of bounds");
+      array_values.put(idx,val);
+    }
+   
+   @Override public BudValue getArrayElement(int idx) throws RoseException {
+      if (idx < 0 || idx >= dim_size) throw new RoseException("Index out of bounds");
+      BudGenericValue gv = array_values.get(idx);
+      if (gv == null) return null;
+      if (gv instanceof BudDeferredValue) {
+         BudDeferredValue dv = (BudDeferredValue) gv;
+         gv = dv.getValue();
+         array_values.put(idx,gv);
+       }
+      return (BudValue) gv;
+    }
+   
+   @Override protected void localOutputXml(IvyXmlWriter xw) {
+      xw.field("ARRAY",true);
+      for (Map.Entry<Integer,BudGenericValue> ent : array_values.entrySet()) {
+         xw.begin("ELEMENT");
+         xw.field("INDEX",ent.getKey());
+         BudGenericValue gv = ent.getValue();
+         if (gv instanceof BudDeferredValue) {
+            xw.field("DEFERRED",true);
+          }
+         else if (gv instanceof BudValue) {
+            BudValue fvl = (BudValue) gv;
+            fvl.outputXml(xw);
+          }
+         xw.end("ELEMENT");
+       }
+    }
+   
+   @Override public String getJavaValue() {
+      // this doesn't work -- is it needed?
+      return toString();
+    } 
+   
+   @Override public String toString() {
+      StringBuffer buf = new StringBuffer();
+      buf.append("[ ");
+      int ct = 0;
+      for (Map.Entry<Integer,BudGenericValue> ent : array_values.entrySet()) {
+         BudGenericValue gv = ent.getValue();
+         if (gv instanceof BudValue) {
+            BudValue bv = (BudValue) gv;
+            if (bv.getDataType().isArrayType() || bv.getDataType().isObjectType()) continue;
+            if (ct++ > 0) buf.append(",");
+            buf.append(ent.getKey());
+            buf.append(":");
+            buf.append(bv.toString());
+          }
+       }
+      buf.append("]");
+      return buf.toString();
+    }
+   
+}       // end of iinner class ArrayValue
 
 
 }       // end of class BudValue

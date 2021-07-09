@@ -114,7 +114,7 @@ protected RootProcessor getProcessor()          { return bract_control; }
 
 protected RootProblem getProblem()              { return for_problem; }
 
-protected RootLocation getLocation()            { return at_location; }
+@Override public RootLocation getLocation()     { return at_location; }
 
 
 
@@ -170,6 +170,7 @@ protected void addRepair(ASTRewrite rw,String desc,String logdata,double priorit
    double pri = getFinderPriority();
    double p1 = getLocation().getPriority();
    if (p1 > 0) {
+      p1 = 0.75 + p1 / 4.0;
       pri = (1+priority+p1)/3.0 * getFinderPriority();
     }
    else {

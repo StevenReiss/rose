@@ -88,6 +88,8 @@ Element sendRoseMessage(String cmd,CommandArgs args,String xmlcnts,long wait);
 
 ASTNode getSourceNode(String proj,File f,int offset,int line,boolean resolve,boolean stmt);
 
+ASTNode getNewSourceStatement(File f,int line,int col);
+
 
 public default ASTNode getSourceNode(RootLocation loc,boolean resolve,boolean stmt)
 {

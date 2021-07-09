@@ -296,17 +296,20 @@ private void handleEndSuggestion(Element xml)
 private class RoseStarter extends Thread {
    
    private String panel_id;
+   private BumpThread for_thread;
    
-   RoseStarter() {
+   RoseStarter(BumpThread bt) {
       super("Rose_Starter");
       panel_id = null;
+      for_thread = bt;
     }
    
    @Override public void run() {
       BoardLog.logD("BUSH","Start rose");
       waitForRose();
-      BoardLog.logD("BUSH","Rose running " + rose_started + " " + rose_running + " " + rose_failed + " " + rose_ready);
-      startRoseAnalysis();
+      BoardLog.logD("BUSH","Rose running " + rose_started + " " + rose_running + " " + 
+            rose_failed + " " + rose_ready);
+      startRoseAnalysis(for_thread);
       BoardLog.logD("BUSH","Rose START returned " + rose_ready);
       
       synchronized (this) {
@@ -503,9 +506,12 @@ private String decodeClassPath(String xcp,File jarfile)
 /*										*/
 /********************************************************************************/
 
-private void startRoseAnalysis()
+private void startRoseAnalysis(BumpThread bt)
 {
-   sendRoseMessage("START",null,null);
+   CommandArgs args = null;
+   if (bt != null) args = new CommandArgs("THREAD",bt.getId());
+   
+   sendRoseMessage("START",args,null);
    
    synchronized (this) {
       rose_ready = true;
@@ -866,7 +872,7 @@ private class AskRoseAction extends AbstractAction implements Runnable {
    private BumpStackFrame for_frame;
    private Component base_editor;
    private BaleFileOverview bale_file;
-
+   
    private static final long serialVersionUID = 1;
 
    AskRoseAction(BumpThread thread,BumpStackFrame frame,Component base,BaleFileOverview doc) {
@@ -883,7 +889,7 @@ private class AskRoseAction extends AbstractAction implements Runnable {
     }
 
    @Override public void run() {
-      RoseStarter starter = new RoseStarter();
+      RoseStarter starter = new RoseStarter(for_thread);
       starter.start();
       
       BushProblemPanel pnl = new BushProblemPanel(for_thread,for_frame,base_editor,bale_file);
