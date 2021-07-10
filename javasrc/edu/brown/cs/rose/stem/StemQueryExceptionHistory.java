@@ -197,6 +197,9 @@ private String getExceptionCause() throws RoseException
      case "java.lang.StackOverflowError" :
         checker = new StackOverflowChecker();
         break;
+     case "java.lang.ClassCastException" :
+        checker = new ClassCastChecker();
+        break;
    }
   
   if (checker != null) {

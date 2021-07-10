@@ -165,7 +165,7 @@ private void setupTests()
    
    test_names[5] = "Math11";
    test_problem[5] = RoseEvalProblem.createAssertion();
-   test_solution[5] = "105@0.5 * dim@MultivariateNormalDistribution.java";
+   test_solution[5] = "185@2.0@MultivariateNormalDistribution.java";
    test_time[5] = TEST_TIME;
    test_skip[5] = 0;
   
@@ -188,7 +188,7 @@ private void setupTests()
    test_skip[8] = 0;
    
    test_names[9] = "Math32";
-   test_problem[9] = RoseEvalProblem.createException("java.lang.CastClassException");
+   test_problem[9] = RoseEvalProblem.createException("java.lang.ClassCastException");
    test_solution[9] = "529@tree.getCut() == null@PolygonsSet.java";
    test_time[9] = TEST_TIME;
    test_skip[9] = 0;

@@ -64,6 +64,7 @@ private RootLocation    repair_location;
 private RootLineMap     line_map;
 private long            repair_time;
 private int             repair_count;
+private long            repair_seede;
 
 
 
@@ -104,6 +105,7 @@ protected RootRepair(Element xml,RootLocation loc)
    repair_id = IvyXml.getAttrString(xml,"ID");
    repair_time = IvyXml.getAttrLong(xml,"TIME",0);
    repair_count = IvyXml.getAttrInt(xml,"COUNT",0);
+   repair_seede = IvyXml.getAttrLong(xml,"SEEDE",0);
    repair_location = loc;
 }
 
@@ -113,15 +115,6 @@ protected RootRepair(Element xml,RootLocation loc)
 /********************************************************************************/
 /*                                                                              */
 /*      Access methods                                                          */
-/*                                                                              */
-/********************************************************************************/
-
-
-
-
-/********************************************************************************/
-/*                                                                              */
-/*      Output methods                                                          */
 /*                                                                              */
 /********************************************************************************/
 
@@ -189,6 +182,12 @@ public void setCount(int ct)
 }
 
 
+public void setSeedeCount(long ct)
+{
+   repair_seede = ct;
+}
+
+
 /********************************************************************************/
 /*                                                                              */
 /*      Output methods                                                          */
@@ -204,6 +203,7 @@ public void outputXml(IvyXmlWriter xw)
    xw.field("ID",repair_id);
    if (repair_time > 0) xw.field("TIME",repair_time);
    if (repair_count > 0) xw.field("COUNT",repair_count);
+   if (repair_seede > 0) xw.field("SEEDE",repair_seede);
    localOutputXml(xw);
    repair_edit.outputXml(xw);
    xw.cdataElement("DESCRIPTION",repair_description);

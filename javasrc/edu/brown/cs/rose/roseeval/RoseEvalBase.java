@@ -162,7 +162,7 @@ protected void startEvaluations()
    File f3 = new File(f2,fnm);
    try {
       output_file = new PrintWriter(f3);
-      output_file.println("Name,# Results,# Displayed,Correct Rank,Total Time,Fix Time,Fix Count,# Checked");
+      output_file.println("Name,# Results,# Displayed,Correct Rank,Total Time,Fix Time,Fix Count,Seede Count,# Checked");
     }
    catch (IOException e) {
       System.err.println("Can't create " + fnm);
@@ -413,6 +413,7 @@ private void processSuggestions(String name,SuggestionSet ss,String expect,long 
    int fnd = -1;
    long fixtime = 0;
    int fixcnt = 0;
+   long fixseede = 0;
    double max = 0;
    for (Suggestion sug : ss.getSuggestions()) {
       if (max == 0) max = sug.getPriority()*0.1;
@@ -427,6 +428,7 @@ private void processSuggestions(String name,SuggestionSet ss,String expect,long 
                fnd = ctr+1;
                fixtime = sug.getTime();
                fixcnt = sug.getCount();
+               fixseede = sug.getSeedeCount();
              }
           }
        }
@@ -438,11 +440,11 @@ private void processSuggestions(String name,SuggestionSet ss,String expect,long 
    
    if (output_file != null) {
       output_file.println(name + "," + ctr + "," + showctr + "," + fnd + "," + 
-            time + "," + fixtime + "," + fixcnt + "," + ct);
+            time + "," + fixtime + "," + fixcnt + "," + fixseede + "," + ct);
     }
    
    System.err.println("PROCESS SUGGESTIONS: " + name +": " + ctr + " " + showctr + " " + 
-         fnd + " " + time + " " + fixtime + " " + fixcnt + " " + ct);
+         fnd + " " + time + " " + fixtime + " " + fixcnt + " " + fixseede + " " + ct);
 }
 
 
@@ -1107,6 +1109,7 @@ private static class Suggestion implements Comparable<Suggestion> {
    private String fix_description;
    private long fix_time;
    private int fix_count;
+   private long seede_count;
    private String fix_file;
    
    Suggestion(Element xml) {
@@ -1115,7 +1118,8 @@ private static class Suggestion implements Comparable<Suggestion> {
       fix_file = IvyXml.getAttrString(loc,"FILE");
       line_number = IvyXml.getAttrInt(loc,"LINE");
       fix_time = IvyXml.getAttrLong(xml,"TIME");
-      fix_count = IvyXml.getAttrInt(xml,"COUNT");
+      fix_count = IvyXml.getAttrInt(xml,"COUNT",0);
+      seede_count = IvyXml.getAttrLong(xml,"SEEDE",0);
       double reppri = IvyXml.getAttrDouble(xml,"PRIORITY");
       double valpri = IvyXml.getAttrDouble(xml,"VALIDATE");
       fix_priority = reppri * valpri;
@@ -1126,6 +1130,7 @@ private static class Suggestion implements Comparable<Suggestion> {
    double getPriority()                 { return fix_priority; }
    long getTime()                       { return fix_time; }
    int getCount()                       { return fix_count; }
+   long getSeedeCount()                 { return seede_count; }
    String getFile()                     { return fix_file; }
    
    @Override public int compareTo(Suggestion s) {

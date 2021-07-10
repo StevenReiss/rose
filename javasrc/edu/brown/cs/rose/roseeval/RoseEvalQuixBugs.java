@@ -141,7 +141,7 @@ private void setupTests()
    test_skip = new int[TEST_COUNT+1];
    test_time = new int[TEST_COUNT+1];
 
-   test_names[1] = "BitCtount";
+   test_names[1] = "BitCount";
    test_problem[1] = RoseEvalProblem.createJunitAssertion();
    test_solution[1] = "25@n & (n - 1)";
    test_time[1] = TEST_TIME;

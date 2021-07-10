@@ -306,6 +306,7 @@ double checkValidResult(ValidateExecution ve)
 {
    ValidateTrace e2 = base_execution.getSeedeResult();
    ValidateTrace e1 = ve.getSeedeResult();
+   if (e1.isCompilerError()) return 0;
    
    ValidateChecker checker = new ValidateChecker(this,e2,e1,ve.getRepair());
    
@@ -325,6 +326,7 @@ synchronized void noteSeedeLength(long t,RootRepair repair)
    num_checked++;
    seede_total += t;
    repair.setCount(num_checked);
+   repair.setSeedeCount(seede_total);
 }
 
 
