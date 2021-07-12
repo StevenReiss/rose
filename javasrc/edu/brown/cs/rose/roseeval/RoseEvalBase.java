@@ -136,7 +136,7 @@ protected void runSingleEvalaution(String launch,
       
       String cnts = problem.getDescription(fd);  
       
-      runTest(mc,fd,cnts,max,lines);
+      runTest(mc,fd,cnts,max,lines,false);
     }
    catch (Throwable t) {
       RoseLog.logE("Problem processing evaluation test",t);
@@ -174,6 +174,13 @@ protected void startEvaluations()
 
 protected void runEvaluation(String launch,RoseEvalProblem problem,int ct,String expect,int max)
 {
+   runEvaluation(launch,problem,ct,expect,max,false);
+}
+
+
+
+protected void runEvaluation(String launch,RoseEvalProblem problem,int ct,String expect,int max,boolean usecur)
+{
    MintControl mc = setupBedrock();
    
    RoseEvalFrameData fd = setupTest(launch,ct);
@@ -184,7 +191,7 @@ protected void runEvaluation(String launch,RoseEvalProblem problem,int ct,String
       System.err.println("START " + launch);
       
       long starttime = System.currentTimeMillis();
-      SuggestionSet ss = runTest(mc,fd,cnts,max,false);
+      SuggestionSet ss = runTest(mc,fd,cnts,max,false,usecur);
       long time = System.currentTimeMillis() - starttime;
       processSuggestions(launch,ss,expect,time);
     }
@@ -239,10 +246,11 @@ private RoseEvalFrameData setupTest(String launch,int cont)
 
 
 private SuggestionSet runTest(MintControl ctrl,RoseEvalFrameData fd,
-      String oprob,int max,boolean lines)
+      String oprob,int max,boolean lines,boolean usecur)
 {
 // getChangedVariables(ctrl,fd,oprob);
-   String prob = getStartFrame(ctrl,oprob,null,max);
+   String startloc = (usecur ? "*" : null);
+   String prob = getStartFrame(ctrl,oprob,startloc,max);
    SuggestionSet ss = getSuggestionsFor(ctrl,fd,prob,null);
    
    if (lines) {
@@ -342,6 +350,10 @@ private String getStartFrame(MintControl ctrl,String prob,String loc,int max)
 {
    CommandArgs args = new CommandArgs();
    String cnts = prob;
+   if (loc != null && loc.equals("*")) {
+      loc = null;
+      args.put("CURRENT",true);
+    }
    if (loc != null) cnts += loc;
    Element rslt = sendStemReply(ctrl,"STARTFRAME",args,cnts);
    String startframe = IvyXml.getAttrString(rslt,"STARTFRAME");

@@ -140,7 +140,7 @@ public RootValidate createValidate(RootProblem prob,String frameid,RootLocation 
    if (frameid == null) {
       RoseLog.logD("VALIDATE","Create start location");
       ValidateStartLocator ssl = new ValidateStartLocator(prob,bl,atloc);
-      frameid = ssl.getStartingFrame();
+      frameid = ssl.getStartingFrame(false);
     }
    if (frameid == null) return null;
 
@@ -158,11 +158,11 @@ public RootValidate createValidate(RootProblem prob,String frameid,RootLocation 
 /*                                                                              */
 /********************************************************************************/
 
-public BudStackFrame getStartingFrame(RootProblem prob,RootLocation atloc)
+public BudStackFrame getStartingFrame(RootProblem prob,RootLocation atloc,boolean usecur)
 {
    BudLaunch bl = new BudLaunch(root_control,prob);
    ValidateStartLocator ssl = new ValidateStartLocator(prob,bl,atloc);
-   String frameid = ssl.getStartingFrame();
+   String frameid = ssl.getStartingFrame(usecur);
    for (BudStackFrame bsf : bl.getStack().getFrames()) {
       if (bsf.getFrameId().equals(frameid)) return bsf;
     }

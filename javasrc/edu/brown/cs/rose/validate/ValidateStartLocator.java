@@ -85,13 +85,16 @@ ValidateStartLocator(RootProblem rp,BudLaunch bl,RootLocation at)
 /*										*/
 /********************************************************************************/
 
-String getStartingFrame()
+String getStartingFrame(boolean usecur)
 {
    String startframe = for_launch.getFrame();
 
    if (at_location != null) {
       startframe = updateFrameForLocation(startframe,at_location);
       // might want to move up stack anyway by calling findValidStart
+    }
+   else if (usecur) {
+      // might want to check that startframe is a source frame
     }
    else {
       List<RootLocation> locs = root_control.getLocations(base_problem);

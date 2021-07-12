@@ -36,7 +36,9 @@
 package edu.brown.cs.rose.roseeval;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import edu.brown.cs.rose.root.RoseLog;
 
@@ -66,7 +68,7 @@ public static void main(String [] args)
 /********************************************************************************/
 
 
-private static final int	TEST_COUNT = 10;
+private static final int	TEST_COUNT = 15;
 private static final int	TEST_TIME = 100000;
 
 
@@ -76,6 +78,7 @@ private String []		test_solution;
 private int []			test_skip;
 private int []			test_time;
 private List<Integer>		run_tests;
+private Set<String>             local_tests;
 
 
 /********************************************************************************/
@@ -90,6 +93,7 @@ private RoseEvalDefects4J(String [] args)
    run_local = true;
    run_debug = true;
    seede_debug = true;
+   local_tests = new HashSet<>();
    
    setupTests();
    
@@ -182,10 +186,11 @@ private void setupTests()
    test_skip[7] = 0;
    
    test_names[8] = "Math30";
-   test_problem[8] = RoseEvalProblem.createAssertion();
+   test_problem[8] = RoseEvalProblem.createVariable("r","NaN","> 0");
    test_solution[8] = "180@double@MannWhitneyUTest.java";
-   test_time[8] = 500000;
+   test_time[8] = TEST_TIME;
    test_skip[8] = 0;
+   local_tests.add("Math30");
    
    test_names[9] = "Math32";
    test_problem[9] = RoseEvalProblem.createException("java.lang.ClassCastException");
@@ -198,6 +203,36 @@ private void setupTests()
    test_solution[10] = "223@getChromosomes()@ListPopulation.java";
    test_time[10] = TEST_TIME;
    test_skip[10] = 0;
+   
+   test_names[11] = "Chart01";
+   test_problem[11] = RoseEvalProblem.createAssertion();
+   test_solution[11] = "1799@==@AbstractCategeoryItemRenderer.java";
+   test_time[11] = TEST_TIME;
+   test_skip[11] = 0;
+   
+   test_names[12] = "Chart03";
+   test_problem[12] = RoseEvalProblem.createAssertion();
+   test_solution[12] = "1059@NaN@TimeSeries.java";
+   test_time[12] = TEST_TIME;
+   test_skip[12] = 0;
+   
+   test_names[13] = "Chart11";
+   test_problem[13] = RoseEvalProblem.createAssertion();
+   test_solution[13] = "278@p2.getPathIterator@ShapeUtilities.java";
+   test_time[13] = TEST_TIME;
+   test_skip[13] = 0;
+   
+   test_names[14] = "Chart12";
+   test_problem[14] = RoseEvalProblem.createAssertion();
+   test_solution[14] = "1648@setDataset@MultiplePiePlot.java";
+   test_time[14] = TEST_TIME;
+   test_skip[14] = 0;
+   
+   test_names[15] = "Chart20";
+   test_problem[15] = RoseEvalProblem.createAssertion();
+   test_solution[15] = "97@outlinePaint, outlineStroke@ValueMarker.java";
+   test_time[15] = TEST_TIME;
+   test_skip[15] = 0;
    
    test_names[0] = test_names[1];
    test_problem[0] = test_problem[1];
@@ -220,8 +255,9 @@ private void process()
    
    try {
       for (int tn : run_tests) {
+         boolean usecur = local_tests.contains(test_names[tn]);
 	 runEvaluation(test_names[tn],test_problem[tn],test_skip[tn],
-	       test_solution[tn],test_time[tn]);
+	       test_solution[tn],test_time[tn],usecur);
        }
     }
    catch (Throwable t) {

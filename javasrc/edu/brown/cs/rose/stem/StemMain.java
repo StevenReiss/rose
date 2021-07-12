@@ -702,7 +702,8 @@ private void handleStartFrame(MintMessage msg) throws RoseException
    RootProblem prob = BractFactory.getFactory().createProblemDescription(this,probxml);
    Element locxml = IvyXml.getChild(msgxml,"LOCATION");
    RootLocation loc = BractFactory.getFactory().createLocation(this,locxml);
-   BudStackFrame bsf = ValidateFactory.getFactory(this).getStartingFrame(prob,loc);
+   boolean usecur = IvyXml.getAttrBool(msgxml,"CURRENT");
+   BudStackFrame bsf = ValidateFactory.getFactory(this).getStartingFrame(prob,loc,usecur);
    if (bsf != null) {
       IvyXmlWriter xw = new IvyXmlWriter();
       xw.begin("RESULT");
