@@ -206,7 +206,7 @@ private void setupTests()
    
    test_names[11] = "Chart01";
    test_problem[11] = RoseEvalProblem.createAssertion();
-   test_solution[11] = "1799@==@AbstractCategeoryItemRenderer.java";
+   test_solution[11] = "1799@==@AbstractCategoryItemRenderer.java";
    test_time[11] = TEST_TIME;
    test_skip[11] = 0;
    
@@ -230,7 +230,7 @@ private void setupTests()
    
    test_names[15] = "Chart20";
    test_problem[15] = RoseEvalProblem.createAssertion();
-   test_solution[15] = "97@outlinePaint, outlineStroke@ValueMarker.java";
+   test_solution[15] = "97@,outline@ValueMarker.java";
    test_time[15] = TEST_TIME;
    test_skip[15] = 0;
    

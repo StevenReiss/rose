@@ -48,6 +48,7 @@ import org.eclipse.jface.text.Document;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.Position;
 import org.eclipse.text.edits.TextEdit;
+import org.w3c.dom.Element;
 
 import edu.brown.cs.ivy.file.IvyFile;
 
@@ -166,7 +167,21 @@ protected ASTNode getResolvedStatementForLocation(RootLocation loc)
 
 protected void addRepair(ASTRewrite rw,String desc,String logdata,double priority)
 {
-   if (rw == null) return;
+   addRepair(rw,null,desc,logdata,priority);
+}
+
+
+protected void addRepair(Element editxml,String desc,String logdata,double priority)
+{
+   addRepair(null,editxml,desc,logdata,priority);
+}
+
+
+
+private void addRepair(ASTRewrite rw,Element editxml,String desc,String logdata,double priority)
+{
+   if (rw == null && editxml == null) return;
+   
    double pri = getFinderPriority();
    double p1 = getLocation().getPriority();
    if (p1 > 0) {
@@ -201,12 +216,19 @@ protected void addRepair(ASTRewrite rw,String desc,String logdata,double priorit
     }
    
    TextEdit te = null;
-   try {
-      te = rw.rewriteAST(doc,null);
+   if (rw != null) {
+      try {
+         te = rw.rewriteAST(doc,null);
+       }
+      catch (Throwable e) {
+         RoseLog.logE("ROOT","Problem creating text edit from rewrite",e);
+       } 
     }
-   catch (Throwable e) {
-      RoseLog.logE("ROOT","Problem creating text edit from rewrite",e);
-    } 
+   else if (editxml != null) {
+      RootEdit ed = new RootEdit(editxml);
+      System.err.println("FOUND EDIT " + ed);
+      // te = ed.getTextEdit();
+    }
    if (te == null) return;
    RoseLog.logD("ROOT","Edit to apply: " + te);
    

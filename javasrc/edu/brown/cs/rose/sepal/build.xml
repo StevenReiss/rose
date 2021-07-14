@@ -19,6 +19,7 @@
 	 <fileset dir='${PRO}/ivy/lib/eclipsejar' includes='*.jar' />
 	 <pathelement location="${BUBBLES}/lib/junit.jar" />
 	 <pathelement location='${PRO}/rose/lib/sharpfix.jar' />
+	 <pathelement location='${PRO}/rose/lib/sequencer.jar' />
       </path>
       <path id='test.classpath'>
 	 <pathelement location='${PRO}/rose/java' />

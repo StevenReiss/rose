@@ -280,7 +280,8 @@ private void handleStartCommand(MintMessage msg) throws RoseException
    
    Element xml = msg.getXml();
    String tid = IvyXml.getAttrString(xml,"THREAD");
-   loadFilesIntoFait(tid);
+   Element fileelt = IvyXml.getChild(xml,"FILES");
+   loadFilesIntoFait(tid,fileelt);
 
    if (sts) {
       analysis_state = AnalysisState.PENDING;
@@ -649,7 +650,8 @@ private void handleHistoryCommand(MintMessage msg) throws RoseException
 {
    Element msgxml = msg.getXml();
    String tid = IvyXml.getAttrString(msgxml,"THREAD");
-   if (tid != null) loadFilesIntoFait(tid);
+   Element fileelt = IvyXml.getChild(msgxml,"FILES");
+   if (tid != null) loadFilesIntoFait(tid,fileelt);
    waitForAnalysis();
    long start = System.currentTimeMillis();
    Element probxml = IvyXml.getChild(msgxml,"PROBLEM");
@@ -672,7 +674,8 @@ private void handleLocationCommand(MintMessage msg) throws RoseException
 {
    Element msgxml = msg.getXml();
    String tid = IvyXml.getAttrString(msgxml,"THREAD");
-   if (tid != null) loadFilesIntoFait(tid);
+   Element fileelt = IvyXml.getChild(msgxml,"FILES");
+   if (tid != null) loadFilesIntoFait(tid,fileelt);
    waitForAnalysis();
    long start = System.currentTimeMillis();
    Element probxml = IvyXml.getChild(msgxml,"PROBLEM");
@@ -1411,10 +1414,27 @@ private class WaitForExit extends Thread {
 
 
 
-private void loadFilesIntoFait(String tid) throws RoseException
+private void loadFilesIntoFait(String tid,Element fileelt) throws RoseException
 {
    Set<File> files = new HashSet<>();
-   if (use_all_files) files = findAllSourceFiles();
+   if (fileelt != null) {
+      if (IvyXml.getAttrBool(fileelt,"ALLFILES")) files = findAllSourceFiles();
+      else if (IvyXml.getAttrBool(fileelt,"COMPUTED")) {
+         if (use_computed_files) files = findComputedFiles(tid);
+         else files = findFaitFiles(tid);
+       }
+      else if (IvyXml.getAttrBool(fileelt,"STACK")) {
+         files = findStackFiles(tid);
+       }
+      else {
+         for (Element felt : IvyXml.children(fileelt,"FILE")) {
+            String fnm = IvyXml.getAttrString(felt,"NAME");
+            if (fnm == null) fnm = IvyXml.getText(felt);
+            if (fnm != null) files.add(new File(fnm));
+          }
+       }
+    }
+   else if (use_all_files) files = findAllSourceFiles();
    else if (use_computed_files) files = findComputedFiles(tid);
    else if (use_fait_files) files = findFaitFiles(tid);
    else files = findStackFiles(tid);

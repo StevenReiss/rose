@@ -73,7 +73,7 @@ private int             num_checked;
 private long            seede_total;
 
 private static final int        MAX_CHECKED = 200;
-private static final long       MAX_SEEDE_TOTAL = 100000000;
+private static final long       MAX_SEEDE_TOTAL = 10000000;
 private static final long       TIME_MULTIPLIER = 10;
 
 
