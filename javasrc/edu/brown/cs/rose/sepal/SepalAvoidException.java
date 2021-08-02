@@ -44,8 +44,10 @@ import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.ArrayAccess;
+import org.eclipse.jdt.core.dom.Assignment;
 import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.ClassInstanceCreation;
+import org.eclipse.jdt.core.dom.ConditionalExpression;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldAccess;
 import org.eclipse.jdt.core.dom.ForStatement;
@@ -181,6 +183,12 @@ public SepalAvoidException()
       String desc = "Add '(" + cm.getEqlCondition(base).toString() + ") ||' to " + stmtdesc;
       addRepair(rw5,desc,logdata + "@NULLRETURN",0.80);
     } 
+   ASTRewrite rw6 = exprCheck(cm,base,stmt);
+   if (rw6 != null) {
+      String desc = "Use (" + cm.getEqlCondition(base).toString();
+      desc += " ? + <default> : <original>)";
+       addRepair(rw6,desc,logdata + "@COND",0.75);  
+    }
 }
 
 
@@ -358,6 +366,47 @@ private ASTRewrite condReturn(ConditionMaker cm,Expression base,Statement start)
    
    return rw;
 }
+
+
+private ASTRewrite exprCheck(ConditionMaker cm,Expression base,Statement start)
+{
+   Assignment asgn = null;
+   ASTNode prev = base;
+   for (ASTNode p = base.getParent(); p != null && p != start; p = p.getParent()) {
+      switch (p.getNodeType()) {
+         case ASTNode.ASSIGNMENT :
+            asgn = (Assignment) p;
+            if (asgn.getOperator() != Assignment.Operator.ASSIGN) return null;
+            if (asgn.getRightHandSide() != prev) return null;
+            break;
+       }
+      prev = p;
+    }
+   if (asgn == null) return null;
+   
+   JcompType typ = JcompAst.getExprType(asgn.getLeftHandSide());
+   if (typ == null) return null;
+   
+   AST ast = start.getAST();
+   
+   Expression rslt = null;
+   if (typ.isBooleanType()) rslt = ast.newBooleanLiteral(false);
+   else if (typ.isNumericType()) rslt = ast.newNumberLiteral("0");
+   else if (typ.isVoidType()) rslt = null;
+   else rslt = ast.newNullLiteral();
+   Expression rhs = asgn.getRightHandSide();
+   ConditionalExpression cexp = ast.newConditionalExpression();
+   cexp.setExpression(cm.getCheckExpression(ast,base,false));
+   cexp.setThenExpression(rslt);
+   cexp.setElseExpression((Expression) ASTNode.copySubtree(ast,rhs));
+   ParenthesizedExpression pexp = ast.newParenthesizedExpression();
+   pexp.setExpression(cexp);
+   ASTRewrite rw = ASTRewrite.create(ast);
+   rw.replace(rhs,pexp,null);
+   
+   return rw;
+}
+
 
 
 

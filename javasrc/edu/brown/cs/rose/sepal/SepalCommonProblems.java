@@ -402,6 +402,8 @@ private void checkConversion(ASTNode stmt)
 }
 
 
+
+
 private boolean isDivideConversionRelevant(ASTNode n)
 {
    // this is made complicated since compilation is local, not global

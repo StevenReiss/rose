@@ -101,6 +101,8 @@ private Map<String,BushRepairAdder> current_repairs;
 private static BushFactory the_factory = null;
 private static AtomicInteger id_counter = new AtomicInteger();
 
+private static boolean project_setup_required = false;
+
 
 
 /********************************************************************************/
@@ -155,6 +157,8 @@ private void setupHandlers()
    BumpClient bc = BumpClient.getBump();
 
    bc.getRunModel().addRunEventHandler(new RoseRunEventHandler());
+   
+   if (project_setup_required) fixupProjects();
 }
 
 
@@ -517,6 +521,112 @@ private void startRoseAnalysis(BumpThread bt)
       rose_ready = true;
       notifyAll();
     }
+}
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Ensure Projects setup for SEEDE                                         */
+/*                                                                              */
+/********************************************************************************/
+
+private void fixupProjects()
+{
+   BumpClient bc = BumpClient.getBump();
+   
+   Element xml = bc.getAllProjects();
+   if (xml != null) {
+      for (Element pe : IvyXml.children(xml,"PROJECT")) {
+	 String pnm = IvyXml.getAttrString(pe,"NAME");
+	 boolean havepoppy = false;
+	 boolean haveseede = false;
+	 Element delpath = null;
+	 Element opxml = bc.getProjectData(pnm,false,true,false,false,false);
+	 if (opxml != null) {
+	    Element cpe = IvyXml.getChild(opxml,"CLASSPATH");
+	    for (Element rpe : IvyXml.children(cpe,"PATH")) {
+	       String bn = null;
+	       String ptyp = IvyXml.getAttrString(rpe,"TYPE");
+	       if (ptyp != null && ptyp.equals("SOURCE")) {
+		  bn = IvyXml.getTextElement(rpe,"OUTPUT");
+		}
+	       else {
+		  bn = IvyXml.getTextElement(rpe,"BINARY");
+		}
+	       if (bn == null) continue;
+	       if (bn.contains("poppy.jar")) {
+		  File bfn = new File(bn);
+		  if (bfn.exists()) {
+		     havepoppy = true;
+		   }
+		  else {
+		     delpath = rpe;
+		   }
+		}
+	       if (bn.contains("seede")) haveseede = true;
+	     }
+            
+	    if (haveseede && !havepoppy) {
+	       opxml = bc.getProjectData(pnm,false,false,true,false,false);
+	       Element cp = IvyXml.getChild(cpe,"CLASSES");
+	       for (Element fe : IvyXml.children(cp,"TYPE")) {
+		  String cnm = IvyXml.getAttrString(fe,"NAME");
+		  if (cnm.startsWith("edu.brown.cs.seede.poppy.")) {
+		     havepoppy = true;
+		     break;
+		   }
+		}
+	     }
+	    if (delpath != null) {
+	       IvyXmlWriter xwp = new IvyXmlWriter();
+	       xwp.begin("PROJECT");
+	       xwp.field("NAME",pnm);
+	       xwp.begin("PATH");
+	       xwp.field("TYPE","LIBRARY");
+	       xwp.field("DELETE",true);
+	       String src = IvyXml.getTextElement(delpath,"SOURCE");
+	       if (src != null) xwp.textElement("SOURCE",src);
+	       src = IvyXml.getTextElement(delpath,"OUTPUT");
+	       if (src != null) xwp.textElement("OUTPUT",src);
+	       src = IvyXml.getTextElement(delpath,"BINARY");
+	       if (src != null) xwp.textElement("BINARY",src);
+	       xwp.end("PATH");
+	       xwp.end("PROJECT");
+	       String cnts = xwp.toString();
+	       xwp.close();
+	       bc.editProject(pnm,cnts);
+	     }
+	    if (!havepoppy) {
+	       File poppyjar = new File(findPoppyJar());
+	       if (poppyjar.exists()) {
+		  IvyXmlWriter xwp = new IvyXmlWriter();
+		  xwp.begin("PROJECT");
+		  xwp.field("NAME",pnm);
+		  xwp.begin("PATH");
+		  xwp.field("TYPE","LIBRARY");
+		  xwp.field("NEW",true);
+		  xwp.field("BINARY",poppyjar.getPath());
+		  xwp.field("EXPORTED",false);
+		  xwp.field("OPTIONAL",true);
+		  xwp.end("PATH");
+		  xwp.end("PROJECT");
+		  String cnts = xwp.toString();
+		  xwp.close();
+		  bc.editProject(pnm,cnts);
+		}
+	     }
+	  }
+       }
+    }
+}
+
+
+private String findPoppyJar()
+{
+   String path = BoardSetup.getSetup().getLibraryPath("poppy.jar");
+   
+   return path;
 }
 
 

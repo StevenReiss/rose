@@ -108,7 +108,14 @@ public SepalWrongVariable()
    if (ct == 0) return;
    
    for (UserVariable uv : vars) {
-     for (JcompSymbol js : uv.getReplacements()) {
+      int rct = uv.getReplacements().size();
+      int lct = uv.getLocations().size();
+      for (JcompSymbol js : uv.getReplacements()) {
+         // Might want to take location priority into account as well
+         if (rct > 4 || lct > 6 || lct*rct > 10) {
+            double pri = IvyStringDiff.normalizedStringDiff(uv.getSymbol().getName(),js.getName());
+            if (pri < 0.4) continue;
+          }
          for (ASTNode n : uv.getLocations()) {
             createRepair(uv,js,n);
           }
@@ -336,7 +343,7 @@ private void createRepair(UserVariable uv,JcompSymbol js,ASTNode where)
       ASTNode par = where.getParent();
       desc += " in " + par;
       String logdata = getClass().getName() + "#" + pri;
-      double priority = 0.5 + (pri/2);
+      double priority = 0.25 + (pri * 0.75);
       addRepair(rw,desc,logdata,priority);
     }
    

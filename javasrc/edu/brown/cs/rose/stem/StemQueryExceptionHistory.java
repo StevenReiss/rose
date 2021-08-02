@@ -479,47 +479,66 @@ private class IndexOutOfBoundsChecker extends ExceptionChecker {
 private class StringIndexOutOfBoundsChecker extends ExceptionChecker {
    
    @Override public void endVisit(MethodInvocation mi) {
-      if (mi.getExpression() == null) return;
       JcompType jt = JcompAst.getExprType(mi.getExpression());
       String jtname = jt.getName();
       int idx0 = jtname.indexOf("<");
       if (idx0 > 0) jtname = jtname.substring(0,idx0);
+      String ex = null;
       switch (jtname) {
          case "java.lang.String" :
+            ex = mi.getExpression().toString();
+            switch (mi.getName().getIdentifier()) {
+               case "charAt" :
+               case "codePointAt" :
+               case "codePointBefore" :
+               case "codePointCount" :
+               case "offsetByCodeePoints" :
+               case "getBytes" :
+               case "substring" :
+               case "subSequence" :
+                  checkIndex(mi,ex,0);
+                  break;
+               case "getChars" :
+                  useNode(mi,null,null);
+                  break;
+               default :
+                  return;
+             }
+            break;
+         case "java.lang.Character" :
+            switch (mi.getName().getIdentifier()) {
+               case "codePointAt" :
+                  ex = mi.arguments().get(0).toString();
+                  if (ex != null) checkIndex(mi,ex,1);
+                  break;
+               default :
+                  return;
+             }
             break;
          default :
             return;
        }
-      switch (mi.getName().getIdentifier()) {
-         case "charAt" :
-         case "codePointAt" :
-         case "codePointBefore" :
-         case "codePointCount" :
-         case "offsetByCodeePoints" :
-         case "getChars" :
-         case "getBytes" :
-         case "substring" :
-         case "subSequence" :
-            break;
-         default :
-            return;
-       }
-      
-      BudValue bv = evaluate("(" + mi.getExpression() + ").length())");
-      if (bv == null) return;
+    }
+   
+   private boolean checkIndex(MethodInvocation mi,String ex,int arg) {
+      BudValue bv = evaluate("(" + ex + ").length()");
+      if (bv == null) bv = evaluate("(" + ex + ").length");
+      if (bv == null) return false;
       long bnd = bv.getInt();
       List<?> args = mi.arguments();
       long idx = 0;
-      if (args.size() > 0) {
-         Expression eidx = (Expression) args.get(0);
+      if (args.size() > arg) {
+         Expression eidx = (Expression) args.get(arg);
          BudValue bidx = evaluate(eidx.toString());
-         if (bidx == null && bnd > 0) return;
+         if (bidx == null && bnd > 0) return false;
          if (bidx != null) idx = bidx.getInt();
        }
-      if (idx < 0 || idx >= bnd) useNode(mi,Long.toString(idx),null);
+      if (idx < 0 || idx >= bnd) {
+         useNode(mi,Long.toString(idx),null);
+         return true;
+       }
+      return false;
     }
-   
-   
 }
 
 

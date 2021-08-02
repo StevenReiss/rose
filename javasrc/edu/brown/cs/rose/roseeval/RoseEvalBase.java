@@ -53,6 +53,7 @@ import org.w3c.dom.Element;
 
 import edu.brown.cs.ivy.exec.IvyExec;
 import edu.brown.cs.ivy.exec.IvyExecQuery;
+import edu.brown.cs.ivy.file.IvyFile;
 import edu.brown.cs.ivy.leash.LeashIndex;
 import edu.brown.cs.ivy.mint.MintArguments;
 import edu.brown.cs.ivy.mint.MintControl;
@@ -118,6 +119,13 @@ protected RoseEvalBase(String workspace,String project)
    output_file = null;
 }
 
+protected RoseEvalBase()
+{
+   workspace_name = null;
+   project_name = null;
+   output_file = null;
+}
+
 
 
 /********************************************************************************/
@@ -129,10 +137,10 @@ protected RoseEvalBase(String workspace,String project)
 protected void runSingleEvalaution(String launch,
       RoseEvalProblem problem,String expect,int max,boolean lines)
 {
-   MintControl mc = setupBedrock();
+   MintControl mc = setupBedrock(workspace_name,project_name);
    
    try {
-      RoseEvalFrameData fd = setupTest(launch,0);
+      RoseEvalFrameData fd = setupTest(workspace_name,project_name,launch,0,null);
       
       String cnts = problem.getDescription(fd);  
       
@@ -150,12 +158,18 @@ protected void runSingleEvalaution(String launch,
 
 protected void startEvaluations()
 {
-   setupBedrock();
+   startEvaluations(workspace_name,project_name);
+}
+
+
+protected void startEvaluations(String workspace,String project)
+{
+   setupBedrock(workspace,project);
    
    Date d = new Date();
    
    DateFormat fmt = new SimpleDateFormat("yyyyMMddHHmmssSSS");
-   String fnm = "ROSEEVAL_" + workspace_name + "_" + fmt.format(d) + ".csv";
+   String fnm = "ROSEEVAL_" + workspace + "_" + fmt.format(d) + ".csv";
    File f1 = new File(System.getProperty("user.home"));
    File f2 = new File(f1,"RoseEval");
    f2.mkdir();
@@ -174,19 +188,20 @@ protected void startEvaluations()
 
 protected void runEvaluation(String launch,RoseEvalProblem problem,int ct,String expect,int max)
 {
-   runEvaluation(launch,problem,ct,expect,max,false);
+   runEvaluation(launch,problem,ct,expect,max,false,null);
 }
 
 
 
-protected void runEvaluation(String launch,RoseEvalProblem problem,int ct,String expect,int max,boolean usecur)
+protected void runEvaluation(String launch,RoseEvalProblem problem,int ct,String expect,int max,
+      boolean usecur,List<String> files)
 {
-   MintControl mc = setupBedrock();
+   MintControl mc = setupBedrock(workspace_name,project_name);
    
-   RoseEvalFrameData fd = setupTest(launch,ct);
+   RoseEvalFrameData fd = setupTest(workspace_name,project_name,launch,ct,files);
    
    try {
-      String cnts = problem.getDescription(fd);  
+      String cnts = problem.getDescription(fd); 
       
       System.err.println("START " + launch);
       
@@ -200,7 +215,36 @@ protected void runEvaluation(String launch,RoseEvalProblem problem,int ct,String
     }
    finally {
       finishTest(fd);
-      shutdownBedrock();
+      shutdownBedrock(workspace_name,project_name);
+    }
+}
+
+
+
+protected void runEvaluation(RoseEvalTest test)
+{
+   RoseEvalSuite suite = test.getSuite();
+   MintControl mc = setupBedrock(suite.getWorkspace(),suite.getProject());
+   
+   RoseEvalFrameData fd = setupTest(suite.getWorkspace(),suite.getProject(),
+         test.getName(),test.getSkipTimes(),test.getUseFiles());
+   
+   try {
+      String cnts = test.getProblem().getDescription(fd);  
+      
+      System.err.println("START " + test.getName());
+      
+      long starttime = System.currentTimeMillis();
+      SuggestionSet ss = runTest(mc,fd,cnts,test.getTime(),false,test.getUpFrames() == 0);
+      long time = System.currentTimeMillis() - starttime;
+      processSuggestions(test.getName(),ss,test.getSolution(),time);
+    }
+   catch (Throwable t) {
+      RoseLog.logE("ROSEEVAL","Problem processing evaluation test",t);
+    }
+   finally {
+      finishTest(fd);
+      shutdownBedrock(suite.getWorkspace(),suite.getProject());
     }
 }
 
@@ -208,12 +252,18 @@ protected void runEvaluation(String launch,RoseEvalProblem problem,int ct,String
 
 protected void finishEvaluations()
 {
+   finishEvaluations(workspace_name,project_name);
+}
+
+
+protected void finishEvaluations(String workspace,String project)
+{
    if (output_file != null) {
       output_file.close();
       output_file = null;
     }
    
-   shutdownBedrock();
+   shutdownBedrock(workspace,project);
 }
 
 
@@ -224,19 +274,34 @@ protected void finishEvaluations()
 /*                                                                              */
 /********************************************************************************/
 
-private RoseEvalFrameData setupTest(String launch,int cont)
+private RoseEvalFrameData setupTest(String workspace,String project,
+      String launch,int cont,List<String> files)
 {
-   MintControl ctrl = mint_map.get(workspace_name);
-   LaunchData ld = startLaunch(ctrl,project_name,launch);
+   MintControl ctrl = mint_map.get(workspace);
+   LaunchData ld = startLaunch(ctrl,project,launch);
    for (int i = 0; i < cont; ++i) {
       continueLaunch(ld);
     }
-   RoseEvalFrameData fd = getTopFrame(ctrl,project_name,ld);
-   setupStem(workspace_name);
+   RoseEvalFrameData fd = getTopFrame(ctrl,project,ld);
+   setupStem(workspace);
    
    CommandArgs args = new CommandArgs("THREAD",ld.getThreadId(),
          "LAUNCH",ld.getLaunchId());
-   Element xml = sendStemReply(ctrl,"START",args,null);
+   String cnts = null;
+   if (files != null && !files.isEmpty()) {
+      IvyXmlWriter xw = new IvyXmlWriter();
+      xw.begin("FILES");
+      for (String f : files) {
+         xw.begin("FILE");
+         xw.field("NAME",f);
+         xw.end("FILE");
+       }
+      xw.end("FILES");
+      cnts = xw.toString();
+      xw.close();
+    }
+   
+   Element xml = sendStemReply(ctrl,"START",args,cnts);
    
    assert IvyXml.isElement(xml,"RESULT");
    
@@ -246,7 +311,7 @@ private RoseEvalFrameData setupTest(String launch,int cont)
 
 
 private SuggestionSet runTest(MintControl ctrl,RoseEvalFrameData fd,
-      String oprob,int max,boolean lines,boolean usecur)
+      String oprob,long max,boolean lines,boolean usecur)
 {
 // getChangedVariables(ctrl,fd,oprob);
    String startloc = (usecur ? "*" : null);
@@ -346,7 +411,7 @@ protected void getChangedVariables(MintControl ctrl,RoseEvalFrameData fd,String 
 }
 
 
-private String getStartFrame(MintControl ctrl,String prob,String loc,int max)
+private String getStartFrame(MintControl ctrl,String prob,String loc,long max)
 {
    CommandArgs args = new CommandArgs();
    String cnts = prob;
@@ -395,7 +460,7 @@ private SuggestionSet getSuggestionsFor(MintControl ctrl,RoseEvalFrameData fd,St
    
    Element xml = sendStemReply(ctrl,"SUGGEST",args,cnts);
    assert IvyXml.isElement(xml,"RESULT");
-   List<Suggestion> rslt = ss.getSuggestions();
+   List<RoseEvalSuggestion> rslt = ss.getSuggestions();
    assert rslt != null;
    
    suggest_set.remove(id);
@@ -427,7 +492,7 @@ private void processSuggestions(String name,SuggestionSet ss,String expect,long 
    int fixcnt = 0;
    long fixseede = 0;
    double max = 0;
-   for (Suggestion sug : ss.getSuggestions()) {
+   for (RoseEvalSuggestion sug : ss.getSuggestions()) {
       if (max == 0) max = sug.getPriority()*0.1;
       if (fnd < 0) {
          System.err.println("CHECK " + sug.getPriority() + " " + sug.getLine() + " " + sug.getDescription() +
@@ -443,6 +508,46 @@ private void processSuggestions(String name,SuggestionSet ss,String expect,long 
                fixseede = sug.getSeedeCount();
              }
           }
+       }
+      ++ctr;
+      if (sug.getPriority() >= max) ++showctr;
+    }
+   
+   int ct = ss.getNumChecked();
+   
+   if (output_file != null) {
+      output_file.println(name + "," + ctr + "," + showctr + "," + fnd + "," + 
+            time + "," + fixtime + "," + fixcnt + "," + fixseede + "," + ct);
+    }
+   
+   System.err.println("PROCESS SUGGESTIONS: " + name +": " + ctr + " " + showctr + " " + 
+         fnd + " " + time + " " + fixtime + " " + fixcnt + " " + fixseede + " " + ct);
+}
+
+
+
+private void processSuggestions(String name,SuggestionSet ss,RoseEvalSolution sol,long time)
+{
+   if (sol == null) return;
+   
+   int ctr = 0;
+   int showctr = 0;
+   int fnd = -1;
+   long fixtime = 0;
+   int fixcnt = 0;
+   long fixseede = 0;
+   double max = 0;
+   for (RoseEvalSuggestion sug : ss.getSuggestions()) {
+      if (max == 0) max = sug.getPriority()*0.1;
+      if (fnd < 0) {
+         System.err.println("CHECK " + sug.getPriority() + " " + sug.getLine() + " " + sug.getDescription() +
+               " " + sug.getTime() + " " + sug.getCount());
+       }
+      if (sol.match(sug) && fnd < 0) {
+         fnd = ctr+1;
+         fixtime = sug.getTime();
+         fixcnt = sug.getCount();
+         fixseede = sug.getSeedeCount();
        }
       ++ctr;
       if (sug.getPriority() >= max) ++showctr;
@@ -620,35 +725,35 @@ protected void stopSeede(MintControl mc)
 /*										*/
 /********************************************************************************/
 
-private MintControl setupBedrock()
+private MintControl setupBedrock(String workspace,String project)
 {
-   MintControl mc = mint_map.get(workspace_name);
+   MintControl mc = mint_map.get(workspace);
    if (mc == null) {
       int rint = random_gen.nextInt(1000000);
-      String mint = "STEM_TEST_" + workspace_name.toUpperCase() + "_" + rint;
+      String mint = "STEM_TEST_" + workspace.toUpperCase() + "_" + rint;
       mc = MintControl.create(mint,MintSyncMode.ONLY_REPLIES);
-      mint_map.put(workspace_name,mc);
-      mint_count.put(workspace_name,1);
+      mint_map.put(workspace,mc);
+      mint_count.put(workspace,1);
       mc.register("<BEDROCK SOURCE='ECLIPSE' TYPE='_VAR_0' />",new IDEHandler());
     }
    else {
-      int ct = mint_count.get(workspace_name);
-      mint_count.put(workspace_name,ct+1);
+      int ct = mint_count.get(workspace);
+      mint_count.put(workspace,ct+1);
     }
    
    RoseLog.logI("STEM","SETTING UP BEDROCK");
    File ec1 = new File("/u/spr/eclipse-oxygenx/eclipse/eclipse");
-   File ec2 = new File("/u/spr/Eclipse/" + workspace_name);
+   File ec2 = new File("/u/spr/Eclipse/" + workspace);
    if (!ec1.exists()) {
       ec1 = new File(ECLIPSE_PATH_MAC);
-      ec2 = new File(ECLIPSE_DIR_MAC + workspace_name);
+      ec2 = new File(ECLIPSE_DIR_MAC + workspace);
     }
    if (!ec1.exists()) {
       System.err.println("Can't find bubbles version of eclipse to run");
       System.exit(1);
     }
    String path = ec2.getAbsolutePath();
-   workspace_path.put(workspace_name,path);
+   workspace_path.put(workspace,path);
    
    String cmd = ec1.getAbsolutePath();
    cmd += " -application edu.brown.cs.bubbles.bedrock.application";
@@ -663,8 +768,10 @@ private MintControl setupBedrock()
 	    CommandArgs args = new CommandArgs("LEVEL","DEBUG");
 	    sendBubblesMessage(mc,"LOGLEVEL",null,args,null);
 	    sendBubblesMessage(mc,"ENTER");
-	    Element pxml = sendBubblesXmlReply(mc,"OPENPROJECT",project_name,null,null);
+            args = new CommandArgs("PATHS",true);
+	    Element pxml = sendBubblesXmlReply(mc,"OPENPROJECT",project,args,null);
 	    if (!IvyXml.isElement(pxml,"PROJECT")) pxml = IvyXml.getChild(pxml,"PROJECT");
+            if (i != 0) checkProject(mc,pxml);
 	    return mc;
 	  }
 	 if (i == 0) {
@@ -683,23 +790,71 @@ private MintControl setupBedrock()
 
 
 
-private void shutdownBedrock()
+private void checkProject(MintControl mc,Element opxml)
 {
-   MintControl mc = mint_map.get(workspace_name);
+   boolean havepoppy = false;
+   
+   String pnm = IvyXml.getAttrString(opxml,"NAME");
+   Element cpe = IvyXml.getChild(opxml,"CLASSPATH");
+   for (Element rpe : IvyXml.children(cpe,"PATH")) {
+      String bn = null;
+      String ptyp = IvyXml.getAttrString(rpe,"TYPE");
+      if (ptyp != null && ptyp.equals("SOURCE")) {
+         bn = IvyXml.getTextElement(rpe,"OUTPUT");
+       }
+      else {
+         bn = IvyXml.getTextElement(rpe,"BINARY");
+       }
+      if (bn == null) continue;
+      if (bn.contains("poppy.jar")) {
+         File bfn = new File(bn);
+         if (bfn.exists()) {
+            havepoppy = true;
+          }
+       }
+    }
+   
+   if (!havepoppy) {
+      File poppyjar = IvyFile.expandFile("$(PRO)/bubbles/lib/poppy.jar");
+      if (poppyjar.exists()) {
+         IvyXmlWriter xwp = new IvyXmlWriter();
+         xwp.begin("PROJECT");
+         xwp.field("NAME",pnm);
+         xwp.begin("PATH");
+         xwp.field("TYPE","LIBRARY");
+         xwp.field("NEW",true);
+         xwp.field("BINARY",poppyjar.getPath());
+         xwp.field("EXPORTED",false);
+         xwp.field("OPTIONAL",true);
+         xwp.end("PATH");
+         xwp.end("PROJECT");
+         String cnts = xwp.toString();
+         xwp.close();
+         CommandArgs args = new CommandArgs("LOCAL",true);
+         sendBubblesMessage(mc,"EDITPROJECT",pnm,args,cnts);
+       }
+    }
+}
+
+
+
+private void shutdownBedrock(String workspace,String project)
+{
+   MintControl mc = mint_map.get(workspace);
    if (mc == null) return;
-   int ctr = mint_count.get(workspace_name);
+   int ctr = mint_count.get(workspace);
    if (ctr > 1) {
-      mint_count.put(workspace_name,ctr-1);
+      mint_count.put(workspace,ctr-1);
       return;
     }
    else {
-      mint_count.remove(workspace_name);
-      mint_map.remove(workspace_name);
+      mint_count.remove(workspace);
+      mint_map.remove(workspace);
     }
    
    RoseLog.logI("STEM","Shut down bedrock");
    
-   String path = workspace_path.get(workspace_name);
+   String path = workspace_path.get(workspace);
    File bdir = new File(path);
    File bbdir = new File(bdir,".bubbles");
    File cdir = new File(bbdir,"CockerIndex");
@@ -1093,16 +1248,16 @@ private static class SuggestionSet {
       notifyAll();
     }
    
-   synchronized List<Suggestion> getSuggestions() {
+   synchronized List<RoseEvalSuggestion> getSuggestions() {
       while (!is_done) {
          try {
             wait(1000);
           }
          catch (InterruptedException e) { }
        }
-      List<Suggestion> rslt = new ArrayList<>();
+      List<RoseEvalSuggestion> rslt = new ArrayList<>();
       for (Element e : suggest_nodes) {
-         rslt.add(new Suggestion(e));
+         rslt.add(new RoseEvalSuggestion(e));
        }
       Collections.sort(rslt);
       return rslt;
@@ -1114,42 +1269,7 @@ private static class SuggestionSet {
 
 
 
-private static class Suggestion implements Comparable<Suggestion> {
-   
-   private int line_number;
-   private double fix_priority;
-   private String fix_description;
-   private long fix_time;
-   private int fix_count;
-   private long seede_count;
-   private String fix_file;
-   
-   Suggestion(Element xml) {
-      fix_description = IvyXml.getTextElement(xml,"DESCRIPTION");
-      Element loc = IvyXml.getChild(xml,"LOCATION");
-      fix_file = IvyXml.getAttrString(loc,"FILE");
-      line_number = IvyXml.getAttrInt(loc,"LINE");
-      fix_time = IvyXml.getAttrLong(xml,"TIME");
-      fix_count = IvyXml.getAttrInt(xml,"COUNT",0);
-      seede_count = IvyXml.getAttrLong(xml,"SEEDE",0);
-      double reppri = IvyXml.getAttrDouble(xml,"PRIORITY");
-      double valpri = IvyXml.getAttrDouble(xml,"VALIDATE");
-      fix_priority = reppri * valpri;
-    }
-   
-   int getLine()                        { return line_number; }
-   String getDescription()              { return fix_description; }
-   double getPriority()                 { return fix_priority; }
-   long getTime()                       { return fix_time; }
-   int getCount()                       { return fix_count; }
-   long getSeedeCount()                 { return seede_count; }
-   String getFile()                     { return fix_file; }
-   
-   @Override public int compareTo(Suggestion s) {
-      return Double.compare(s.fix_priority,fix_priority);
-    }
-   
-}       // end of inner class Suggestion
+
 
 }       // end of class RoseEvalBase
 

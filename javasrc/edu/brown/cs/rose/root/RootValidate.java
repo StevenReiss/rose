@@ -58,6 +58,9 @@ RootProblem getProblem();
 void validateAndSend(RootProcessor rp,RootRepair rr);
 
 
+boolean canCheckResult();
+
+
 
 }       // end of class RootValidate
 

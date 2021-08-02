@@ -132,6 +132,7 @@ private String          default_project;
 private LeashIndex      project_index;
 private LeashIndex      global_index;
 private Set<File>       loaded_files;
+private Set<File>       seede_files;
 private boolean         run_debug;
 private boolean         no_debug;
 
@@ -172,6 +173,7 @@ private StemMain(String [] args)
    eval_handlers = new HashMap<>();
    stem_compiler = null;
    loaded_files = new HashSet<>();
+   seede_files = null;
    run_debug = true;
    no_debug = false;
    scanArgs(args);
@@ -269,7 +271,9 @@ private void handleStartCommand(MintMessage msg) throws RoseException
    RoseLog.logD("STEM","START FAIT returned " + sts);
    if (!fait_running) return;
    
-   Element rslt = sendFaitMessage("BEGIN",null,null);
+   CommandArgs bargs = null;
+   if (local_fait) bargs = new CommandArgs("NOEXIT",true);
+   Element rslt = sendFaitMessage("BEGIN",bargs,null);
    if (!IvyXml.isElement(rslt,"RESULT")) {
       analysis_state = AnalysisState.NONE;
       sts = false;
@@ -318,6 +322,7 @@ private void handleFinishedCommand(MintMessage msg)
    
    if (ct > 0) {
       loaded_files.removeAll(added_files);
+      seede_files = null;
       Element xw = sendSeedeMessage(session_id,"REMOVEFILE",null,buf.toString());
       if (!IvyXml.isElement(xw,"RESULT")) {
          RoseLog.logE("STEM","Problem removing seede files");
@@ -535,6 +540,7 @@ private void handleParameterValuesCommand(MintMessage msg) throws RoseException
 @Override public List<RootLocation> getLocations(RootProblem prob)
 {
    List<RootLocation> rslt = new ArrayList<>();
+   seede_files = null;
    StemQueryHistory histq = StemQueryHistory.createHistoryQuery(this,prob);
    if (histq != null) {
       IvyXmlWriter xw = new IvyXmlWriter();
@@ -548,6 +554,7 @@ private void handleParameterValuesCommand(MintMessage msg) throws RoseException
       Element e = IvyXml.convertStringToXml(xw.toString());
       Element nodes = IvyXml.getChild(e,"NODES");
       Map<String,RootLocation> done = new HashMap<>();
+      Set<File> usefiles = new HashSet<>();
       for (Element n : IvyXml.children(nodes,"NODE")) {
          double p = IvyXml.getAttrDouble(n,"PRIORITY");
          String reason = IvyXml.getAttrString(n,"REASON");
@@ -557,6 +564,7 @@ private void handleParameterValuesCommand(MintMessage msg) throws RoseException
          p1 = p1 * p;
          loc.setPriority(p1);
          loc.setReason(reason);
+         usefiles.add(loc.getFile());
          if (!isLocationRelevant(loc,prob)) continue;
          String s = loc.getFile().getPath() + "@" + loc.getLineNumber();
          RootLocation oloc = done.putIfAbsent(s,loc);
@@ -568,6 +576,7 @@ private void handleParameterValuesCommand(MintMessage msg) throws RoseException
             rslt.add(loc);
           }
        }
+      if (!usefiles.isEmpty()) seede_files = usefiles;
     }
    
    return rslt;
@@ -648,6 +657,7 @@ private boolean isLocationRelevant(RootLocation loc,RootProblem prob)
 
 private void handleHistoryCommand(MintMessage msg) throws RoseException
 {
+   seede_files = null;
    Element msgxml = msg.getXml();
    String tid = IvyXml.getAttrString(msgxml,"THREAD");
    Element fileelt = IvyXml.getChild(msgxml,"FILES");
@@ -1394,7 +1404,7 @@ private class WaitForExit extends Thread {
 	  }
        }
 
-      System.exit(0);
+     if (!local_fait) System.exit(0);
 }
 
 }	// end of inner class WaitForExit
@@ -1409,6 +1419,13 @@ private class WaitForExit extends Thread {
 
 @Override public Set<File> getLoadedFiles()
 {
+   return loaded_files;
+}
+
+
+@Override public Set<File> getSeedeFiles()
+{
+   if (seede_files != null) return seede_files;
    return loaded_files;
 }
 
@@ -1461,6 +1478,8 @@ private void loadFilesIntoFait(String tid,Element fileelt) throws RoseException
    else {
       RoseLog.logD("STEM","No files to add for " + tid + " " + use_all_files);
     }
+   
+   seede_files = null;
 }
 
 
@@ -1536,7 +1555,8 @@ private Set<File> findFaitFiles(String threadid) throws RoseException
    startFaitProcess();
    if (!fait_running) return findAllSourceFiles();
    
-   Element frslt = sendFaitMessage("BEGIN",null,null);
+   CommandArgs bargs = null;
+   if (local_fait) bargs = new CommandArgs("NOEXIT",true);  Element frslt = sendFaitMessage("BEGIN",bargs,null);
    if (!IvyXml.isElement(frslt,"RESULT")) {
       throw new RoseException("BEGIN for session failed");
     }
@@ -1544,6 +1564,7 @@ private Set<File> findFaitFiles(String threadid) throws RoseException
    if (analysis_state == AnalysisState.NONE) {
       analysis_state = AnalysisState.PENDING; 
       CommandArgs aargs = new CommandArgs("REPORT","SOURCE");
+      aargs.put("REPORT","FULL_STATS");
       BoardProperties props = BoardProperties.getProperties("Rose");
       int nth = props.getInt("Rose.fait.threads");
       if (nth > 0) aargs.put("THREADS",nth);
@@ -1616,14 +1637,17 @@ private void findFilesForClasses(Set<String> clsset,Set<File> rslt)
       
       for (Element c : IvyXml.children(clss,"TYPE")) {
          String tnm = IvyXml.getAttrString(c,"NAME");
+         tnm = tnm.replace("$",".");
          String fnm  = IvyXml.getAttrString(c,"SOURCE");
          if (tnm != null && fnm != null) classmap.put(tnm,fnm);
        }
     }
    
    for (String s : clsset) {
+      s = s.replace("$",".");
       String fnm = classmap.get(s);
       if (fnm != null) rslt.add(new File(fnm));
+      else RoseLog.logE("STEM","Class " + s + " not found for FILEADD");
     }
 }
 

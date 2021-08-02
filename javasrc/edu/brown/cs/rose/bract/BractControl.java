@@ -187,7 +187,7 @@ private ProcessorTask startTask(Class<?> cls,RootProblem p,RootLocation l)
     }
    catch (Throwable t) { }
    if (rrf == null) return null;
-   ProcessorTask pt = new ProcessorTask(rrf);
+   ProcessorTask pt = new ProcessorTask(rrf,base_validator);
    RootThreadPool.start(pt);
    return pt;
 }
@@ -252,9 +252,11 @@ private List<RootLocation> getLocations()
 private static class ProcessorTask extends RootTask implements PriorityTask {
    
    private RootRepairFinder repair_finder;
+   private RootValidate repair_validate;
    
-   ProcessorTask(RootRepairFinder brf) {
+   ProcessorTask(RootRepairFinder brf,RootValidate rv) {
       repair_finder = brf;
+      repair_validate = rv;
     }
    
    @Override public void run() {
@@ -266,14 +268,20 @@ private static class ProcessorTask extends RootTask implements PriorityTask {
          RoseLog.logD("BRACT","Start repair finder " + repair_finder.getClass() + 
                " at " + loc.getFile() + " " + loc.getLineNumber());
        }
-      
+   
       try {
-         repair_finder.process();
+         if (repair_validate.canCheckResult()) {
+            repair_finder.process();
+          }
+         else {
+            RoseLog.logD("BRACT","Skipping repair");
+          }
        }
       catch (Throwable t) {
          RoseLog.logE("BRACT","Problem in repair finder",t);
        }
       finally {
+         RoseLog.logD("BRACT","Finish repair finder " + repair_finder.getClass());
          synchronized (this) {
             noteDone();
           }
@@ -283,7 +291,13 @@ private static class ProcessorTask extends RootTask implements PriorityTask {
    
    
    @Override public double getTaskPriority() {
-      return repair_finder.getFinderPriority() * 0.5;
+      double v = repair_finder.getFinderPriority() * 0.5;
+      if (repair_finder.getLocation() != null) {
+         double lv = repair_finder.getLocation().getPriority();
+         v += lv * 0.1;
+       }
+      
+      return v;
     }
    
 }       // end of inner class ProcessorTask

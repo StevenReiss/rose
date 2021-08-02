@@ -44,6 +44,7 @@ import org.w3c.dom.Element;
 import edu.brown.cs.rose.root.RootControl;
 import edu.brown.cs.rose.root.RootRepairFinderDefault;
 import edu.brown.cs.sequencer.application.ApplicationQuery;
+import edu.brown.cs.sequencer.application.ApplicationServerRegulation;
 import edu.brown.cs.sequencer.repair.RepairResult;
 
 public class SepalSequencer extends RootRepairFinderDefault
@@ -86,6 +87,11 @@ public SepalSequencer()
 // asr.startServer();
    
    sequencer_connect = new ApplicationQuery();
+   if (!sequencer_connect.ping()) {
+      String [] args = new String[] { };
+      ApplicationServerRegulation asr = new ApplicationServerRegulation(args);
+      asr.startServer();
+    }
 }
 
 
@@ -98,7 +104,7 @@ public SepalSequencer()
 
 @Override public double getFinderPriority()
 {
-   return 0.45;
+   return 0.40;
 }
 
 
@@ -112,9 +118,15 @@ public SepalSequencer()
    File bfile = getLocation().getFile();
    int lno = getLocation().getLineNumber();
    String bcnts = ctrl.getSourceContents(bfile);
-   List<RepairResult> rslts = sequencer_connect.execute(bfile.getPath(),bcnts,lno);
+   List<RepairResult> rslts = null;
+   if (sequencer_connect.ping()) {
+//    rslts = sequencer_connect.execute(bfile.getPath(),bcnts,lno);
+    }
    if (rslts == null || rslts.isEmpty()) return;
-   
+   // need to sort the results -- skip first, ignore changes
+   // covered by other suggesters, etc.
+   // score is meaningless.
+   // limit to 3-5 per suggestion
    int rct = 0;
    int fnd = 0;
    for (RepairResult rr : rslts) {
@@ -128,37 +140,6 @@ public SepalSequencer()
       if (++fnd > MAX_LOCAL_CHECK) break;
     }
 }
-
-
-
-
-
-
-/********************************************************************************/
-/*                                                                              */
-/*      Check if server is alive                                                */
-/*                                                                              */
-/********************************************************************************/
-
-// private boolean pingServer()
-// {
-// String [] args = new String[] { };
-// ApplicationServerRegulation asr = new ApplicationServerRegulation(args);
-// String ping = "<PING />";
-// try {
-//    Element rslt = asr.sendMessage(ping);
-//    if (rslt != null && IvyXml.isElement(rslt,"RESULT")) return true;
-//  }
-// catch (IOException e) {
-//  }
-// catch (MalformedMessageException e) { }
-// 
-// return false;
-// }
-
-
-
-
 
 
 

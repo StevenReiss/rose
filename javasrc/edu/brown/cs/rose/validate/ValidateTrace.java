@@ -544,7 +544,13 @@ private Boolean compareVariable(BudLocalVariable local,Element valelt,BudLaunch 
             if (IvyXml.getAttrBool(valelt,"NULL")) return true;
             return false;
           }
+         else if (local.getType().equals("java.lang.Class")) {
+            return true;
+          }
          return compareObject(local,valelt,launch,from,to);
+      case "CLASS" :
+         System.err.println("CHECK HERE");
+         break;
       default :
          break;
     }
@@ -707,6 +713,7 @@ private Boolean compareValueAtTime(BudValue actval,Element valctx,BudLaunch laun
    String s2 = ctxtyp;
    int idx2 = s2.indexOf("<");
    if (idx2 > 0) s2 = s2.substring(0,idx2);
+   s1 = s1.replace("$",".");
    
    if (!s1.equals(s2)) return false;
    

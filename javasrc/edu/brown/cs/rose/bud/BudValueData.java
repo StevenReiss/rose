@@ -134,6 +134,7 @@ int getLength() 		{ return array_length; }
 
 
 
+   
 BudValue getBudValue()
 {
    if (result_value != null) return result_value;
@@ -232,7 +233,7 @@ BudValue getBudValue()
 	    tnm = tnm.substring(1,idx2).trim();
 	  }
          BudType ctyp = bud_launch.findType(tnm);
-	 result_value = BudValue.classValue(ctyp);
+	 result_value = BudValue.classValue(bud_launch.findType("java.lang.Class"),ctyp);
 	 break;
       case UNKNOWN :
 	 break;

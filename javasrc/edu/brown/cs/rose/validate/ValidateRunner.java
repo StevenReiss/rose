@@ -120,7 +120,7 @@ ValidateRunner(ValidateContext ctx,RootProcessor rp,RootRepair rr)
       ve.start(root_processor.getController());
       
       double score = base_context.checkValidResult(ve);
-      base_context.noteSeedeLength(ve.getExecutionTime(),for_repair);
+      base_context.noteSeedeLength(ve.getExecutionTime(),for_repair,score);
       
       if (score > 0) {
          RootTestCase tc = base_context.getProblem().getCurrentTest();

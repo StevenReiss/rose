@@ -36,7 +36,12 @@
 package edu.brown.cs.rose.sepal;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.Statement;
@@ -62,8 +67,9 @@ public class SepalLocalSearch extends RootRepairFinderDefault
 
 private BractSearch     search_engine;
 
-private static final int MAX_LOCAL_CHECK = 5;
-private static final int MAX_LOCAL_RESULTS = 5;
+private static final int MAX_LOCAL_CHECK = 40;
+private static final int MAX_LOCAL_RESULTS = 10;
+private static final int MAX_CHECK_PER_RESULT = 4;
 private static final double SEARCH_THRESHOLD = 1.0;
 
 
@@ -112,6 +118,10 @@ public SepalLocalSearch()
    if (rslts == null || rslts.isEmpty()) return; 
    
    File bfile = getLocation().getFile();
+   try {
+      bfile = bfile.getCanonicalFile();
+    }
+   catch (IOException e) { }
    int lno = getLocation().getLineNumber();
    String bcnts = ctrl.getSourceContents(bfile);
    ASTNode bnode = stmt;
@@ -133,10 +143,11 @@ public SepalLocalSearch()
          RoseLog.logE("SEPAL","Problem with sharpFix",t);
          continue;
        }
+      restrictPatches(lno,stmt,patches);
       int ct = patches.size();
+      int lct = 0;
       for (int i = 0; i < ct; ++i) {
          PatchAsASTRewriteWithScore r = patches.get(i);
-         if (!isRelevant(lno,stmt,r)) continue;
          ASTRewrite rw = r.getASTRewrite();
         
          // need to get a description from the rewrite -- replace Search-based repair with that
@@ -146,6 +157,8 @@ public SepalLocalSearch()
          String logdata = getClass().getName() + "@" + i + "@" + r.getType();
          String desc = r.getDescription();
          addRepair(rw,desc,logdata,score);
+//       System.err.println("LOCAL " + i + " " + fnd + " " + rct + " " + lct + " " + desc);
+         if (++lct > MAX_CHECK_PER_RESULT) break;
          if (++fnd > MAX_LOCAL_CHECK) break;
        }
       // add repair for each returned patch
@@ -158,20 +171,97 @@ public SepalLocalSearch()
 
 private boolean isRelevant(int lno,Statement stmt,PatchAsASTRewriteWithScore r)
 {
+   // ignore method replace
    if (r.getType().equals("METHODREPLACE")) return false;
+   
+   // ensure the fix is at or near the line being checked
    if (r.getType().startsWith("REPLACE")) {
       if (r.getLineNumber() != lno) return false;
     }
    else if (r.getType().startsWith("INSERT")) {
       if (Math.abs(r.getLineNumber()-lno) > 1) return false;
     }
+   else if (r.getType().contains("GUARD")) {
+      if (Math.abs(r.getLineNumber()-lno) > 1) return false;
+    }
    
+   // ignore large changes
    if (r.getHeight() >= 3.0) return false;
    
    return true;
 }
-   
+  
 
+
+/********************************************************************************/
+/*                                                                              */
+/*      Sort patches                                                            */
+/*                                                                              */
+/*  This takes into account the other patch generation strategies and tries to  */
+/*  prioritize search patches that are not likely to be found by them.   It     */
+/*  also removes patches that are too complex and therefore out of the scope of */
+/*  ROSE.                                                                       */        
+/*                                                                              */
+/********************************************************************************/
+
+private void restrictPatches(int lno,Statement stmt,List<PatchAsASTRewriteWithScore> patches)
+{
+   // first remove irrelevant patches
+   for (Iterator<PatchAsASTRewriteWithScore> it = patches.iterator(); it.hasNext(); ) {
+      PatchAsASTRewriteWithScore p = it.next();
+      if (!isRelevant(lno,stmt,p)) it.remove();
+    }
+   
+   patches.sort(new PatchComparer());
+   
+   int patch_num = patches.size();
+   float basic_score = 1f / ((1f + patch_num) * patch_num / 2);
+   for (int i=0; i<patch_num; i++) {
+      PatchAsASTRewriteWithScore p = patches.get(i);
+      p.setScore(basic_score * (patch_num-i));
+    }
+}
+
+
+private static Map<String,Integer> patch_type;
+static {
+   int ct = 0;
+   patch_type = new HashMap<>();
+   patch_type.put("INSERT",++ct);
+   patch_type.put("REPLACE_EXPR",++ct);
+   patch_type.put("REPLACE_STATEMENT",++ct);
+   patch_type.put("EXPRGUARD",++ct);
+   patch_type.put("REPLACE_OP",++ct);
+   patch_type.put("IFCONDGUARD",++ct);
+   patch_type.put("REPLACE_BLOCK",++ct);
+   patch_type.put("REPLACE_LIST",++ct);
+   patch_type.put("REPLACE_STMTS",++ct);
+   patch_type.put("REPLACE_NAME",++ct);
+   patch_type.put("REPLACE",++ct);
+   patch_type.put("DELETE",++ct);
+   patch_type.put("METHODREPLACE",++ct);
+}
+
+
+private static int getTypeScore(String t)
+{
+   Integer v = patch_type.get(t);
+   if (v != null) return v;
+   RoseLog.logE("SEPAL","Unknown search patch type " + t);
+   return patch_type.size() + 1;
+}
+
+private static class PatchComparer implements Comparator<PatchAsASTRewriteWithScore> {
+   
+   @Override public int compare(PatchAsASTRewriteWithScore p1,PatchAsASTRewriteWithScore p2) {
+      String t1 = p1.getType();
+      String t2 = p2.getType();
+      if (t1.equals(t2)) {
+         return Float.compare(p1.getScore(),p2.getScore());
+       }
+      return Integer.compare(getTypeScore(t1),getTypeScore(t2));
+    }
+}
 
 
 

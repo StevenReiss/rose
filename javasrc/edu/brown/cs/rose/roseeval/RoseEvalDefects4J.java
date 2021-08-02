@@ -257,7 +257,7 @@ private void process()
       for (int tn : run_tests) {
          boolean usecur = local_tests.contains(test_names[tn]);
 	 runEvaluation(test_names[tn],test_problem[tn],test_skip[tn],
-	       test_solution[tn],test_time[tn],usecur);
+	       test_solution[tn],test_time[tn],usecur,null);
        }
     }
    catch (Throwable t) {

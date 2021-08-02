@@ -35,8 +35,12 @@
 
 package edu.brown.cs.rose.roseeval;
 
+import org.w3c.dom.Element;
+
 import edu.brown.cs.ivy.mint.MintControl;
+import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
+import edu.brown.cs.rose.root.RoseLog;
 
 class RoseEvalProblem implements RoseEvalConstants
 {
@@ -69,6 +73,36 @@ private RoseEvalProblem(String typ,String item,String oval,String tval)
    original_value = oval;
    target_value = tval;
 }
+
+
+static RoseEvalProblem createProblem(Element xml)
+{
+   String type = IvyXml.getAttrString(xml,"TYPE");
+   if (type == null) return null;
+   
+   switch (type) {
+      case "EXCEPTION" :
+         return createException(IvyXml.getAttrString(xml,"CATCH"));
+      case "VARIABLE" :
+         return createVariable(IvyXml.getAttrString(xml,"NAME"),
+               IvyXml.getAttrString(xml,"CURRENT"),
+               IvyXml.getAttrString(xml,"TARGET"));
+      case "EXPRESSION" :
+         return createExpression(IvyXml.getAttrString(xml,"NAME"),
+               IvyXml.getAttrString(xml,"CURRENT"),
+               IvyXml.getAttrString(xml,"TARGET"));
+      case "LOCATION" :
+         return createLocation();
+      case "ASSERTION" :
+         return createAssertion();
+      case "JUNIT" :
+         return createJunitAssertion();
+      default : 
+         RoseLog.logT("ROSEEVAL","Unknown problem type " + type);
+         return null;
+    }
+}
+
 
 
 static RoseEvalProblem createException(String typ)

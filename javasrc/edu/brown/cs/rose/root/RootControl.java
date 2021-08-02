@@ -186,6 +186,7 @@ LeashIndex getProjectIndex();
 LeashIndex getGlobalIndex();
 
 Set<File> getLoadedFiles();
+Set<File> getSeedeFiles();
 
 
 }       // end of interface RoseControl

@@ -118,9 +118,9 @@ static BudValue arrayValue(BudType typ,int len,Map<Integer,BudGenericValue> init
 }
 
 
-static BudValue classValue(BudType typ)
+static BudValue classValue(BudType ctyp,BudType typ)
 {
-   return null;
+   return new ClassValue(ctyp,typ);
 }
 
 
@@ -355,6 +355,30 @@ private static class StringValue extends BudValue {
 }       // end of inner class StringValue
 
 
+
+/********************************************************************************/
+/*                                                                              */
+/*      Class values                                                            */
+/*                                                                              */
+/********************************************************************************/
+
+private static class ClassValue extends BudValue {
+   
+   private BudType base_type;
+   
+   ClassValue(BudType ctype,BudType base) {
+      super(ctype);
+      base_type = base;
+    }
+
+   @Override protected void localOutputXml(IvyXmlWriter xw) {
+      xw.field("CLASS",true);
+      xw.cdataElement("BASE",base_type.toString());
+    }
+   
+   @Override public String toString()           { return base_type.getName(); }
+   
+}       // end of inner class ClassValue
 
 /********************************************************************************/
 /*                                                                              */

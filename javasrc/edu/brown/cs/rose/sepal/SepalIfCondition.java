@@ -36,6 +36,7 @@
 package edu.brown.cs.rose.sepal;
 
 import edu.brown.cs.rose.root.RootRepairFinderDefault;
+import edu.brown.cs.rose.root.RoseLog;
 
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -104,6 +105,7 @@ public SepalIfCondition()
          break;
     }
    if (cond == null) return;
+   RoseLog.logD("SEPAL","Check condition on " + stmt);
    
    if (cond instanceof InfixExpression) {
       InfixExpression ifx = (InfixExpression) cond;

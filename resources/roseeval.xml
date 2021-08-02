@@ -1,0 +1,525 @@
+<ROSEEVAL>
+
+
+<SUITE NAME='quix' WORKSPACE='quixspr' PROJECT='quixbugs' TIME='10000'>
+   <TEST NAME='BitCount'>
+      <PROBLEM TYPE='JUNIT'/>
+      <SOLUTION LINE='25'>
+	  <MATCH><![CDATA[n & (n - 1)]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='BreadthFirstSearch'>
+      <PROBLEM TYPE='EXCEPTION' CATCH='java.util.NoSuchElementException'/>
+      <SOLUTION LINE='33' MATCH='if (queue.size() == 0) return ' />
+   </TEST>
+   <TEST NAME='BucketSort'>
+      <PROBLEM TYPE='ASSERTION'/>
+      <SOLUTION LINE='29'>
+	 <MATCH>`arr' with `counts'</MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='DepthFirstSearch' SKIP='3'>
+      <PROBLEM TYPE='LOCATION'/>
+      <SOLUTION LINE='44' MATCH='nodes_visited.add' />
+   </TEST>
+   <TEST NAME='DetectCycle'>
+      <PROBLEM TYPE='EXCEPTION' CATCH='java.lang.NullPointerException'/>
+      <SOLUTION LINE='26' MATCH='(hare == null) ||' />
+   </TEST>
+   <TEST NAME='FindFirstInSorted'>
+      <PROBLEM TYPE='EXCEPTION' CATCH='java.lang.ArrayIndexOutOfBoundsException' />
+      <SOLUTION LINE='24'>
+	 <MATCH><![CDATA[lo < hi]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='FindInSorted' SKIP='4' >
+      <PROBLEM TYPE='VARIABLE' NAME='start' CURRENT='3' TARGET='4' />
+      <SOLUTION LINE='30'>
+	 <MATCH><![CDATA[mid + 1]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Flatten' SKIP='1'>
+      <PROBLEM TYPE='LOCATION'/>
+      <SOLUTION LINE='29'>
+	 <MATCH><![CDATA[flatten(x)]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Gcd' SKIP='2'>
+      <PROBLEM TYPE='VARIABLE' NAME='b' CURRENT='600' />
+      <SOLUTION LINE='26'>
+	 <MATCH><![CDATA[gcd(b,]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='GetFactors'>
+      <PROBLEM TYPE='JUNIT' />
+      <SOLUTION LINE='34'>
+	 <MATCH><![CDATA[asList(n)]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Hanoi'>
+      <PROBLEM TYPE='ASSERTION'/>
+      <SOLUTION LINE='35'>
+	<MATCH><![CDATA[`helper' with `end']]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='IsValidParenthesization'>
+      <PROBLEM TYPE='ASSERTION'/>
+      <SOLUTION LINE='33'>
+	 <MATCH><![CDATA[depth == 0]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='KHeapSort'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='37'>
+	 <MATCH><![CDATA[sublist(k,arr.size())]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Knapsack'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='37'>
+	 <MATCH><![CDATA[<=]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Kth'>
+      <PROBLEM TYPE='EXCEPTION' CATCH='java.lang.IndexOutOfBoundsException' />
+      <SOLUTION LINE='39'>
+	 <MATCH><![CDATA[k - numlessoreq]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='LcsLength'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='46'>
+	 <MATCH><![CDATA[p.get(i-1).containsKey(j-1)]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Levenshtein' TIME='500000'>
+      <PROBLEM TYPE='VARIABLE' NAME='result' CURRENT='8' TARGET='3' />
+      <SOLUTION LINE='26'>
+	 <MATCH><![CDATA[- 1]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Lis'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='42'>
+	 <MATCH><![CDATA[Match.max]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='LongestCommonSubsequence' TIME='50000'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='25'>
+	 <MATCH><![CDATA[b.substring(1)]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='MaxSublistSum'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='25'>
+	 <MATCH><![CDATA[Math.max(0]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='MergeSort' SKIP='2'>
+      <PROBLEM TYPE='VARIABLE' NAME='arr' />
+      <SOLUTION LINE='56'>
+	 <MATCH><![CDATA[<= 1]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='MinimumSpanningTree'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='46'>
+	 <MATCH><![CDATA[groupByNode.put(node,groupByNode.get(vertex_u)]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='NextPalindrome'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='44'>
+	 <MATCH><![CDATA[length - 1]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='NextPermutation'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='26'>
+	 <MATCH><![CDATA[> ]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Pascal'>
+      <PROBLEM TYPE='EXCEPTION' CATCH='java.lang.IndexOutOfBoundsException' />
+      <SOLUTION LINE='28'>
+	 <MATCH><![CDATA[c <= r]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='PossibleChange'>
+      <PROBLEM TYPE='EXCEPTION' CATCH='java.lang.ArrayIndexOutOfBoundsException' />
+      <SOLUTION LINE='28'>
+	 <MATCH><![CDATA[.length]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='PowerSet'>
+      <PROBLEM TYPE='ASSERTION'/>
+      <SOLUTION LINE='34'>
+	 <MATCH><![CDATA[to_add.add(]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='QuickSort'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='35'>
+	 <MATCH><![CDATA[>=]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='ReverseLinkedList'>
+      <PROBLEM TYPE='EXCEPTION' CATCH='java.lang.NullPointerException' />
+      <SOLUTION LINE='26'>
+	 <MATCH><![CDATA[prevnode = node]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='RpnEval'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='43'>
+	 <MATCH><![CDATA[apply(b,a)]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='ShortestPathLength'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='53'>
+	 <MATCH><![CDATA[distance]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='ShortestPathLengths' TIME='500000'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='46'>
+	 <MATCH><![CDATA[Arrays.aslist(k,j)]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='ShortestPaths'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='40'>
+	 <MATCH><![CDATA[edge.get(i)]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='ShuntingYard'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='48'>
+	 <MATCH><![CDATA[opstack.push(token)]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Sieve'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='47'>
+	 <MATCH><![CDATA[`any' with `all']]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Sqrt' SKIP='4'>
+      <PROBLEM TYPE='LOCATION' />
+      <SOLUTION LINE='23'>
+	 <MATCH><![CDATA[approx * approx]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Subsequences'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='23'>
+	 <MATCH><![CDATA[.add(]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='ToBase'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='26'>
+	 <MATCH><![CDATA[+ result]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='TopologicalOrdering'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='31'>
+	 <MATCH><![CDATA[getPredecessors]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Wrap'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='36'>
+	 <MATCH><![CDATA[lines.add(test)]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   </SUITE>
+
+<SUITE NAME='math3' WORKSPACE='d4jmath3' PROJECT='d4jmath3' TIME='100000'>
+   <TEST NAME='Math02'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='271' FILE='HypergeometricDistribution.java'>
+	 <MATCH><![CDATA[getSampleSize() *]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Math05'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='307' FILE='Complex.java'>
+	 <MATCH><![CDATA[INF]]></MATCH>
+      </SOLUTION>
+   </TEST>
+<!--
+   <TEST NAME='Math09'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='91' FILE='Line.java'>
+	 <MATCH><![CDATA[reverted.direction = ]]></MATCH>
+      </SOLUTION>
+   </TEST>
+-->
+<!--
+   <TEST NAME='Math10'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='1427-1433' FILE='Compiler.java'>
+	 <MATCH><![CDATA[FastMath.atan2]]></MATCH>
+      </SOLUTION>
+   </TEST>
+-->
+   <TEST NAME='Math11'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='185' FILE='MultivariateNormalDistribution.java'>
+	 <MATCH><![CDATA[2.0]]></MATCH>
+      </SOLUTION>
+   </TEST>
+<!--
+   <TEST NAME='Math25'>
+      <PROBLEM TYPE='LOCATION' />
+      <SOLUTION LINE='341-347' FILE='ParameterGuesser.java'>
+	 <MATCH><![CDATA[c2 == 0]]></MATCH>
+      </SOLUTION>
+   </TEST>
+-->
+   <TEST NAME='Math27'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='599' FILE='Fraction.java'>
+	 <MATCH><![CDATA[100 * doubleValue]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Math30' LOCAL='true' FRAMES='0'>
+      <PROBLEM TYPE='VARIABLE' NAME='r' CURRENT='NaN' />
+      <SOLUTION LINE='180' FILE='MannWhitneyUTest.java'>
+	 <MATCH><![CDATA[double]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Math32'>
+      <PROBLEM TYPE='EXCEPTION' CATCH='java.lang.ClassCastException' />
+      <SOLUTION LINE='529' FILE='PolygonsSet.java'>
+	 <MATCH><![CDATA[tree.getCut() == null]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Math34'>
+      <PROBLEM TYPE='LOCATION' />
+      <SOLUTION LINE='223' FILE='ListPopulation.java'>
+	 <MATCH><![CDATA[getChromosomes()]]></MATCH>
+      </SOLUTION>
+   </TEST>
+</SUITE>
+
+<SUITE NAME='chart' WORKSPACE='d4jchart' PROJECT='d4jchart' TIME='100000'>
+   <TEST NAME='Chart01'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='1799' FILE='AbstractCategoryItemRenderer.java'>
+	 <MATCH><![CDATA[==]]></MATCH>
+      </SOLUTION>
+      <FILE>/pro/d4jspr/chart/javasrc/edu/brown/cs/d4jspr/BugChart01.java</FILE>
+      <FILE>/pro/d4jspr/chart/javasrc/org/jfree/chart/renderer/category/LineAndShapeRenderer.java</FILE>
+      <FILE>/pro/d4jspr/chart/javasrc/org/jfree/chart/renderer/category/AbstractCategoryItemRenderer.java</FILE>
+      <FILE>/pro/d4jspr/chart/javasrc/org/jfree/data/category/DefaultCategoryDataset.java</FILE>
+      <FILE>/pro/d4jspr/chart/javasrc/org/jfree/data/category/AbstractCategoryDataset.java</FILE>
+      <FILE>/pro/d4jspr/chart/javasrc/org/jfree/data/general/AbstractDataset.java</FILE>
+      <FILE>/pro/d4jspr/chart/javasrc/org/jfree/chart/plot/CategoryPlot.java</FILE>
+      <FILE>/pro/d4jspr/chart/javasrc/org/jfree/chart/plot/Plot.java</FILE>
+      <FILE>/pro/d4jspr/chart/javasrc/org/jfree/chart/LegendItemCollection.java</FILE>
+   </TEST>
+   <TEST NAME='Chart03'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='1096' FILE='TimeSeries.java'>
+	 <MATCH><![CDATA[NaN]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Chart11'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='278' FILE='ShapeUtilities.java'>
+	 <MATCH><![CDATA[p1.getPathIterator]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Chart12'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='164' FILE='MultiplePiePlot.java'>
+	 <MATCH><![CDATA[setDataset]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Chart20'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='97' FILE='ValueMarker.java'>
+	 <MATCH><![CDATA[,outline]]></MATCH>
+      </SOLUTION>
+   </TEST>
+</SUITE>
+
+<SUITE NAME='math' WORKSPACE='d4jmath' PROJECT='d4jmath' TIME='100000'>
+   <TEST NAME='Math41'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='522' FILE='Variance.java'>
+	 <MATCH><![CDATA[begin + length]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Math58'>
+      <PROBLEM TYPE='LOCATION' />
+      <SOLUTION LINE='124' FILE='GaussianFitter.java'>
+	 <MATCH><![CDATA[(guess)]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Math59'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='3515' FILE='FastMath.java'>
+	 <MATCH><![CDATA[`b' with `a]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Math69'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='176' FILE='PearsonsCorrelation.java'>
+	 <MATCH><![CDATA[(-t)]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Math75'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='268' FILE='Frequency.java'>
+	 <MATCH><![CDATA[getPct']]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Math94'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='387' FILE='ArithmeticUtils.java'>
+	 <MATCH><![CDATA[(u == 0) ||]]></MATCH>
+	 <MATCH><![CDATA[u == 0 ||]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Math96'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='350' FILE='Complex.java'>
+	 <MATCH><![CDATA[real == c.real]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Math104'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='38' FILE='Gamma.java'>
+	 <MATCH><![CDATA[10e-15]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Math105'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='437' FILE='SimpleRegression.java'>
+	 <MATCH><![CDATA[Math.max]]></MATCH>
+      </SOLUTION>
+   </TEST>
+</SUITE>
+
+<SUITE NAME='lang' WORKSPACE='d4jlang' PROJECT='d4jlang' TIME='100000' >
+   <TEST NAME='Lang06'>
+      <PROBLEM TYPE='EXCEPTION' CATCH='java.lang.StringIndexOutOfBoundsException' />
+      <SOLUTION LINE='97' FILE='CharSequenceTranslator.java'>
+	 <MATCH><![CDATA[pt]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Lang21'>
+      <PROBLEM TYPE='ASSERTION'/>
+      <SOLUTION LINE='243-250' FILE='DateUtils.java'>
+	 <MATCH><![CDATA[HOUR_OF_DAY]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Lang24'>
+      <PROBLEM TYPE='ASSERTION'/>
+      <SOLUTION LINE='1404' FILE='NumberUtils.java'>
+	 <MATCH><![CDATA[!hasDecPoint]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Lang33'>
+      <PROBLEM TYPE='EXCEPTION' CATCH='java.lang.NullPointerException' />
+      <SOLUTION LINE='991' FILE='ClassUtils.java'>
+	 <MATCH><![CDATA[array[i] == null]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Lang59'>
+      <PROBLEM TYPE='EXCEPTION' CATCH='java.lang.StringIndexOutOfBoundsException' />
+      <SOLUTION LINE='1359' FILE='StrBuilder.java'>
+	 <MATCH><![CDATA[width]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Lang61'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='2272' FILE='StrBuilder.java'>
+	 <MATCH><![CDATA[size - strlen + 1]]></MATCH>
+      </SOLUTION>
+   </TEST>
+</SUITE>
+
+<SUITE NAME='time' WORKSPACE='d4jtime' PROJECT='d4jtime' TIME='100000' >
+   <TEST NAME='Time04'>
+      <PROBLEM TYPE='LOCATION' />
+      <SOLUTION LINE='466' FILE='Partial.java'>
+	 <MATCH><![CDATA[newTypes,newValues,iChronology]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Time16'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='722' FILE='DateTimeFormatter.java'>
+	 <MATCH><![CDATA[defaultYear]]></MATCH>
+	 <MATCH><![CDATA[chrono.year().get(instanceLocal)]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Time19' LOCAL='TRUE' FRAMES='0' >
+      <PROBLEM TYPE='VARIABLE' NAME='offset' CURRENT='0' TARGET='3600000'/>
+      <SOLUTION LINE='923' FILE='DateTimeZone.java'>
+	 <MATCH><![CDATA[>=]]></MATCH>
+      </SOLUTION>
+   </TEST>
+</SUITE>
+
+<SUITE NAME='closure' WORKSPACE='d4jclosure' PROJECT='d4jclosure' TIME='100000' IGNORE='true' >
+   <TEST NAME='Closure38' LOCAL='true' FRAMES='0'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='248' FILE='CodeConsumer.java'>
+	 <MATCH><![CDATA[negativeZero]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Closure52' LOCAL='true' FRAMES='0'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='825' FILE='CodeCGenerator.java'>
+	 <MATCH><![CDATA[s.charAt(0) 1= '0']]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Closure57' LOCAL='true' FRAMES='0'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='233' FILE='ClosureCodingConvention.java'>
+	 <MATCH><![CDATA[target.isString()]]></MATCH>
+	 <MATCH><![CDATA[target.getType() == Token.STRING]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Closure62' LOCAL='true' FRAMES='0'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='101' FILE='LightweightMessageFormatter.java'>
+	 <MATCH><![CDATA[charno <= source]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Closure65' LOCAL='true' FRAMES='0'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='101' FILE='CodeGenerator.java'>
+	 <MATCH><![CDATA[\\000]]></MATCH>
+	 <MATCH><![CDATA[\\0x00]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Closure73' LOCAL='true' FRAMES='0'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='1189' FILE='CodeGenerator.java'>
+	 <MATCH><![CDATA[&& c <= 0x7f]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Closure104' LOCAL='true' FRAMES='0'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='327' FILE='UnionType.java'>
+	 <MATCH><![CDATA[!result.isNoType]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Closure123' LOCAL='true' FRAMES='0'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='327' FILE='CodeGenerator.java'>
+	 <MATCH><![CDATA[getContextForNoInOperator]]></MATCH>
+      </SOLUTION>
+   </TEST>
+</SUITE>
+
+
+</ROSEEVAL>

@@ -71,9 +71,12 @@ private ValidateExecution base_execution;
 private List<ValidateAction> setup_actions;
 private int             num_checked;
 private long            seede_total;
+private double          best_score;
 
-private static final int        MAX_CHECKED = 200;
-private static final long       MAX_SEEDE_TOTAL = 10000000;
+private static final int        MAX_CHECKED_OK = 300;
+private static final long       MAX_SEEDE_OK = 600000;
+private static final int        MAX_CHECKED = 600;
+private static final long       MAX_SEEDE_TOTAL = 5000000;
 private static final long       TIME_MULTIPLIER = 10;
 
 
@@ -94,6 +97,7 @@ ValidateContext(RootControl ctrl,RootProblem p,String fid)
    setup_actions = new ArrayList<>();
    num_checked = 0;
    seede_total = 0;
+   best_score = 0;
 }
 
 
@@ -129,6 +133,7 @@ long getMaxTime()
    long time = base_execution.getExecutionTime();
    if (time <= 0) time = dflt;
    else if (time < dflt) {
+      time = Math.max(time,5000);
       time = TIME_MULTIPLIER*time;
       if (time > dflt*2) time = dflt*2;
     }   
@@ -181,7 +186,7 @@ void setupBaseExecution()
 
    // Add all the loaded files
    IvyXmlWriter xw = new IvyXmlWriter();
-   for (File f : root_control.getLoadedFiles()) {
+   for (File f : root_control.getSeedeFiles()) {
       xw.begin("FILE");
       xw.field("NAME",f.getPath());
       xw.end("FILE");
@@ -314,17 +319,23 @@ double checkValidResult(ValidateExecution ve)
 }
 
 
-synchronized boolean canCheckResult()
+@Override public synchronized boolean canCheckResult()
 {
+   if (best_score > 0.7) {
+      if (num_checked > MAX_CHECKED_OK) return false;
+      if (seede_total > MAX_SEEDE_OK) return false;
+    }
+   
    if (num_checked > MAX_CHECKED) return false;
    if (seede_total > MAX_SEEDE_TOTAL) return false;
    return true;
 }
 
-synchronized void noteSeedeLength(long t,RootRepair repair) 
+synchronized void noteSeedeLength(long t,RootRepair repair,double score) 
 {
    num_checked++;
    seede_total += t;
+   if (score > best_score) best_score = score;
    repair.setCount(num_checked);
    repair.setSeedeCount(seede_total);
 }
