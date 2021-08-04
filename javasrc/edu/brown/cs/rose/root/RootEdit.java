@@ -118,7 +118,17 @@ public Element getTextEditXml()
    return rslt;
 }
 
-
+public TextEdit getTextEdit()
+{
+   if (text_edit != null) return text_edit;
+   if (complete_edit == null) return null;
+   text_edit = computeTextEdit(complete_edit);
+   
+   return text_edit;
+}
+   
+   
+   
 public int getEditStartOffset()
 {
    if (text_edit != null) {
@@ -241,6 +251,47 @@ private static void outputTextEdit(TextEdit te,IvyXmlWriter xw)
        }
     }
    xw.end("EDIT");
+}
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Convert XML to an actual EDIT                                           */
+/*                                                                              */
+/********************************************************************************/
+
+TextEdit computeTextEdit(Element xml)
+{ 
+   int off = IvyXml.getAttrInt(xml,"OFFSET");
+   int len = IvyXml.getAttrInt(xml,"LENGTH");
+   String type = IvyXml.getAttrString(xml,"TYPE");
+   String cnts = IvyXml.getTextElement(xml,"TEXT");
+   TextEdit te = null;
+   switch (type) {
+      case "MULTI" :
+         te = new MultiTextEdit(off,len);
+         break;
+      case "REPLACE" :
+         te = new ReplaceEdit(off,len,cnts);
+         break;
+      case "DELETE" :
+         te = new DeleteEdit(off,len);
+         break;
+      case "INSERT" :
+         te = new InsertEdit(off,cnts);
+         break;
+      default :
+         RoseLog.logE("ROOT","Edit type " + type + " not found");
+         return null;
+    }
+   
+   for (Element celt : IvyXml.children(xml,"EDIT")) {
+      TextEdit te1 = computeTextEdit(celt);
+      if (te1 != null) te.addChild(te1);
+    }
+   
+   return te;
 }
 
 }	// end of class RootEdit

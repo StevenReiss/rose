@@ -42,6 +42,7 @@ import java.util.List;
 import org.w3c.dom.Element;
 
 import edu.brown.cs.ivy.xml.IvyXml;
+import edu.brown.cs.rose.root.RootThreadPool;
 import edu.brown.cs.rose.root.RoseLog;
 
 public class RoseEvalRunner extends RoseEvalBase
@@ -191,15 +192,22 @@ private void loadTests(String [] args)
 {
    for (int i = 0; i < args.length; ++i) {
       if (args[i].startsWith("-u")) ++i;
-      else if (args[i].startsWith("-RS")) {                             // -SEEDE
+      else if (args[i].startsWith("-RS")) {                             // -RSEEDE
          run_debug = true;
-         seede_debug = false;
+         seede_debug = true;
+         run_setup = true;
+       }
+      else if (args[i].startsWith("-RX")) {                              // -RX
+         run_debug = true;
+         seede_debug = true;
          run_setup = false;
+         RootThreadPool.setMaxThreads(4);
        }
       else if (args[i].startsWith("-R")) {                              // -RUN
          run_debug = false;
          seede_debug = false;
          run_setup = true;
+         RootThreadPool.setMaxThreads(4);
        }
       else if (args[i].startsWith("-s") && i+1 < args.length) {         // -suite <name>
          ++i;

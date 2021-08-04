@@ -144,6 +144,8 @@ private void saveCommand(String cmd)
    synchronized(command_data) {
       command_data.add(cmd);
     }
+   
+   RoseLog.logD("ROOT","METRICS: " + cmd);
 }
 
 

@@ -218,9 +218,9 @@ private void matchLines(ValidateCall origctx,ValidateCall matchctx)
          ValidateValue matchval = it2.next();
          long thistime = origval.getStartTime();
          long trytime = matchval.getStartTime();
-         long mappedline = origval.getNumericValue();
-         mappedline = for_repair.getMappedLine(file,mappedline);
-         if (checkrepair > 0 && mappedline == checkrepair) repair_executed = true;
+         long execline = origval.getNumericValue();
+         long mappedline = for_repair.getMappedLine(file,execline);
+         if (checkrepair > 0 && execline == checkrepair) repair_executed = true;
          
          if (match_problem_context == matchctx) {
             if (lasttime <= problem_time && thistime > problem_time) {

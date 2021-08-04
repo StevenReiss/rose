@@ -131,6 +131,7 @@ public RootControl getController()              { return rose_control; }
       uselocs.add(at_location);
     }
    
+   
    if (for_problem != null) {
       for (Class<?> cls : processor_classes) {
          ProcessorTask pt = startTask(cls,for_problem,null);
@@ -188,6 +189,7 @@ private ProcessorTask startTask(Class<?> cls,RootProblem p,RootLocation l)
    catch (Throwable t) { }
    if (rrf == null) return null;
    ProcessorTask pt = new ProcessorTask(rrf,base_validator);
+   RoseLog.logD("BRACT","Queue finder " + rrf.getClass() + " " + l.getLineNumber());
    RootThreadPool.start(pt);
    return pt;
 }
@@ -242,6 +244,11 @@ private List<RootLocation> getLocations()
 }
 
 
+@Override public boolean haveGoodResult()
+{
+   if (base_validator == null) return false;
+   return base_validator.haveGoodResult();
+}
 
 /********************************************************************************/
 /*                                                                              */

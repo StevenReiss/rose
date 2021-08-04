@@ -135,14 +135,17 @@ public SepalLocalSearch()
       String ccnts = ctrl.getSourceContents(sr.getFile());
       ASTNode cnode = ctrl.getNewSourceStatement(sr.getFile(),sr.getLineNumber(),sr.getColumnNumber());
       List<PatchAsASTRewriteWithScore> patches;
+     
+      synchronized (search_engine) {
+         try {
+            patches = LocalPatchGenerator.makePatches(bcnts,bnode,ccnts,cnode);
+          }
+         catch (Throwable t) {
+            RoseLog.logE("SEPAL","Problem with sharpFix",t);
+            continue;
+          }
+       }
       
-      try {
-         patches = LocalPatchGenerator.makePatches(bcnts,bnode,ccnts,cnode);
-       }
-      catch (Throwable t) {
-         RoseLog.logE("SEPAL","Problem with sharpFix",t);
-         continue;
-       }
       restrictPatches(lno,stmt,patches);
       int ct = patches.size();
       int lct = 0;

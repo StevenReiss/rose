@@ -444,7 +444,13 @@ private ASTRewrite nullReturn(ConditionMaker cm,Expression base,Statement stmt)
 {
    if (!(stmt instanceof IfStatement)) return null;
    IfStatement ifstmt = (IfStatement) stmt;
-   if (!(ifstmt.getThenStatement() instanceof ReturnStatement)) return null;
+   Statement then = ifstmt.getThenStatement();
+   if (then instanceof Block) {
+      Block b = (Block) then;
+      if (b.statements().size() == 1) then = (Statement) b.statements().get(0);
+    }
+   
+   if (!(then instanceof ReturnStatement)) return null;
    
    return addToConditionalOr(cm,base,ifstmt.getExpression(),base);
 }  

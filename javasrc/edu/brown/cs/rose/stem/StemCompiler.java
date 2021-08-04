@@ -61,6 +61,7 @@ import edu.brown.cs.ivy.jcomp.JcompSemantics;
 import edu.brown.cs.ivy.jcomp.JcompSource;
 import edu.brown.cs.ivy.mint.MintConstants.CommandArgs;
 import edu.brown.cs.ivy.xml.IvyXml;
+import edu.brown.cs.rose.root.RoseLog;
 
 class StemCompiler implements StemConstants
 {

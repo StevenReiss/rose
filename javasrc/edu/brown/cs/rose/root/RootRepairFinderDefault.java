@@ -226,8 +226,8 @@ private void addRepair(ASTRewrite rw,Element editxml,String desc,String logdata,
     }
    else if (editxml != null) {
       RootEdit ed = new RootEdit(editxml);
-      System.err.println("FOUND EDIT " + ed);
-      // te = ed.getTextEdit();
+      RoseLog.logD("ROOT","FOUND EDIT " + ed);
+      te = ed.getTextEdit();
     }
    if (te == null) return;
    RoseLog.logD("ROOT","Edit to apply: " + te);

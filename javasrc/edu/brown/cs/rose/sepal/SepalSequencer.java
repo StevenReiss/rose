@@ -60,9 +60,11 @@ public class SepalSequencer extends RootRepairFinderDefault
 
 private ApplicationQuery        sequencer_connect;
 
+private boolean use_sequencer = false;
+
 private static final int MAX_LOCAL_CHECK = 5;
 private static final int MAX_LOCAL_RESULTS = 5;
-private static final double SEARCH_THRESHOLD = 1.0;
+private static final double SEARCH_THRESHOLD = 0.050;
 
 
 
@@ -120,7 +122,9 @@ public SepalSequencer()
    String bcnts = ctrl.getSourceContents(bfile);
    List<RepairResult> rslts = null;
    if (sequencer_connect.ping()) {
-//    rslts = sequencer_connect.execute(bfile.getPath(),bcnts,lno);
+      if (!getProcessor().haveGoodResult() && use_sequencer) {
+         rslts = sequencer_connect.execute(bfile.getPath(),bcnts,lno);
+       }
     }
    if (rslts == null || rslts.isEmpty()) return;
    // need to sort the results -- skip first, ignore changes
@@ -129,16 +133,46 @@ public SepalSequencer()
    // limit to 3-5 per suggestion
    int rct = 0;
    int fnd = 0;
+   // probably want to assign priority and sort the results
    for (RepairResult rr : rslts) {
-      Element edit = rr.getTextEditXML();
       double f = rr.getScore();
       if (f < SEARCH_THRESHOLD) continue;
+      if (!isRepairRelevant(rr,lno)) continue;
+      Element edit = rr.getTextEditXML();
+      if (edit == null) continue;
       if (++rct > MAX_LOCAL_RESULTS) break;
-      String logdata = getClass().getName() + "@" + f;
-      String desc = "SequenceR suggests";       // edit.getDescription
+      String logdata = getClass().getName() + "@" + rr.getType() + "@" + f;
+      String desc = rr.getDescription();
       addRepair(edit,desc,logdata,f);
       if (++fnd > MAX_LOCAL_CHECK) break;
     }
+}
+
+
+
+private boolean isRepairRelevant(RepairResult rr,int lno) 
+{
+   String typ = rr.getType();
+   int rlno = rr.getLineNumber();
+   
+   switch (typ) {
+      case "REPLACE_OP" :
+      case "REPLACE_NAME" :
+      case "DELETE" :
+         return false;
+      case "REPLACE_EXPR" :
+      case "REPLACE_LITERAL" :
+      case "REPLACE_STATEMENT" :
+      case "REPLACE" :
+      case "REPLACE_PRIMITIVE_TYPE" :
+         if (rlno != lno) return false;
+         break;
+      default :
+         if (rlno != lno) return false;
+         break;
+    }
+   
+   return true;
 }
 
 

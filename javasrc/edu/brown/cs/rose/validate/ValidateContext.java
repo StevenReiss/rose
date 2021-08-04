@@ -73,10 +73,10 @@ private int             num_checked;
 private long            seede_total;
 private double          best_score;
 
-private static final int        MAX_CHECKED_OK = 300;
+private static final int        MAX_CHECKED_OK = 100;
 private static final long       MAX_SEEDE_OK = 600000;
-private static final int        MAX_CHECKED = 600;
-private static final long       MAX_SEEDE_TOTAL = 5000000;
+private static final int        MAX_CHECKED = 300;
+private static final long       MAX_SEEDE_TOTAL = 1000000;
 private static final long       TIME_MULTIPLIER = 10;
 
 
@@ -321,7 +321,7 @@ double checkValidResult(ValidateExecution ve)
 
 @Override public synchronized boolean canCheckResult()
 {
-   if (best_score > 0.7) {
+   if (haveGoodResult()) {
       if (num_checked > MAX_CHECKED_OK) return false;
       if (seede_total > MAX_SEEDE_OK) return false;
     }
@@ -329,6 +329,12 @@ double checkValidResult(ValidateExecution ve)
    if (num_checked > MAX_CHECKED) return false;
    if (seede_total > MAX_SEEDE_TOTAL) return false;
    return true;
+}
+
+
+@Override public boolean haveGoodResult()
+{
+   return best_score >= 0.7;
 }
 
 synchronized void noteSeedeLength(long t,RootRepair repair,double score) 

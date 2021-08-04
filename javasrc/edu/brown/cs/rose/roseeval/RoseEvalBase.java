@@ -1236,7 +1236,7 @@ private static class SuggestionSet {
       is_done = false;
     }
    
-   void addSuggestion(Element xml) {
+   synchronized void addSuggestion(Element xml) {
       for (Element r : IvyXml.children(xml,"REPAIR")) { 
          suggest_nodes.add(r);
        }

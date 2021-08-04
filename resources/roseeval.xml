@@ -101,12 +101,12 @@
    <TEST NAME='Lis'>
       <PROBLEM TYPE='ASSERTION' />
       <SOLUTION LINE='42'>
-	 <MATCH><![CDATA[Match.max]]></MATCH>
+	 <MATCH><![CDATA[Math.max]]></MATCH>
       </SOLUTION>
    </TEST>
    <TEST NAME='LongestCommonSubsequence' TIME='50000'>
       <PROBLEM TYPE='ASSERTION' />
-      <SOLUTION LINE='25'>
+      <SOLUTION LINE='26'>
 	 <MATCH><![CDATA[b.substring(1)]]></MATCH>
       </SOLUTION>
    </TEST>
@@ -233,7 +233,7 @@
    <TEST NAME='Wrap'>
       <PROBLEM TYPE='ASSERTION' />
       <SOLUTION LINE='36'>
-	 <MATCH><![CDATA[lines.add(test)]]></MATCH>
+	 <MATCH><![CDATA[lines.add(text)]]></MATCH>
       </SOLUTION>
    </TEST>
    </SUITE>

@@ -57,11 +57,11 @@ public class RootThreadPool implements RootConstants
 
 private ThreadPoolExecutor      thread_pool;
 
-private static RootThreadPool   the_pool = new RootThreadPool();
+private static RootThreadPool   the_pool = null;
 
 private static AtomicInteger    thread_counter = new AtomicInteger();
 
-private boolean do_debug = true;
+private static int max_threads = 1;
 
 
 
@@ -75,12 +75,13 @@ private boolean do_debug = true;
 private RootThreadPool()
 {
    BlockingQueue<Runnable> bq = new PriorityBlockingQueue<>(10,new TaskComparator());
-   if (do_debug) {
+   if (max_threads <= 1) {
       thread_pool = new ThreadPoolExecutor(1,1,30000,TimeUnit.MILLISECONDS,
             bq,new OurThreadFactory());
     }
    else {
-      thread_pool = new ThreadPoolExecutor(2,12,30000,TimeUnit.MILLISECONDS,
+      thread_pool = new ThreadPoolExecutor(max_threads,max_threads,
+            30000,TimeUnit.MILLISECONDS,
             bq,new OurThreadFactory());
     }
 }
@@ -92,11 +93,22 @@ private RootThreadPool()
 /*                                                                              */
 /********************************************************************************/
 
-public static void start(Runnable r) 
+public synchronized static void start(Runnable r) 
 {
+   if (the_pool == null) {
+      the_pool = new RootThreadPool();
+    }
    if (r != null) {
       the_pool.thread_pool.execute(r);
+      RoseLog.logD("Start task " + r + " " + the_pool.thread_pool.getQueue().size() + " " +
+            the_pool.thread_pool.getPoolSize() + " " +
+            the_pool.thread_pool.getLargestPoolSize());
     }
+}
+
+public static void setMaxThreads(int max)
+{
+   max_threads = max;
 }
 
 

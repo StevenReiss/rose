@@ -60,6 +60,8 @@ void validateAndSend(RootProcessor rp,RootRepair rr);
 
 boolean canCheckResult();
 
+boolean haveGoodResult();
+
 
 
 }       // end of class RootValidate

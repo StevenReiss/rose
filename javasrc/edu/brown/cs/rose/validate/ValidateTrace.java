@@ -178,7 +178,7 @@ boolean isCompilerError()
    Element runner = getRunner();
    Element ret = IvyXml.getChild(runner,"RETURN");
    String reason = IvyXml.getAttrString(ret,"REASON");
-   return reason.equals("COMPILER_ERROR");
+   return reason.equals("COMPILER_ERROR") || reason.equals("ERROR");
 }
 
 

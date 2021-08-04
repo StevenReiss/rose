@@ -64,6 +64,8 @@ void validateRepair(RootRepair repair);
 
 void addSubtask(RootTask task);
 
+boolean haveGoodResult();
+
 }       // end of interface RootProcessor
 
 
