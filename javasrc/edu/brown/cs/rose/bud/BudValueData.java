@@ -296,6 +296,8 @@ String findValue(BudValue cv,int lvl)
 
 
 
+
+
 /********************************************************************************/
 /*										*/
 /*	Setup methods								*/
@@ -348,6 +350,16 @@ private synchronized void computeValues()
     }
 }
 
+
+
+void merge(BudValueData bvd)
+{
+   if (!has_values && bvd.has_values) {
+      sub_values = bvd.sub_values;
+      has_values = true;
+      result_value = null;
+    }
+}
 
 /********************************************************************************/
 /*										*/

@@ -190,12 +190,14 @@ private void addSuite(Element xml)
 
 private void loadTests(String [] args)
 {
+   RootThreadPool.setMaxThreads(1);
+   
    for (int i = 0; i < args.length; ++i) {
       if (args[i].startsWith("-u")) ++i;
       else if (args[i].startsWith("-RS")) {                             // -RSEEDE
-         run_debug = true;
+         run_debug = false;
          seede_debug = true;
-         run_setup = true;
+         run_setup = false;
        }
       else if (args[i].startsWith("-RX")) {                              // -RX
          run_debug = true;

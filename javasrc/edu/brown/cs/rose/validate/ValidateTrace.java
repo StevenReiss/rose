@@ -329,8 +329,8 @@ private String normalizeName(String mthd)
 
 
 private boolean checkStack(BudLaunch launch,Stack<String> stack,int start)
-{
-   BudStack stk = launch.getStack();
+{ 
+   BudStack stk = launch.getStack(); 
    BudStackFrame topframe = stk.getTopFrame();
    List<BudStackFrame> frms = stk.getFrames();
    for (int i = start; i >= 0; --i) {
@@ -483,7 +483,7 @@ double checkTest(RootTestCase rtc)
        }
     }
    else {
-      if (!isReturn()) return 0.1;
+      if (!isReturn()) return 0.0;
       ValidateValue rtv = getReturnValue();
       String eval = rtc.getReturnValue();
       if (eval != null && rtv != null) {
@@ -577,8 +577,6 @@ private Boolean compareObject(BudLocalVariable local,Element valelt0,BudLaunch l
          if (!ltyp.equals(vtype)) return false;
        }
     }
-   
-// if (!local.getType().equals(IvyXml.getAttrString(valelt,"TYPE"))) return false;
    
    BudValue localval = launch.evaluate(local.getName());
    if (localval == null) return null;

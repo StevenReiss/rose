@@ -64,7 +64,7 @@ private boolean use_sequencer = false;
 
 private static final int MAX_LOCAL_CHECK = 5;
 private static final int MAX_LOCAL_RESULTS = 5;
-private static final double SEARCH_THRESHOLD = 0.050;
+private static final double SEARCH_THRESHOLD = 0.05;
 
 
 
@@ -106,7 +106,7 @@ public SepalSequencer()
 
 @Override public double getFinderPriority()
 {
-   return 0.40;
+   return 0.30;
 }
 
 
@@ -158,19 +158,23 @@ private boolean isRepairRelevant(RepairResult rr,int lno)
    switch (typ) {
       case "REPLACE_OP" :
       case "REPLACE_NAME" :
+      case "REPLACE_LITERAL" :
       case "DELETE" :
          return false;
       case "REPLACE_EXPR" :
-      case "REPLACE_LITERAL" :
       case "REPLACE_STATEMENT" :
       case "REPLACE" :
       case "REPLACE_PRIMITIVE_TYPE" :
-         if (rlno != lno) return false;
+         if (rlno != lno) 
+            return false;
          break;
       default :
          if (rlno != lno) return false;
          break;
     }
+   
+   // reject illogical repairs as well
+   // ( x < x ), (x). (E && E). E && (E). E || E. E || (E)
    
    return true;
 }

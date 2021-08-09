@@ -1,6 +1,5 @@
 <ROSEEVAL>
 
-
 <SUITE NAME='quix' WORKSPACE='quixspr' PROJECT='quixbugs' TIME='10000'>
    <TEST NAME='BitCount'>
       <PROBLEM TYPE='JUNIT'/>
@@ -288,7 +287,7 @@
       </SOLUTION>
    </TEST>
    <TEST NAME='Math30' LOCAL='true' FRAMES='0'>
-      <PROBLEM TYPE='VARIABLE' NAME='r' CURRENT='NaN' />
+      <PROBLEM TYPE='VARIABLE' NAME='r' CURRENT='NaN' TARGET='0.9747770814386078' PRECISION='1e-5' />
       <SOLUTION LINE='180' FILE='MannWhitneyUTest.java'>
 	 <MATCH><![CDATA[double]]></MATCH>
       </SOLUTION>
@@ -327,6 +326,12 @@
       <PROBLEM TYPE='ASSERTION' />
       <SOLUTION LINE='1096' FILE='TimeSeries.java'>
 	 <MATCH><![CDATA[NaN]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Chart09'>
+      <PROBLEM TYPE='LOCATION' />
+      <SOLUTION LINE='1154' FILE='TimeSeries.java'>
+	 <MATCH><![CDATA[endIndex < startIndex]]></MATCH>
       </SOLUTION>
    </TEST>
    <TEST NAME='Chart11'>
@@ -378,6 +383,12 @@
       <PROBLEM TYPE='ASSERTION' />
       <SOLUTION LINE='268' FILE='Frequency.java'>
 	 <MATCH><![CDATA[getPct']]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Math82' SKIP='4'>
+      <PROBLEM TYPE='VARIABLE' NAME='pivotRow' CURRENT='2' TARGET='5' />
+      <SOLUTION LINE='98' FILE='SimplexSolver.java'>
+	 <MATCH><![CDATA[> 0]]></MATCH>
       </SOLUTION>
    </TEST>
    <TEST NAME='Math94'>
@@ -523,3 +534,42 @@
 
 
 </ROSEEVAL>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

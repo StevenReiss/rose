@@ -51,6 +51,7 @@ import edu.brown.cs.rose.root.RootProcessor;
 import edu.brown.cs.rose.root.RootRepair;
 import edu.brown.cs.rose.root.RootThreadPool;
 import edu.brown.cs.rose.root.RootValidate;
+import edu.brown.cs.rose.root.RoseLog;
 
 class ValidateContext implements RootValidate, ValidateConstants
 {
@@ -75,8 +76,9 @@ private double          best_score;
 
 private static final int        MAX_CHECKED_OK = 100;
 private static final long       MAX_SEEDE_OK = 600000;
+private static final long       MIN_SEEDE_OK = 50000;
 private static final int        MAX_CHECKED = 300;
-private static final long       MAX_SEEDE_TOTAL = 1000000;
+private static final long       MAX_SEEDE_TOTAL = 3000000;
 private static final long       TIME_MULTIPLIER = 10;
 
 
@@ -162,6 +164,7 @@ public void validateAndSend(RootProcessor rp,RootRepair rr)
 
 
 
+
 /********************************************************************************/
 /*                                                                              */
 /*      Get base-line seede execution                                           */
@@ -186,7 +189,7 @@ void setupBaseExecution()
 
    // Add all the loaded files
    IvyXmlWriter xw = new IvyXmlWriter();
-   for (File f : root_control.getSeedeFiles()) {
+   for (File f : root_control.getSeedeFiles(for_launch.getThread())) {
       xw.begin("FILE");
       xw.field("NAME",f.getPath());
       xw.end("FILE");
@@ -213,6 +216,7 @@ void setupBaseExecution()
           }
        }
     }
+   RoseLog.logT("VALIDATE","BAD BASE EXECUTION");
 }
 
 
@@ -321,6 +325,11 @@ double checkValidResult(ValidateExecution ve)
 
 @Override public synchronized boolean canCheckResult()
 {
+   if (base_execution.getSeedeResult().getProblemTime() < 0) 
+      return false;
+   
+   if (seede_total < MIN_SEEDE_OK) return true;
+   
    if (haveGoodResult()) {
       if (num_checked > MAX_CHECKED_OK) return false;
       if (seede_total > MAX_SEEDE_OK) return false;

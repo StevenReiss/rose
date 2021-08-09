@@ -60,6 +60,7 @@ private String          target_value;
 private String          launch_id;
 private String          thread_id;
 private String          frame_id;
+private double          target_precision;
 private RootLocation    bug_location;
 private RootNodeContext node_context;
 private RootTestCase    current_test;
@@ -67,6 +68,8 @@ private List<RootTestCase> other_tests;
 private boolean         ignore_main;
 private boolean         ignore_tests;
 private List<String>    ignore_patterns;
+
+private static double DEFAULT_PRECISION = 1e-6;
 
 
 
@@ -93,6 +96,7 @@ protected RootProblem(RoseProblemType typ,String item,String orig,String tgt,
    ignore_main = false;
    ignore_tests = false;
    ignore_patterns = new ArrayList<>();
+   target_precision = DEFAULT_PRECISION;
 }
 
 
@@ -102,6 +106,7 @@ protected RootProblem(RootControl ctrl,Element xml)
    problem_item = IvyXml.getTextElement(xml,"ITEM");
    original_value = IvyXml.getTextElement(xml,"ORIGINAL");
    target_value = IvyXml.getTextElement(xml,"TARGET");
+   target_precision = IvyXml.getAttrDouble(xml,"PRECISION",DEFAULT_PRECISION);
    launch_id = IvyXml.getAttrString(xml,"LAUNCH");
    thread_id = IvyXml.getAttrString(xml,"THREAD");
    frame_id = IvyXml.getAttrString(xml,"FRAME");
@@ -183,8 +188,11 @@ public String getTargetValue()
    return target_value;
 }
 
+public double getTargetPrecision()             { return target_precision; }
+
 public void setOriginalValue(String v)          { original_value = v; }
 public void setTargetValue(String v)            { target_value = v; }
+public void setTargetPrecision(double v)        { target_precision = v; }
 
 public String getLaunchId()                     { return launch_id; }
 
@@ -255,9 +263,12 @@ public void outputXml(IvyXmlWriter xw)
    if (thread_id != null) xw.field("THREAD",thread_id);
    if (ignore_main) xw.field("IGNOREMAIN",ignore_main);
    if (ignore_tests) xw.field("IGNORETESTS",ignore_tests);
+   if (target_precision != DEFAULT_PRECISION) xw.field("PRECISION",target_precision);
+   
    if (problem_item != null) xw.textElement("ITEM",problem_item);
    if (original_value != null) xw.textElement("ORIGINAL",original_value);
    if (target_value != null) xw.textElement("TARGET",target_value);
+   
    if (bug_location != null) bug_location.outputXml(xw);
    if (node_context != null) node_context.outputXml(xw);
    if (current_test != null) current_test.outputXml(xw);

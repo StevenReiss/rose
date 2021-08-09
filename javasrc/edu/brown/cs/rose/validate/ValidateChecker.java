@@ -80,7 +80,7 @@ double check()
 {
    if (check_execution == null) return 0;
    if (original_execution == null) return 0.5;
-   if (validate_context.getProblem() == null) return 0.5;
+   if (validate_context.getProblem() == null) return 0;
    if (check_execution.getRootContext() == null) return 0;
    
    ValidateMatcher matcher = new ValidateMatcher(original_execution,check_execution,for_repair);
@@ -106,9 +106,19 @@ double check()
          break;
     }
 
-   if (vpc != null) return vpc.validate();
+   double v0 = DEFAULT_SCORE;
+   if (vpc != null) v0 = vpc.validate();
    
-   return DEFAULT_SCORE;
+   if (v0 != 0) {
+      double v1 = matcher.getControlChangeTime();
+      double v2 = matcher.getDataChangeTime();
+      double v3 = matcher.getProblemTime();
+      double v4 = (v1 == 0 ? v2 : (v2 == 0 ? v1 : Math.min(v1,v2)));
+      double v6 = v4/v3;
+      v0 = (v0 * 0.95) + (v6 * 0.05);
+    }
+   
+   return v0;
 }
 
 
@@ -189,7 +199,6 @@ private class ValidateCheckerException extends ValidateProblemChecker {
       if (!executionChanged()) return 0;
       if (exceptionThrown()) return 0;
       
-      // note we are unlikely to match if execption not thrown
       ValidateValue origexc = original_execution.getException();
       if (origexc != null && execution_matcher.getMatchProblemContext() != null) {
          ValidateValue checkexc = check_execution.getException();
@@ -230,7 +239,7 @@ private class ValidateCheckerVariable extends ValidateProblemChecker {
     }
    
    @Override double validate() {
-      if (!executionChanged()) return 0.1;
+      if (!executionChanged()) return 0;
       if (exceptionThrown()) return 0;
       
       RootProblem prob = validate_context.getProblem();
@@ -250,7 +259,7 @@ private class ValidateCheckerVariable extends ValidateProblemChecker {
       nval = fixValue(nval,otyp);
       
       ValidateCall vc = execution_matcher.getMatchChangeContext();
-      if (vc == null) return 0.1;
+      if (vc == null) return 0.0;
       ValidateVariable vv = vc.getVariables().get(var);
       if (vv == null) return 0.5;
       
@@ -258,29 +267,66 @@ private class ValidateCheckerVariable extends ValidateProblemChecker {
       if (t0 > 0) {
          ValidateValue vval = vv.getValueAtTime(check_execution,t0);
          if (vval != null) {
-            // this needs to be more sophisticated, i.e.
-            // it needs to differential "null" from null,
-            // and handle non-primitives
             String vvalstr = vval.getValue();
             if (oval == null && vvalstr == null) return 0;
             if (oval != null && oval.equals(vvalstr)) return 0.0;
-            if (nval == null) return 0.9;
-            if (nval.equals(vvalstr)) return 1.0;
+            
+            return matchValue(vval,vvalstr,nval);
           }
        }
       boolean haveold = false;
+      boolean haveother = false;
       for (ValidateValue vval : vv.getValues(check_execution)) {
          String vvalstr = vval.getValue();
-         if (oval == null && vvalstr == null) haveold = true;
+         if (oval == null && vvalstr == null) {
+            haveold = true;
+            haveother = false;
+          }     
          else if (oval != null && oval.equals(vvalstr)) haveold = true;
-         else if (nval == null || nval.equals(vvalstr)) {
+         else if (nval != null && !nval.equals(vvalstr)) {
             if (haveold) return 0.60;
             return 0.75;
           }
+         else if (nval == null) haveother = true;
        }
       
-      return 0.5;
+      if (!haveold) return 0.6;
+      if (haveother) return 0.5;
+      
+      return 0.0;
     }
+   
+   
+   
+   private double matchValue(ValidateValue vval,String vvalstr,String nval)
+   {
+      if (nval == null) return 0.9;
+         
+      RootProblem prob = validate_context.getProblem();
+      
+      if (nval.equals(vvalstr)) return 1.0;
+      if (vval.getDataType().equals("float") || vval.getDataType().equals("double")) {
+         try {
+            double v1 = Double.valueOf(vvalstr);
+            double v2 = Double.valueOf(nval);
+            double diff = Math.abs(v1-v2);
+            if (diff <= prob.getTargetPrecision()) return 1.0;
+          }
+         catch (NumberFormatException e) {
+            // should handle > x, < x, ...
+            return 0.6;
+          }
+       }
+      else if (vval.getDataType().equals("int") || vval.getDataType().equals("long")) {
+         // handle > x , < x , ...
+       }
+      else {
+         // handle non-null, etc.
+       }
+   
+         
+      return 0.0;
+   }
    
 }       // end of inner class ValidateCheckerException
 
@@ -322,19 +368,24 @@ private class ValidateCheckerLocation extends ValidateProblemChecker {
     }
    
    @Override double validate() {
-      if (!executionChanged()) return 0.1;
+      if (!executionChanged()) return 0;
       
       ValidateCall vc = execution_matcher.getMatchChangeContext();
-      if (vc == null) return 0.7;
+      if (vc == null) return 0.8;
       long t0 = execution_matcher.getMatchProblemTime();
-      if (t0 <= 0) return 0.7;
+      if (t0 <= 0) return 0.8;
       ValidateVariable vv = vc.getLineNumbers();
       int lmatch = vv.getLineAtTime(t0);
-      if (lmatch <= 0) return 0.7;
+      if (lmatch <= 0) return 0.8;
       
       ValidateVariable vv1 = execution_matcher.getProblemContext().getLineNumbers();
       int lorig = vv1.getLineAtTime(execution_matcher.getProblemTime());
       if (lorig == lmatch) return 0;
+      
+      for (ValidateValue vvx : vv1.getValues(null)) {
+         Long lno = vvx.getNumericValue();
+         if (lno != null && lno == lorig) return 0.2;
+       }
       
       return 0.5;
     }

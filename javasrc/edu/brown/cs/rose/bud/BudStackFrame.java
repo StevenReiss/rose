@@ -76,7 +76,7 @@ private boolean is_userframe;
 BudStackFrame(Element xml)
 {
    frame_id = IvyXml.getAttrString(xml,"ID");
-   class_name = IvyXml.getAttrString(xml,"RECEIVER");
+   class_name = IvyXml.getAttrString(xml,"CLASS");
    method_name = IvyXml.getAttrString(xml,"METHOD");
    int idx = method_name.lastIndexOf(".");
    if (idx > 0) method_name = method_name.substring(idx+1);

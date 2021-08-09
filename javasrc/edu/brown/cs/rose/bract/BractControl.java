@@ -301,7 +301,7 @@ private static class ProcessorTask extends RootTask implements PriorityTask {
       double v = repair_finder.getFinderPriority() * 0.5;
       if (repair_finder.getLocation() != null) {
          double lv = repair_finder.getLocation().getPriority();
-         v += lv * 0.1;
+         v += lv * 0.01;
        }
       
       return v;

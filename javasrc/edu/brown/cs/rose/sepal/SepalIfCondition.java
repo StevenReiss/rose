@@ -105,7 +105,7 @@ public SepalIfCondition()
          break;
     }
    if (cond == null) return;
-   RoseLog.logD("SEPAL","Check condition on " + stmt);
+   RoseLog.logD("SEPAL","Check condition on " +  getLocation().getLineNumber() + " " + stmt);
    
    if (cond instanceof InfixExpression) {
       InfixExpression ifx = (InfixExpression) cond;
@@ -126,7 +126,7 @@ public SepalIfCondition()
 
 @Override public double getFinderPriority()
 {
-   return 0.5;
+   return 0.51;
 }
 
 

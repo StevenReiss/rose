@@ -124,7 +124,7 @@ ValidateRunner(ValidateContext ctx,RootProcessor rp,RootRepair rr)
       
       if (score > 0) {
          RootTestCase tc = base_context.getProblem().getCurrentTest();
-         RoseLog.logD("VALIDATE","Use test case " + tc);
+         RoseLog.logD("VALIDATE","Use test case " + tc + " " + score);
          if (tc != null) {
             double tscore = ve.checkTest(tc);
             score *= tscore;

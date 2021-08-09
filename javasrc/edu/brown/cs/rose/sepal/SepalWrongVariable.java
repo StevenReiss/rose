@@ -47,6 +47,7 @@ import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.jdt.core.dom.SimpleName;
@@ -107,6 +108,8 @@ public SepalWrongVariable()
    ct += findMethodReplacements(vars);
    if (ct == 0) return;
    
+   RoseLog.logD("SEPAL","Check variables on " +  getLocation().getLineNumber() + " " + stmt);
+   
    for (UserVariable uv : vars) {
       int rct = uv.getReplacements().size();
       int lct = uv.getLocations().size();
@@ -117,12 +120,34 @@ public SepalWrongVariable()
             if (pri < 0.4) continue;
           }
          for (ASTNode n : uv.getLocations()) {
-            createRepair(uv,js,n);
+            if (isReplacementRelevant(uv.getSymbol(),js,n)) {
+               createRepair(uv,js,n);
+             }
           }
        }
     }
    
    return;
+}
+
+
+
+private boolean isReplacementRelevant(JcompSymbol orig,JcompSymbol rep,ASTNode n)
+{
+   if (rep.getDefinitionNode() != null && 
+         rep.getDefinitionNode().getStartPosition() > n.getStartPosition())
+      if (!orig.isMethodSymbol() && !orig.isFieldSymbol())
+         return false;
+   
+   if (n.getParent() instanceof InfixExpression) {
+      InfixExpression exp = (InfixExpression) n.getParent();
+      JcompSymbol js1 = JcompAst.getReference(exp.getLeftOperand());
+      JcompSymbol js2 = JcompAst.getReference(exp.getRightOperand());
+      if (rep == js1 || rep == js2) 
+         return false;
+    }
+   
+   return true;
 }
 
 
@@ -336,12 +361,16 @@ private void createRepair(UserVariable uv,JcompSymbol js,ASTNode where)
        }
     }
    
+   // this should be skipped if the variable being replaced is the only use of that variable
    if (rw != null) {
       double pri = IvyStringDiff.normalizedStringDiff(uv.getSymbol().getName(),js.getName());
       String desc = "Replace `" + uv.getSymbol().getName() + "' with `" + js.getName() + "'";
 
       ASTNode par = where.getParent();
-      desc += " in " + par;
+      String pdesc = par.toString();
+      int idx = pdesc.indexOf("\n");
+      if (idx > 0) pdesc = pdesc.substring(0,idx) + "...";
+      desc += " in " + pdesc;
       String logdata = getClass().getName() + "#" + pri;
       double priority = 0.25 + (pri * 0.75);
       addRepair(rw,desc,logdata,priority);

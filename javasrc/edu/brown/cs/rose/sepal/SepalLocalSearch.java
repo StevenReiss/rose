@@ -104,7 +104,7 @@ public SepalLocalSearch()
 
 @Override public double getFinderPriority()
 {
-   return 0.45;
+   return 0.40;
 }
 
 
@@ -134,6 +134,10 @@ public SepalLocalSearch()
       if (++rct > MAX_LOCAL_RESULTS) break;
       String ccnts = ctrl.getSourceContents(sr.getFile());
       ASTNode cnode = ctrl.getNewSourceStatement(sr.getFile(),sr.getLineNumber(),sr.getColumnNumber());
+      if (cnode == null) {
+         --rct;
+         continue;
+       }
       List<PatchAsASTRewriteWithScore> patches;
      
       synchronized (search_engine) {
@@ -188,8 +192,20 @@ private boolean isRelevant(int lno,Statement stmt,PatchAsASTRewriteWithScore r)
       if (Math.abs(r.getLineNumber()-lno) > 1) return false;
     }
    
-   // ignore large changes
-   if (r.getHeight() >= 3.0) return false;
+   // ignore large changes other than expressions
+   if (!r.getType().equals("REPLACE_EXPR")) {
+      if (r.getHeight() >= 3.0) return false;
+    }
+   else {
+      if (r.getHeight() == 1) {                 // constant replace
+         return false;
+       }
+    }
+   if (r.getType().equals("REPLACE_OP")) {
+      if (r.getDescription().contains("=") ||
+            r.getDescription().contains(">") || 
+            r.getDescription().contains("<")) return false;
+    }
    
    return true;
 }

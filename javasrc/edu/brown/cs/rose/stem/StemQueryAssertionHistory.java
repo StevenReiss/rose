@@ -161,6 +161,7 @@ private class AssertionChecker extends ASTVisitor implements AssertionData {
       if (use_node == null) return null;
       if (orig_value != null) for_problem.setOriginalValue(orig_value);
       if (target_value != null) for_problem.setTargetValue(target_value);
+      // should set precision
       return getXmlForLocation("EXPR",use_node,true);
     }
    

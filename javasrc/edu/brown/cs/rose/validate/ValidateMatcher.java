@@ -231,11 +231,20 @@ private void matchLines(ValidateCall origctx,ValidateCall matchctx)
          if (!fnd && 
                (origval.getStartTime() != matchval.getStartTime() ||
                      mappedline != matchval.getNumericValue())) {
-            noteChange(origctx,matchctx,lasttime);
+            if (control_change < 0 || control_change > thistime) {
+               noteChange(origctx,matchctx,lasttime);
+             }
             fnd = true;
           }
          lasttime = thistime;
          lastmatch = matchval.getStartTime();
+       }
+      if (match_problem_context == matchctx) {
+         long thistime = origctx.getEndTime();
+         if (lasttime <= problem_time && thistime > problem_time) {
+            match_time = lastmatch;
+            match_after_time = matchctx.getEndTime();
+          }
        }
       if (!fnd && (it1.hasNext() || it2.hasNext())) {
          noteChange(origctx,matchctx,lasttime);

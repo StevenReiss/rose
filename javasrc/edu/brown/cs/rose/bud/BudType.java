@@ -313,6 +313,37 @@ private static class ObjectType extends BudType {
          String fnm = IvyXml.getAttrString(itm,"NAME");
          field_map.put(fnm,for_launch.findType(typ1));
        }
+      if (field_map.isEmpty()) {
+         String vtyp = null;
+         switch (getName()) {
+            case "java.lang.Integer" :
+               vtyp = "int";
+               break;
+            case "java.lang.Short" :
+               vtyp = "short";
+               break;
+            case "java.lang.Long" :
+               vtyp = "long";
+               break;
+            case "java.lang.Byte" :
+               vtyp = "byte";
+               break;
+            case "java.lang.Double" :
+               vtyp = "double";
+               break;
+            case "java.lang.Float" :
+               vtyp = "float";
+               break;
+            case "java.lang.Character" :
+               vtyp = "char";
+               break;
+          }
+         if (vtyp != null) {
+            String fnm = getName() + ".value";
+            field_map.put(fnm,for_launch.findType(vtyp));
+          }
+       }
+      
    
       return field_map;
     }

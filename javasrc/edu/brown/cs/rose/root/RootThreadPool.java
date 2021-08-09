@@ -61,7 +61,7 @@ private static RootThreadPool   the_pool = null;
 
 private static AtomicInteger    thread_counter = new AtomicInteger();
 
-private static int max_threads = 1;
+private static int max_threads = 4;
 
 
 

@@ -56,6 +56,7 @@ private String problem_type;
 private String problem_item;
 private String original_value;
 private String target_value;
+private Double target_precision;
 
 
 
@@ -68,10 +69,17 @@ private String target_value;
 
 private RoseEvalProblem(String typ,String item,String oval,String tval)
 {
+   this(typ,item,oval,tval,null);
+}
+
+
+private RoseEvalProblem(String typ,String item,String oval,String tval,Double prec)
+{
    problem_type = typ;
    problem_item = item;
    original_value = oval;
    target_value = tval;
+   target_precision = prec;
 }
 
 
@@ -86,7 +94,8 @@ static RoseEvalProblem createProblem(Element xml)
       case "VARIABLE" :
          return createVariable(IvyXml.getAttrString(xml,"NAME"),
                IvyXml.getAttrString(xml,"CURRENT"),
-               IvyXml.getAttrString(xml,"TARGET"));
+               IvyXml.getAttrString(xml,"TARGET"),
+               IvyXml.getAttrDouble(xml,"PRECISION"));
       case "EXPRESSION" :
          return createExpression(IvyXml.getAttrString(xml,"NAME"),
                IvyXml.getAttrString(xml,"CURRENT"),
@@ -111,9 +120,15 @@ static RoseEvalProblem createException(String typ)
 }
 
 
+static RoseEvalProblem createVariable(String var,String oval,String tval,Double prec)
+{
+   return new RoseEvalProblem("VARIABLE",var,oval,tval,prec);
+}
+
+
 static RoseEvalProblem createVariable(String var,String oval,String tval)
 {
-   return new RoseEvalProblem("VARIABLE",var,oval,tval);
+   return createVariable(var,oval,tval,null);
 }
 
 
@@ -159,6 +174,7 @@ String getDescription(RoseEvalFrameData fd)
    xw.field("TYPE",problem_type);
    xw.field("IGNOREMAIN",true);
    xw.field("IGNORETESTS",true);
+   if (target_precision != null) xw.field("PRECISION",target_precision);
    if (problem_item != null) xw.textElement("ITEM",problem_item);
    if (original_value != null) xw.textElement("ORIGINAL",original_value);
    if (target_value != null) xw.textElement("TARGET",target_value);

@@ -576,7 +576,9 @@ private void handleParameterValuesCommand(MintMessage msg) throws RoseException
             rslt.add(loc);
           }
        }
-      if (!usefiles.isEmpty()) seede_files = usefiles;
+      if (!usefiles.isEmpty()) {
+         seede_files = usefiles;
+       }
     }
    
    return rslt;
@@ -1423,9 +1425,13 @@ private class WaitForExit extends Thread {
 }
 
 
-@Override public Set<File> getSeedeFiles()
+@Override public Set<File> getSeedeFiles(String threadid)
 {
-   if (seede_files != null) return seede_files;
+   if (seede_files != null) {
+      Set<File> nset = new HashSet<>(seede_files);
+      nset.addAll(findStackFiles(threadid));
+      return nset;
+    }
    return loaded_files;
 }
 
