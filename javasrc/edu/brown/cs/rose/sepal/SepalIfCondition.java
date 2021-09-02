@@ -232,13 +232,18 @@ private Expression invertInfixExpression(InfixExpression ifx,int check)
       return invertBooleanCondition(ifx,true);
     }
    
-   AST ast = ifx.getAST();
-   InfixExpression rifx = ast.newInfixExpression();
-   rifx.setLeftOperand((Expression) ASTNode.copySubtree(ast,ifx.getLeftOperand()));
-   rifx.setRightOperand((Expression) ASTNode.copySubtree(ast,ifx.getRightOperand()));
-   rifx.setOperator(rop);
-   
-   return rifx;
+   try {
+      AST ast = ifx.getAST();
+      InfixExpression rifx = ast.newInfixExpression();
+      rifx.setLeftOperand((Expression) ASTNode.copySubtree(ast,ifx.getLeftOperand()));
+      rifx.setRightOperand((Expression) ASTNode.copySubtree(ast,ifx.getRightOperand()));
+      rifx.setOperator(rop);
+      return rifx;
+    }
+   catch (Throwable t) {
+      // copySubtree can fail under weird circumstances
+      return null;
+    }
 }
 
 

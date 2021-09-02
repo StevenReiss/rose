@@ -62,6 +62,8 @@ private TestType        test_type;
 private String          return_value;
 private Map<String,String> check_values;
 private long            max_ticks;
+private int             max_repairs;
+private long            max_seede;
 
 
 
@@ -80,6 +82,8 @@ public RootTestCase(Element xml)
    initial_values = loadVarMap(xml,"INITIALIZE");
    check_values = loadVarMap(xml,"CHECK");
    max_ticks = IvyXml.getAttrLong(xml,"MAXTIME");
+   max_repairs = IvyXml.getAttrInt(xml,"MAXREPAIRS");
+   max_seede = IvyXml.getAttrLong(xml,"MAXSEEDE");
 }
 
 
@@ -93,6 +97,8 @@ public RootTestCase(String fid,String rtn)
    return_value = null;
    check_values = null;
    max_ticks = -1;
+   max_repairs = -1;
+   max_seede = -1;
 }
 
 
@@ -138,10 +144,11 @@ public void setReturns(String val)
 }
 
 
-public void setMaxTime(long t)
-{
-   max_ticks = t;
-}
+public void setMaxTime(long t)                  { max_ticks = t; }
+
+public void setMaxRepairs(int r)                { max_repairs = r; }
+
+public void setMaxSeede(long s)                 { max_seede = s; }
 
 
 public void addCheckValue(String nm,String val)
@@ -172,6 +179,8 @@ public void outputXml(IvyXmlWriter xw)
    xw.field("ROUTINE",entry_routine);
    xw.field("ACTION",test_type);
    if (max_ticks > 0) xw.field("MAXTIME",max_ticks);
+   if (max_repairs > 0) xw.field("MAXREPAIRS",max_repairs);
+   if (max_seede > 0) xw.field("MAXSEEDE",max_seede);
    if (return_value != null) xw.textElement("RETURNS",return_value);
    outputVarMap(xw,"INITIALIZE",initial_values);
    outputVarMap(xw,"CHECK",check_values);

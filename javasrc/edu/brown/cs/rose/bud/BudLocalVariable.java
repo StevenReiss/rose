@@ -68,6 +68,7 @@ BudLocalVariable(Element xml)
    var_kind = IvyXml.getAttrString(xml,"KIND");
    var_type = IvyXml.getAttrString(xml,"TYPE");
    var_value = IvyXml.getTextElement(xml,"DESCRIPTION");
+   var_value = IvyXml.decodeXmlString(var_value);
    if (var_type != null && var_type.equals("java.lang.Class")) {
       var_kind = "CLASS";
     }

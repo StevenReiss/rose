@@ -3,7 +3,7 @@
 set WHAT = $*
 
 if ( X$WHAT == X ) then
-   set WHAT = ( quix chart lang math math3 time )
+   set WHAT = ( quix chart lang math3 math time )
 endif
 
 set CATS = ( )

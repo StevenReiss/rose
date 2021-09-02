@@ -176,6 +176,10 @@ void computeMatch()
       e.printStackTrace();
       System.err.println("Problem matching contexts");
     }
+   
+   RoseLog.logD("VALIDATE ","Match result " + control_change + " " +
+         data_change + " " + match_time + " " + match_after_time + " " +
+         repair_executed);
 }
 
 

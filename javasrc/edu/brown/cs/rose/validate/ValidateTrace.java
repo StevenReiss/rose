@@ -527,12 +527,23 @@ private Boolean compareVariable(BudLocalVariable local,Element valelt,BudLaunch 
                 }
                catch (NumberFormatException e) { }
                return false;
+            case "char" :
+               int c1 = 0;
+               String s1 = lclval;
+               if (s1 != null && s1.length() > 0) c1 = s1.charAt(0); 
+               int c2 = Integer.parseInt(valtxt);
+               return c1 == c2;
             default :
                return lclval.equals(valtxt);
           }
       case "STRING" :
          valtxt = IvyXml.getText(valelt);
-         return local.getValue().equals(valtxt);
+         String ltxt = local.getValue();
+         boolean fg = ltxt.equals(valtxt);
+         if (fg) return true;
+         // UTF-16 strings are not correct when reported from bedrock
+         if (ltxt.getBytes().length != ltxt.length()) return null;
+         return false;
       case "ARRAY" :
          if (local.getType().equals("null")) {
             if (IvyXml.getAttrBool(valelt,"NULL")) return true;
@@ -611,7 +622,9 @@ private Boolean compareArray(BudLocalVariable local,Element valelt0,BudLaunch la
       return false;
     }
    
-   if (!local.getType().equals(IvyXml.getAttrString(valelt,"TYPE"))) return false;
+   String s1 = normalizeName(local.getType());
+   String s2 = normalizeName(IvyXml.getAttrString(valelt,"TYPE"));
+   if (!s1.equals(s2)) return false;
 
 // BudValue localval = launch.evaluate(local.getName());
 // int ctxsz = IvyXml.getAttrInt(valelt,"SIZE");
@@ -632,7 +645,7 @@ private Boolean checkValueAtTime(BudValue actval,Element valctx,BudLaunch launch
    boolean found = false;
    for (Element valelt : IvyXml.children(valctx,"VALUE")) {
       long time = IvyXml.getAttrLong(valelt,"TIME");
-      if (prev > 0) {
+      if (prev >= 0) {
          if (time >= from && prev <= to) {
             Boolean fg = compareValueAtTime(actval,prevval,launch,from,to);
             if (fg != null) {

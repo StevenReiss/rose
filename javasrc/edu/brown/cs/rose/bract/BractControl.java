@@ -118,6 +118,18 @@ public RootControl getController()              { return rose_control; }
 
 @Override public void run()
 {
+   try {
+      work();
+    }
+   catch (Throwable t) {
+      RoseLog.logE("BRACT","Problem executing control task",t);
+    }
+}
+
+
+
+private void work()
+{
    List<ProcessorTask> tasks = new ArrayList<>();
    start_time = System.currentTimeMillis();
    num_checked = 0;
@@ -131,6 +143,12 @@ public RootControl getController()              { return rose_control; }
       uselocs.add(at_location);
     }
    
+   if (uselocs.size() == 0) {
+      System.err.println("CHECK HERE");
+    }
+   
+   RoseLog.logI("BRACT","Start processing " + uselocs.size() + " " +
+         location_classes.size());
    
    if (for_problem != null) {
       for (Class<?> cls : processor_classes) {

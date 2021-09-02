@@ -294,8 +294,7 @@ private void handleStartCommand(MintMessage msg) throws RoseException
    else msg.replyTo("<RESULT VALUE='false' />");
 
    CommandArgs args = new CommandArgs("REPORT","SOURCE");
-   BoardProperties props = BoardProperties.getProperties("Rose");
-   int nth = props.getInt("Rose.fait.threads");
+   int nth = getFaitThreads();
    if (nth > 0) args.put("THREADS",nth);
    rslt = sendFaitMessage("ANALYZE",args,null);
    if (!IvyXml.isElement(rslt,"RESULT")) {
@@ -305,7 +304,16 @@ private void handleStartCommand(MintMessage msg) throws RoseException
    
    sts = startSeede();
    RoseLog.logD("STEM","START SEEDE returned " + sts);
-}	
+}
+
+
+private int getFaitThreads()
+{
+   BoardProperties props = BoardProperties.getProperties("Rose");
+   int nth = props.getInt("Rose.fait.threads");
+   if (!no_debug) nth = 1;
+   return nth;
+}
 
 
 
@@ -552,33 +560,39 @@ private void handleParameterValuesCommand(MintMessage msg) throws RoseException
        }
       BractFactory bf = BractFactory.getFactory();
       Element e = IvyXml.convertStringToXml(xw.toString());
-      Element nodes = IvyXml.getChild(e,"NODES");
-      Map<String,RootLocation> done = new HashMap<>();
       Set<File> usefiles = new HashSet<>();
-      for (Element n : IvyXml.children(nodes,"NODE")) {
-         double p = IvyXml.getAttrDouble(n,"PRIORITY");
-         String reason = IvyXml.getAttrString(n,"REASON");
-         Element locelt = IvyXml.getChild(n,"LOCATION");
-         RootLocation loc = bf.createLocation(this,locelt);
-         double p1 = loc.getPriority();
-         p1 = p1 * p;
-         loc.setPriority(p1);
-         loc.setReason(reason);
-         usefiles.add(loc.getFile());
-         if (!isLocationRelevant(loc,prob)) continue;
-         String s = loc.getFile().getPath() + "@" + loc.getLineNumber();
-         RootLocation oloc = done.putIfAbsent(s,loc);
-         if (oloc != null) {
-            double p2 = oloc.getPriority();
-            if (p1 > p2) oloc.setPriority(p1);
-          }
-         else {
-            rslt.add(loc);
+      for (Element nodes : IvyXml.children(e,"NODES")) {
+         RoseLog.logD("STEM","RESULT OF LOCATION QUERY " + IvyXml.convertXmlToString(nodes));
+         Map<String,RootLocation> done = new HashMap<>();
+         for (Element n : IvyXml.children(nodes,"NODE")) {
+            double p = IvyXml.getAttrDouble(n,"PRIORITY");
+            String reason = IvyXml.getAttrString(n,"REASON");
+            Element locelt = IvyXml.getChild(n,"LOCATION");
+            RootLocation loc = bf.createLocation(this,locelt);
+            double p1 = loc.getPriority();
+            p1 = p1 * p;
+            loc.setPriority(p1);
+            loc.setReason(reason);
+            usefiles.add(loc.getFile());
+            RoseLog.logD("STEM","Consider file " + loc.getFile() + " " + loc.getLineNumber());
+            if (!isLocationRelevant(loc,prob)) continue;
+            String s = loc.getFile().getPath() + "@" + loc.getLineNumber();
+            RootLocation oloc = done.putIfAbsent(s,loc);
+            if (oloc != null) {
+               double p2 = oloc.getPriority();
+               if (p1 > p2) oloc.setPriority(p1);
+             }
+            else {
+               rslt.add(loc);
+             }
           }
        }
       if (!usefiles.isEmpty()) {
          seede_files = usefiles;
        }
+    }
+   else {
+      RoseLog.logE("STEM","No location history query for " + prob.getProblemType());
     }
    
    return rslt;
@@ -1571,8 +1585,7 @@ private Set<File> findFaitFiles(String threadid) throws RoseException
       analysis_state = AnalysisState.PENDING; 
       CommandArgs aargs = new CommandArgs("REPORT","SOURCE");
       aargs.put("REPORT","FULL_STATS");
-      BoardProperties props = BoardProperties.getProperties("Rose");
-      int nth = props.getInt("Rose.fait.threads");
+      int nth = getFaitThreads();
       if (nth > 0) aargs.put("THREADS",nth);
       Element arslt = sendFaitMessage("ANALYZE",aargs,null);
       if (!IvyXml.isElement(arslt,"RESULT")) {
@@ -1653,8 +1666,22 @@ private void findFilesForClasses(Set<String> clsset,Set<File> rslt)
       s = s.replace("$",".");
       String fnm = classmap.get(s);
       if (fnm != null) rslt.add(new File(fnm));
-      else RoseLog.logE("STEM","Class " + s + " not found for FILEADD");
+      else {
+         if (!isAnonymousClass(s))
+            RoseLog.logE("STEM","Class " + s + " not found for FILEADD");
+       }
     }
+}
+
+
+private boolean isAnonymousClass(String s)
+{
+   int idx = s.lastIndexOf(".");
+   if (idx > 0 && idx < s.length()-1) {
+      char c = s.charAt(idx+1);
+      if (Character.isDigit(c)) return true;
+    }
+   return false;
 }
 
 
@@ -1927,7 +1954,7 @@ private static class EvalData {
    
    ASTNode n = stem_compiler.getSourceNode(proj,f,offset,line,resolve);
    
-   if (stmt) n = stem_compiler.getStatementOfNode(n);
+   if (stmt) n = StemCompiler.getStatementOfNode(n);
    
    return n;
 }
@@ -1942,7 +1969,7 @@ private static class EvalData {
    String proj = getProjectForFile(f);
    ASTNode n = stem_compiler.getNewSourceNode(proj,f,line,col);
    
-   n = stem_compiler.getStatementOfNode(n);
+   n = StemCompiler.getStatementOfNode(n);
    
    return n;
 }
@@ -2016,6 +2043,11 @@ private void buildProjectMap()
    
    
    
+
+
+
+
+
 }	// end of class StemMain
 
 

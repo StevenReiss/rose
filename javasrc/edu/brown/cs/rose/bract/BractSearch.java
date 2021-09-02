@@ -123,7 +123,7 @@ private BractSearch()
 /*										*/
 /********************************************************************************/
 
-public List<BractSearchResult> getResults(ASTNode stmt,double thresh)
+public List<BractSearchResult> getResults(ASTNode stmt,double thresh,int max)
 {
    List<BractSearchResult> rslt = new ArrayList<>();
    if (stmt == null || cocker_index == null) return rslt;
@@ -135,7 +135,7 @@ public List<BractSearchResult> getResults(ASTNode stmt,double thresh)
    int line = cu.getLineNumber(off);
    int col = cu.getColumnNumber(off);
 
-   List<LeashResult> base = cocker_index.queryStatements(file,line,col);
+   List<LeashResult> base = cocker_index.queryStatements(file,line,col,max);
    if (base == null || base.isEmpty()) return rslt;
 
    RoseLog.logD("BRACT","Leash query for " + filename + "@" + line + ":  " + stmt);

@@ -119,17 +119,28 @@ protected void outputGraph(Element hrslt,IvyXmlWriter xw) throws RoseException
 // RoseLog.logD("STEM","HISTORY RESULT: " + IvyXml.convertXmlToString(hrslt));
    
    if (hrslt == null) throw new RoseException("Can't find history");
-   hrslt = IvyXml.getChild(hrslt,"QUERY");
    xw.begin("RESULT");
-   Element grslt = IvyXml.getChild(hrslt,"GRAPH");
-   processGraph(grslt,xw);
    if (for_problem != null) for_problem.outputXml(xw);
+   xw.begin("NODES");
+   int lsz = 0;
+   int tsz = 0;
+   long ttim = 0;
+   for (Element qrslt : IvyXml.children(hrslt,"QUERY")) {
+      Element grslt = IvyXml.getChild(qrslt,"GRAPH");
+      int sz = IvyXml.getAttrInt(grslt,"SIZE");
+      tsz += sz;
+      ttim += IvyXml.getAttrLong(grslt,"TIME");
+      if (sz > 0) lsz += processGraphNodes(grslt,xw);
+    }
+   xw.end("NODES");
    xw.end("RESULT");
+   
+   RootMetrics.noteCommand("STEM","HISTORYRESULT",tsz,lsz,ttim);
 }
 
 
 
-private void processGraph(Element gelt,IvyXmlWriter xw)
+private int processGraphNodes(Element gelt,IvyXmlWriter xw)
 {
    Map<String,GraphNode> locs = new HashMap<>();
    
@@ -143,15 +154,11 @@ private void processGraph(Element gelt,IvyXmlWriter xw)
        }
       locs.put(id,gn);
     }
-   xw.begin("NODES");
    for (GraphNode gn : locs.values()) {
       gn.outputXml(xw);
     }
-   xw.end("NODES");
    
-   RootMetrics.noteCommand("STEM","HISTORYRESULT",
-         IvyXml.getAttrInt(gelt,"SIZE"),locs.size(),
-         IvyXml.getAttrInt(gelt,"TIME"));
+   return locs.size();
 }
 
 

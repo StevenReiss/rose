@@ -216,7 +216,7 @@ void setupBaseExecution()
           }
        }
     }
-   RoseLog.logT("VALIDATE","BAD BASE EXECUTION");
+   RoseLog.logE("VALIDATE","BAD BASE EXECUTION");
 }
 
 

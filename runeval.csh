@@ -23,7 +23,7 @@ set CP = ${CP}:/pro/rose/resources
 set WHAT = $*
 
 if ( X$WHAT == X ) then
-   set WHAT = ( quix chart lang math math3 time )
+   set WHAT = ( quix chart lang math3 math time )
 endif
 
 foreach i ( $WHAT )

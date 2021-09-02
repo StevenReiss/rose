@@ -48,6 +48,7 @@ import edu.brown.cs.rose.bract.BractConstants;
 import edu.brown.cs.rose.bud.BudValue;
 import edu.brown.cs.rose.root.RootProblem;
 import edu.brown.cs.rose.root.RoseException;
+import edu.brown.cs.rose.root.RoseLog;
 import edu.brown.cs.rose.root.RootControl.AssertionData;
 
 class StemQueryLocationHistory extends StemQueryHistory implements BractConstants
@@ -89,10 +90,13 @@ StemQueryLocationHistory(StemMain ctrl,RootProblem prob)
 @Override void process(StemMain stem,IvyXmlWriter xw) throws RoseException
 {
    String locxml = getExecLocation();
-   if (locxml == null) throw new RoseException("Location undefined");
+   if (locxml == null) {
+      RoseLog.logE("STEM","No location for location query");
+      throw new RoseException("Location undefined");
+    }
    
    Element hrslt = getLocationData(stem,locxml);
-   outputGraph(hrslt,xw); // method body goes here
+   outputGraph(hrslt,xw); 
 }
 
 

@@ -174,7 +174,7 @@ private abstract class ValidateProblemChecker {
       long t2 = execution_matcher.getProblemTime();
       long t3 = check_execution.getExceptionTime();
       long t4 = execution_matcher.getMatchProblemTime();
-      if (t0 < t4 && t4 <= 0 && t3 > 0 && t3 < t2) return true;
+      if (t0 < t2 && t4 <= 0 && t3 > 0 && t3 < t2) return true;
       
       return false;
    }
@@ -208,7 +208,7 @@ private class ValidateCheckerException extends ValidateProblemChecker {
           }
          else if (execution_matcher.getMatchProblemAfterTime() > 0) {
             if (check_execution.getExceptionTime() > execution_matcher.getMatchProblemAfterTime()) {
-               return 0.8;
+               return 0.5;
              }
           }
          else if (origexc.getDataType().equals(checkexc.getDataType())) return 0;
@@ -287,7 +287,7 @@ private class ValidateCheckerVariable extends ValidateProblemChecker {
             if (haveold) return 0.60;
             return 0.75;
           }
-         else if (nval == null) haveother = true;
+         else if (nval == null && vval.getStartTime() > 0) haveother = true;
        }
       
       if (!haveold) return 0.6;
@@ -346,7 +346,9 @@ private class ValidateCheckerExpression extends ValidateProblemChecker {
     }
    
    @Override double validate() {
-      if (!executionChanged()) return 0.1;
+      if (exceptionThrown()) return 0;
+      long t0 = execution_matcher.getMatchProblemTime();
+      if (t0 < 0) return 0.2;
       return 0.5;
     }
    
@@ -371,23 +373,20 @@ private class ValidateCheckerLocation extends ValidateProblemChecker {
       if (!executionChanged()) return 0;
       
       ValidateCall vc = execution_matcher.getMatchChangeContext();
-      if (vc == null) return 0.8;
       long t0 = execution_matcher.getMatchProblemTime();
-      if (t0 <= 0) return 0.8;
+      if  (vc != null) {
+         if (t0 <= 0) {
+            if (exceptionThrown()) return 0.2;
+            return 0.8;
+          }  
+       }
+      if (vc == null) return 0.5;
+     
       ValidateVariable vv = vc.getLineNumbers();
       int lmatch = vv.getLineAtTime(t0);
       if (lmatch <= 0) return 0.8;
       
-      ValidateVariable vv1 = execution_matcher.getProblemContext().getLineNumbers();
-      int lorig = vv1.getLineAtTime(execution_matcher.getProblemTime());
-      if (lorig == lmatch) return 0;
-      
-      for (ValidateValue vvx : vv1.getValues(null)) {
-         Long lno = vvx.getNumericValue();
-         if (lno != null && lno == lorig) return 0.2;
-       }
-      
-      return 0.5;
+      return 0.0;
     }
 
 

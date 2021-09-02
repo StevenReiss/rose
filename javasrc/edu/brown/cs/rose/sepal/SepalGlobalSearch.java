@@ -1,8 +1,8 @@
 /********************************************************************************/
 /*                                                                              */
-/*              SepalLocalSearch.java                                           */
+/*              SepalGlobalSearch.java                                          */
 /*                                                                              */
-/*      Find similar statements or contexts in project as suggestions           */
+/*      Find repairs using sharpFix global search                               */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
@@ -44,18 +44,20 @@ import java.util.List;
 import java.util.Map;
 
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.Statement;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 
+import edu.brown.cs.ivy.jcomp.JcompAst;
 import edu.brown.cs.rose.bract.BractSearch;
 import edu.brown.cs.rose.bract.BractConstants.BractSearchResult;
 import edu.brown.cs.rose.root.RootControl;
 import edu.brown.cs.rose.root.RootRepairFinderDefault;
 import edu.brown.cs.rose.root.RoseLog;
 import sharpfix.global.PatchAsASTRewriteWithScore;
-import sharpfix.patchgen.LocalPatchGenerator;
+import sharpfix.patchgen.GlobalPatchGenerator;
 
-public class SepalLocalSearch extends RootRepairFinderDefault
+public class SepalGlobalSearch extends RootRepairFinderDefault implements SepalConstants
 {
 
 
@@ -67,12 +69,13 @@ public class SepalLocalSearch extends RootRepairFinderDefault
 
 private BractSearch     search_engine;
 
-private static final int MAX_LOCAL_CHECK = 40;
-private static final int MAX_LOCAL_RESULTS = 10;
+private static final int MAX_GLOBAL_CHECK = 40;
+private static final int MAX_GLOBAL_RESULTS = 10;
 private static final int MAX_CHECK_PER_RESULT = 4;
-private static final double SEARCH_THRESHOLD = 1.0;
+private static final double SEARCH_THRESHOLD = 4.0;
 private static final int MAX_RETURN = 128;
 
+private static boolean use_global_search = false;
 
 
 
@@ -82,7 +85,7 @@ private static final int MAX_RETURN = 128;
 /*                                                                              */
 /********************************************************************************/
 
-public SepalLocalSearch()
+public SepalGlobalSearch()
 {
    search_engine = null;
 }
@@ -91,9 +94,10 @@ public SepalLocalSearch()
 @Override synchronized protected void localSetup()
 {
    if (search_engine == null) {
-      search_engine = BractSearch.getProjectSearch(getProcessor().getController());
+      search_engine = BractSearch.getGlobalSearch();
     }
 }
+
 
 
 
@@ -105,13 +109,15 @@ public SepalLocalSearch()
 
 @Override public double getFinderPriority()
 {
-   return 0.40;
+   return 0.37;
 }
 
 
 
 @Override public void process()
 {
+   if (getProcessor().haveGoodResult() || !use_global_search) return;
+   
    RootControl ctrl = getProcessor().getController();
    Statement stmt = (Statement) getResolvedStatementForLocation(null);
    if (stmt == null) return;
@@ -130,20 +136,18 @@ public SepalLocalSearch()
    int rct = 0;
    int fnd = 0;
    for (BractSearchResult sr : rslts) {
-      if (sr.getFile().equals(bfile) && sr.getLineNumber() == lno) continue;
-      if (!sr.getFile().exists() || !sr.getFile().canRead()) continue;
-      if (++rct > MAX_LOCAL_RESULTS) break;
-      String ccnts = ctrl.getSourceContents(sr.getFile());
-      ASTNode cnode = ctrl.getNewSourceStatement(sr.getFile(),sr.getLineNumber(),sr.getColumnNumber());
+      if (++rct > MAX_GLOBAL_RESULTS) break;
+      String ccnts = sr.getFileContents();
+      ASTNode cnode = findSourceNode(ccnts,sr.getLineNumber(),sr.getColumnNumber());
       if (cnode == null) {
          --rct;
          continue;
        }
       List<PatchAsASTRewriteWithScore> patches;
-     
+      
       synchronized (search_engine) {
          try {
-            patches = LocalPatchGenerator.makePatches(bcnts,bnode,ccnts,cnode);
+            patches = GlobalPatchGenerator.makePatches(bcnts,bnode,ccnts,cnode);
           }
          catch (Throwable t) {
             RoseLog.logE("SEPAL","Problem with sharpFix",t);
@@ -157,7 +161,7 @@ public SepalLocalSearch()
       for (int i = 0; i < ct; ++i) {
          PatchAsASTRewriteWithScore r = patches.get(i);
          ASTRewrite rw = r.getASTRewrite();
-        
+         
          // need to get a description from the rewrite -- replace Search-based repair with that
          double score = r.getScore();
          // might want to manipulate score a bit
@@ -165,15 +169,33 @@ public SepalLocalSearch()
          String logdata = getClass().getName() + "@" + i + "@" + r.getType();
          String desc = r.getDescription();
          addRepair(rw,desc,logdata,score);
-//       System.err.println("LOCAL " + i + " " + fnd + " " + rct + " " + lct + " " + desc);
+//       System.err.println("GLOBAL " + i + " " + fnd + " " + rct + " " + lct + " " + desc);
          if (++lct > MAX_CHECK_PER_RESULT) break;
-         if (++fnd > MAX_LOCAL_CHECK) break;
+         if (++fnd > MAX_GLOBAL_CHECK) break;
        }
       // add repair for each returned patch
-      RoseLog.logD("SEPAL","Find local search results " + ct + " " + fnd);
-      if (fnd > MAX_LOCAL_CHECK) break;
+      RoseLog.logD("SEPAL","Find global search results " + ct + " " + fnd);
+      if (fnd > MAX_GLOBAL_CHECK) break;
     }
 }
+
+
+
+private ASTNode findSourceNode(String cnts,int lno,int col)
+{
+   CompilationUnit cu = JcompAst.parseSourceFile(cnts);
+   int offset = cu.getPosition(lno,col);
+   ASTNode node = JcompAst.findNodeAtOffset(cu,offset);
+   while (node != null) {
+      if (node instanceof Statement) break;
+      node = node.getParent();
+    }  
+   
+   return node;
+}
+
+
+
 
 
 
@@ -210,7 +232,7 @@ private boolean isRelevant(int lno,Statement stmt,PatchAsASTRewriteWithScore r)
    
    return true;
 }
-  
+
 
 
 /********************************************************************************/
@@ -287,12 +309,10 @@ private static class PatchComparer implements Comparator<PatchAsASTRewriteWithSc
 
 
 
-
-
-}       // end of class SepalLocalSearch
+}       // end of class SepalGlobalSearch
 
 
 
 
-/* end of SepalLocalSearch.java */
+/* end of SepalGlobalSearch.java */
 

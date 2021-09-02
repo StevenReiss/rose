@@ -35,7 +35,7 @@
       <PROBLEM TYPE='VARIABLE' NAME='start' CURRENT='3' TARGET='4' />
       <SOLUTION LINE='30'>
 	 <MATCH><![CDATA[mid + 1]]></MATCH>
-      </SOLUTION>
+      </SOLUTION>							
    </TEST>
    <TEST NAME='Flatten' SKIP='1'>
       <PROBLEM TYPE='LOCATION'/>
@@ -187,7 +187,7 @@
 	 <MATCH><![CDATA[Arrays.aslist(k,j)]]></MATCH>
       </SOLUTION>
    </TEST>
-   <TEST NAME='ShortestPaths'>
+   <TEST NAME='ShortestPaths' TIME='50000'>
       <PROBLEM TYPE='ASSERTION' />
       <SOLUTION LINE='40'>
 	 <MATCH><![CDATA[edge.get(i)]]></MATCH>
@@ -376,7 +376,7 @@
    <TEST NAME='Math69'>
       <PROBLEM TYPE='ASSERTION' />
       <SOLUTION LINE='176' FILE='PearsonsCorrelation.java'>
-	 <MATCH><![CDATA[(-t)]]></MATCH>
+	 <MATCH><![CDATA[2 * (1 - tDistribution.cumula... with 2.0 * tDistribution.cumulat]]></MATCH>
       </SOLUTION>
    </TEST>
    <TEST NAME='Math75'>
@@ -459,12 +459,12 @@
 
 <SUITE NAME='time' WORKSPACE='d4jtime' PROJECT='d4jtime' TIME='100000' >
    <TEST NAME='Time04'>
-      <PROBLEM TYPE='LOCATION' />
+      <PROBLEM TYPE='VARIABLE' NAME='test1' />
       <SOLUTION LINE='466' FILE='Partial.java'>
 	 <MATCH><![CDATA[newTypes,newValues,iChronology]]></MATCH>
       </SOLUTION>
    </TEST>
-   <TEST NAME='Time16'>
+   <TEST NAME='Time16' LOCAL='true' FRAMES='0' TIME='500000' >
       <PROBLEM TYPE='ASSERTION' />
       <SOLUTION LINE='722' FILE='DateTimeFormatter.java'>
 	 <MATCH><![CDATA[defaultYear]]></MATCH>
@@ -532,26 +532,41 @@
    </TEST>
 </SUITE>
 
+<SUITE NAME='mockito' WORKSPACE='d4jmockito' PROJECT='mockito' TIME='100000' >
+<!--
+   <TEST NAME='Mockito05' LOCAL='true' FRAMES='0' >
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='93' FILE='VerificationOverTimeImpl.java'>
+	 <MATCH><![CDATA[AssertionError]]></MATCH>
+      </SOLUTION>
+   </TEST>
+-->
+<!--
+   <TEST NAME='Mockito24'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='78' FILE='ReturnsEmptyValues.java'>
+	 <MATCH><![CDATA[invocation.getMock]]></MATCH>
+      </SOLUTION>
+   </TEST>
+-->
+   <TEST NAME='Mockito26'>
+      <PROBLEM TYPE='EXCEPTION' CATCH='java.lang.ClassCastException' />
+      <SOLUTION LINE='87' FILE='Primitives.java'>
+	 <MATCH><![CDATA[0D]]></MATCH>
+	 <MATCH><![CDATA[0d]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Mockito38'>
+      <PROBLEM TYPE='EXCEPTION' CATCH='java.lang.NullPointerException'/>
+      <SOLUTION LINE='50' FILE='ArgumentMatchingTool.java'>
+	 <MATCH><![CDATA[== null]]></MATCH>
+	 <MATCH><![CDATA[String.valueOf]]></MATCH>
+      </SOLUTION>
+   </TEST>
+
+</SUITE>
 
 </ROSEEVAL>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

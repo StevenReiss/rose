@@ -64,7 +64,7 @@ private boolean use_sequencer = false;
 
 private static final int MAX_LOCAL_CHECK = 5;
 private static final int MAX_LOCAL_RESULTS = 5;
-private static final double SEARCH_THRESHOLD = 0.05;
+private static final double SEARCH_THRESHOLD = 0.01;
 
 
 
@@ -113,6 +113,8 @@ public SepalSequencer()
 
 @Override public void process()
 {
+   if (getProcessor().haveGoodResult() || !use_sequencer) return;
+   
    RootControl ctrl = getProcessor().getController();
    Statement stmt = (Statement) getResolvedStatementForLocation(null);
    if (stmt == null) return;
@@ -122,9 +124,7 @@ public SepalSequencer()
    String bcnts = ctrl.getSourceContents(bfile);
    List<RepairResult> rslts = null;
    if (sequencer_connect.ping()) {
-      if (!getProcessor().haveGoodResult() && use_sequencer) {
-         rslts = sequencer_connect.execute(bfile.getPath(),bcnts,lno);
-       }
+      rslts = sequencer_connect.execute(bfile.getPath(),bcnts,lno);
     }
    if (rslts == null || rslts.isEmpty()) return;
    // need to sort the results -- skip first, ignore changes

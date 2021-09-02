@@ -1181,6 +1181,8 @@ private class AdvancedPanel extends SwingGridPanel implements ActionListener {
    private JTextField return_field;
    private JTextField except_field;
    private SwingNumericField time_field;
+   private SwingNumericField max_tests_field;
+   private SwingNumericField max_seede_field;
    private VariableValuePanel check_panel;
    private RootTestCase default_test;
    
@@ -1207,6 +1209,8 @@ private class AdvancedPanel extends SwingGridPanel implements ActionListener {
       except_field = addTextField("Exception Type",null,32,this,null);
       showField(except_field,false);
       time_field = addNumericField("Max Time (ticks)",10000,1000000,100000,this);
+      max_tests_field = addNumericField("Max Repairs",50,1000,300,this);
+      max_seede_field = addNumericField("Max Total Time (ticks)",100000,20000000,3000000,this);
       
       check_panel = new VariableValuePanel();
       addRawComponent("Checks",check_panel);
@@ -1245,6 +1249,10 @@ private class AdvancedPanel extends SwingGridPanel implements ActionListener {
              break;
           case "Max Time (ticks)" :
              break;
+          case "Max Repairs" :
+             break;
+          case "Max Total Time (ticks)" :
+             break;
           default :
              BoardLog.logE("BUSH","Unknown action command for advanced panel " + 
                    evt.getActionCommand());
@@ -1260,6 +1268,8 @@ private class AdvancedPanel extends SwingGridPanel implements ActionListener {
        else if (except_field.isVisible()) default_test.setThrows(except_field.getText());
        else default_test.setLoops();
        default_test.setMaxTime((long) time_field.getValue());
+       default_test.setMaxRepairs((int) max_tests_field.getValue());
+       default_test.setMaxSeede((long) max_seede_field.getValue());
        VariableValueSet vset = (VariableValueSet) check_panel.getListModel();
        for (int i = 0; i < vset.getSize(); ++i) {
           VariableValue vv = vset.getElementAt(i);

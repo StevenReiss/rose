@@ -135,7 +135,7 @@ ASTNode getNewSourceNode(String proj,File f,int line,int col)
 
 
 
-ASTNode getStatementOfNode(ASTNode node)
+static ASTNode getStatementOfNode(ASTNode node)
 {
    while (node != null) {
       if (node instanceof Statement) break;

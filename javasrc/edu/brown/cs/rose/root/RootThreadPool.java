@@ -76,13 +76,10 @@ private RootThreadPool()
 {
    BlockingQueue<Runnable> bq = new PriorityBlockingQueue<>(10,new TaskComparator());
    if (max_threads <= 1) {
-      thread_pool = new ThreadPoolExecutor(1,1,30000,TimeUnit.MILLISECONDS,
-            bq,new OurThreadFactory());
+      thread_pool = new RootExecutor(1,bq);
     }
    else {
-      thread_pool = new ThreadPoolExecutor(max_threads,max_threads,
-            30000,TimeUnit.MILLISECONDS,
-            bq,new OurThreadFactory());
+      thread_pool = new RootExecutor(max_threads,bq);
     }
 }
 
@@ -161,6 +158,53 @@ private static class ProcThread extends Thread implements LoggerThread {
 }       // end of inner class ProcThread
 
 
+
+/********************************************************************************/
+/*                                                                              */
+/*      Logging thread pool executor                                            */
+/*                                                                              */
+/********************************************************************************/
+
+private static class RootExecutor extends ThreadPoolExecutor {
+   
+   RootExecutor(int sz,BlockingQueue<Runnable> q) {
+      super(sz,sz,30000,TimeUnit.MILLISECONDS,q,new OurThreadFactory());
+    }
+   
+   @Override protected void beforeExecute(Thread t,Runnable r) { 
+      if (t instanceof LoggerThread) {
+         LoggerThread lt = (LoggerThread) t;
+         RoseLog.logD("ROOT","Execute task " + lt.getLogId() + " " + r);
+       }
+      else {
+         RoseLog.logD("ROOT","Execute tast " + r);
+       }
+      super.beforeExecute(t,r);
+    }
+      
+   @Override protected void afterExecute(Runnable r,Throwable t) { 
+      Thread ct = Thread.currentThread();
+      if (t == null) {
+         if (ct instanceof LoggerThread) {
+            LoggerThread lt = (LoggerThread) ct;
+            RoseLog.logD("ROOT","Finish task " + lt.getLogId() + " " + r);
+          }
+         else {
+            RoseLog.logD("ROOT","Finish tast " + r);
+          }
+       }
+      else {
+         if (ct instanceof LoggerThread) {
+            LoggerThread lt = (LoggerThread) ct;
+            RoseLog.logE("ROOT","Aborted task " + lt.getLogId() + " " + r,t);
+          }
+         else {
+            RoseLog.logE("ROOT","Aborted tast " + r,t);
+          }
+       }
+    }
+         
+}       // end of inner class RootExecutor
 
 }       // end of class RootThreadPool
 

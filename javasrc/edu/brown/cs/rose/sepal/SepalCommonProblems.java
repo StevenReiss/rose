@@ -53,6 +53,8 @@ import edu.brown.cs.ivy.jcomp.JcompSymbol;
 import edu.brown.cs.ivy.jcomp.JcompType;
 import edu.brown.cs.rose.bract.BractAstPattern;
 import edu.brown.cs.rose.bract.BractConstants;
+import edu.brown.cs.rose.root.RootLocation;
+import edu.brown.cs.rose.root.RootProblem;
 import edu.brown.cs.rose.root.RootRepairFinderDefault;
 
 public class SepalCommonProblems extends RootRepairFinderDefault implements BractConstants
@@ -94,6 +96,9 @@ private static final BractAstPattern overflow_result;
 private static final BractAstPattern int_double_pattern;
 private static final BractAstPattern int_double_result;
 
+private static final BractAstPattern to_string_pattern;
+private static final BractAstPattern to_string_result;
+
 
 static {
    cond_pattern = BractAstPattern.expression("Ex = Ey");
@@ -128,6 +133,9 @@ static {
    
    int_double_pattern = BractAstPattern.expression("Ex / Ic");
    int_double_result = BractAstPattern.expression("Ex / Ecf");
+   
+   to_string_pattern = BractAstPattern.expression("Ex.toString()");
+   to_string_result = BractAstPattern.expression("XString.valueOf(Ex)");
 }
 
 
@@ -163,6 +171,7 @@ public SepalCommonProblems()
    checkSimplePattern(stmt,and_pattern,and_result,0.75);
    checkSimplePattern(stmt,overflow_pattern,overflow_result,0.75);
    checkConversion(stmt);
+   checkToString(stmt);
 }
 
 
@@ -479,6 +488,49 @@ private JcompType getExpectedType(ASTNode n)
     }
    return null;
 }
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Convert toString to String.valueOf                                      */
+/*                                                                              */
+/********************************************************************************/
+
+private void checkToString(ASTNode stmt)
+{
+   RootProblem rp = getProblem();
+   if (rp.getProblemType() != RoseProblemType.EXCEPTION) return;
+   if (!rp.getProblemDetail().equals("java.lang.NullPointerException")) return;
+   
+   RootLocation ploc = rp.getBugLocation();
+   ASTNode bstmt = getResolvedStatementForLocation(ploc);
+   if (bstmt != stmt) return;
+   ASTNode exc = getProcessor().getController().getExceptionNode(rp);
+   if (exc == null) return;
+   
+   Map<ASTNode,PatternMap> rslt = to_string_pattern.matchAll(stmt,null);
+   if (rslt != null) {
+      for (ASTNode n : rslt.keySet()) {
+         ASTNode prior = null;
+         for (ASTNode n1 = exc; n1 instanceof Expression; n1 = n1.getParent()) {
+            if (n1 == n) break;
+            prior = n1;
+          }
+         if (prior == null || prior.getParent() != n) continue;
+         if (prior.getLocationInParent() != MethodInvocation.EXPRESSION_PROPERTY) continue;
+         
+         PatternMap omap = rslt.get(n);
+         ASTRewrite rw = to_string_result.replace(n,omap);
+         String logdata = getClass().getName();
+         String desc = "Replace toString with String.valueOf in " + n;
+         if (rw != null) addRepair(rw,desc,logdata + "@TOSTRING",0.75);
+       }
+    }
+}
+
+
+
 
 }       // end of class SepalCommonProblems
 

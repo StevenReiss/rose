@@ -558,6 +558,9 @@ private class SubtreeSubst extends ASTVisitor {
       char typ = s.charAt(0);
       String s1 = getPatternName(sn);
       if (s1 == null) return sn;
+      if (typ == ESCAPE_PATTERN) {
+         return base_ast.newSimpleName(s1);
+       }
       Object val = pattern_values.get(s1);
       if (val == null) {
          if (!pattern_values.containsKey(s1)) is_valid = false;
@@ -565,7 +568,7 @@ private class SubtreeSubst extends ASTVisitor {
        }
       
       ASTNode rep = null;
-      if (val instanceof ASTNode) {
+      if (val instanceof ASTNode) { 
          rep = ASTNode.copySubtree(base_ast,(ASTNode) val);
        }
       else if (val instanceof Number) {
