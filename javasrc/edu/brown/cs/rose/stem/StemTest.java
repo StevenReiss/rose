@@ -390,12 +390,21 @@ public void testRoseAssertion_3()
 
 
 
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Picot Tests                                                             */
+/*                                                                              */
+/********************************************************************************/
+
 @Test
-public void testAssertion()
+public void testPicotRomp()
 {
-   String workspace = "rosetest";
-   String project = "rosetest";
-   String launch = "test07";
+   String workspace = "rompspr";
+   String project = "romp";
+   String launch = "Romp Collide";
    MintControl mc = setupBedrock(workspace,project);
    
    try {
@@ -407,7 +416,7 @@ public void testAssertion()
       xw.field("FRAME",fd.getId());
       xw.field("THREAD",fd.getThreadId());
       xw.field("TYPE","ASSERTION");
-      xw.textElement("ITEM","org.junit.ComparisonFailure");
+      xw.textElement("ITEM","java.lang.AssertionError");
       fd.outputLocation(xw,project,0.5,mc);
       xw.end("PROBLEM");
       String cnts = xw.toString();

@@ -35,6 +35,9 @@
 
 package edu.brown.cs.rose.root;
 
+import java.io.File;
+import java.util.List;
+import java.util.Map;
 
 public interface RootValidate extends RootConstants
 {
@@ -62,7 +65,47 @@ boolean canCheckResult();
 
 boolean haveGoodResult();
 
+RootTrace getExecutionTrace();
 
+interface RootTrace {
+   long getProblemTime();
+   RootTraceCall getProblemContext();
+   RootTraceCall getRootContext();
+   RootTraceValue getException();
+   RootTraceValue getReturnValue();
+}
+
+interface RootTraceCall {
+   File getFile();
+   String getMethod();
+   long getStartTime();
+   long getEndTime();
+   List<RootTraceCall> getInnerTraceCalls();
+   RootTraceVariable getLineNumbers();
+   Map<String,RootTraceVariable> getTraceVariables();
+}
+
+
+interface RootTraceVariable {
+   String getName();
+   List<RootTraceValue> getTraceValues(RootTrace rt);
+   RootTraceValue getValueAtTime(RootTrace tr,long time);
+   int getLineAtTime(long time);
+}
+
+
+interface RootTraceValue {
+   long getStartTime();
+   boolean isNull();
+   String getDataType();
+   Long getNumericValue();
+   int getLineValue();
+   String getValue();
+   RootTraceValue getFieldValue(RootTrace rt,String fld,long when);
+   RootTraceValue getIndexValue(RootTrace rt,int idx,long when);
+   String getId();
+   int getArrayLength();
+}
 
 }       // end of class RootValidate
 

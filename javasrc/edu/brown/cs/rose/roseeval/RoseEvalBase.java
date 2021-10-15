@@ -47,7 +47,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.StringTokenizer;
 
 import org.w3c.dom.Element;
 
@@ -80,14 +79,13 @@ abstract class RoseEvalBase implements RoseEvalConstants
 /*                                                                              */
 /********************************************************************************/
 
-private String  workspace_name;
-private String  project_name;
 private PrintWriter  output_file;
 
 private static String           stopped_thread = null;
 private static String           end_process = null;
 
 private static Map<String,SuggestionSet> suggest_set = new HashMap<>();
+private static Map<String,RoseEvalTestResult> testresult_set = new HashMap<>();
 private static Map<String,String> workspace_path = new HashMap<>();
       
 private static Map<String,MintControl> mint_map = new HashMap<>();
@@ -112,17 +110,8 @@ static {
 /*                                                                              */
 /********************************************************************************/
 
-protected RoseEvalBase(String workspace,String project)
-{
-   workspace_name = workspace;
-   project_name = project;
-   output_file = null;
-}
-
 protected RoseEvalBase()
 {
-   workspace_name = null;
-   project_name = null;
    output_file = null;
 }
 
@@ -133,34 +122,6 @@ protected RoseEvalBase()
 /*      TEST RUNNER                                                             */
 /*                                                                              */
 /********************************************************************************/
-
-protected void runSingleEvalaution(String launch,
-      RoseEvalProblem problem,String expect,int max,boolean lines)
-{
-   MintControl mc = setupBedrock(workspace_name,project_name);
-   
-   try {
-      RoseEvalFrameData fd = setupTest(workspace_name,project_name,launch,0,null);
-      
-      String cnts = problem.getDescription(fd);  
-      
-      runTest(mc,fd,cnts,max,lines,false);
-    }
-   catch (Throwable t) {
-      RoseLog.logE("Problem processing evaluation test",t);
-      throw t;
-    }
-   finally {
-      finishEvaluations();
-    } 
-}
-
-
-protected void startEvaluations()
-{
-   startEvaluations(workspace_name,project_name);
-}
-
 
 protected void startEvaluations(String workspace,String project)
 {
@@ -186,41 +147,6 @@ protected void startEvaluations(String workspace,String project)
 
 
 
-protected void runEvaluation(String launch,RoseEvalProblem problem,int ct,String expect,int max)
-{
-   runEvaluation(launch,problem,ct,expect,max,false,null);
-}
-
-
-
-protected void runEvaluation(String launch,RoseEvalProblem problem,int ct,String expect,int max,
-      boolean usecur,List<String> files)
-{
-   MintControl mc = setupBedrock(workspace_name,project_name);
-   
-   RoseEvalFrameData fd = setupTest(workspace_name,project_name,launch,ct,files);
-   
-   try {
-      String cnts = problem.getDescription(fd); 
-      
-      System.err.println("START " + launch);
-      
-      long starttime = System.currentTimeMillis();
-      SuggestionSet ss = runTest(mc,fd,cnts,max,false,usecur);
-      long time = System.currentTimeMillis() - starttime;
-      processSuggestions(launch,ss,expect,time);
-    }
-   catch (Throwable t) {
-      RoseLog.logE("ROSEEVAL","Problem processing evaluation test",t);
-    }
-   finally {
-      finishTest(fd);
-      shutdownBedrock(workspace_name,project_name);
-    }
-}
-
-
-
 protected void runEvaluation(RoseEvalTest test)
 {
    RoseEvalSuite suite = test.getSuite();
@@ -235,9 +161,19 @@ protected void runEvaluation(RoseEvalTest test)
       System.err.println("START " + test.getName());
       
       long starttime = System.currentTimeMillis();
-      SuggestionSet ss = runTest(mc,fd,cnts,test.getTime(),false,test.getUpFrames() == 0);
-      long time = System.currentTimeMillis() - starttime;
-      processSuggestions(test.getName(),ss,test.getSolution(),time);
+      switch (test.getTestType()) {
+         case ROSE :
+            SuggestionSet ss = runTest(mc,fd,cnts,test);
+            long time = System.currentTimeMillis() - starttime;
+            processSuggestions(test.getName(),ss,test.getSolution(),time);
+            break;
+         case PICOT :
+            RoseEvalTestResult tc = runPicotTest(mc,fd,cnts,test);
+            long timep = System.currentTimeMillis() - starttime;
+            processTestCase(test.getName(),tc,timep);
+            break;
+       }
+     
     }
    catch (Throwable t) {
       RoseLog.logE("ROSEEVAL","Problem processing evaluation test",t);
@@ -248,12 +184,6 @@ protected void runEvaluation(RoseEvalTest test)
     }
 }
 
-
-
-protected void finishEvaluations()
-{
-   finishEvaluations(workspace_name,project_name);
-}
 
 
 protected void finishEvaluations(String workspace,String project)
@@ -310,34 +240,15 @@ private RoseEvalFrameData setupTest(String workspace,String project,
 
 
 
-private SuggestionSet runTest(MintControl ctrl,RoseEvalFrameData fd,
-      String oprob,long max,boolean lines,boolean usecur)
+private SuggestionSet runTest(MintControl ctrl,RoseEvalFrameData fd,String oprob,
+      RoseEvalTest test)
 {
-// getChangedVariables(ctrl,fd,oprob);
+   boolean usecur = test.getUpFrames() == 0;
+   long max = test.getTime();
    String startloc = (usecur ? "*" : null);
    String prob = getStartFrame(ctrl,oprob,startloc,max);
-   SuggestionSet ss = getSuggestionsFor(ctrl,fd,prob,null);
    
-   if (lines) {
-      Element locs = getHistory(ctrl,fd,prob);
-      
-      int lline = 0;
-      for (Element node : IvyXml.children(locs,"NODE")) {
-         Element loc = IvyXml.getChild(node,"LOCATION");
-         String m = IvyXml.getAttrString(loc,"METHOD");
-         if (m == null) continue;
-         int idx = m.lastIndexOf(".");
-         if (idx > 0) m = m.substring(idx+1);
-         if (m.startsWith("test") && !m.contains("code")) continue;
-         int line = IvyXml.getAttrInt(loc,"LINE");
-         if (line <= 0 || line == lline) continue;
-         lline = line;
-         String loccnts = IvyXml.convertXmlToString(loc);
-         String locprob = getStartFrame(ctrl,oprob,loccnts,max);
-         
-         getSuggestionsFor(ctrl,fd,locprob,node);
-       }
-    }
+   SuggestionSet ss = getSuggestionsFor(ctrl,fd,prob);
    
    sendStemReply(ctrl,"FINISHED",null,null);
    
@@ -345,27 +256,28 @@ private SuggestionSet runTest(MintControl ctrl,RoseEvalFrameData fd,
 }
 
 
+private RoseEvalTestResult runPicotTest(MintControl ctrl,RoseEvalFrameData fd,String prob,
+      RoseEvalTest test)
+{
+   String id = "PICOT_" + source_id + "_" + random_gen.nextInt(100000);  CommandArgs args = new CommandArgs("REPLYID",id);
+   RoseEvalTestResult tr = new RoseEvalTestResult();
+   testresult_set.put(id,tr);
+         
+   Element xml = sendStemReply(ctrl,"CREATETEST",args,prob);
+   assert IvyXml.isElement(xml,"RESULT");
+   
+   tr.waitForResult();
+   testresult_set.remove(id);
+  
+   return tr;
+}
+
 private void finishTest(RoseEvalFrameData fd)
 {
    finishLaunch(fd);
 }
 
-private Element getHistory(MintControl ctrl,RoseEvalFrameData fd,String prob)
-{
-   CommandArgs args = new CommandArgs("TYPE","EXCEPTION",
-         "METHOD",fd.getMethod(),
-         "LINE",fd.getLine(),
-         "CLASS",fd.getClassName(),
-         "FILE",fd.getSourceFile(ctrl),
-         "PROJECT",fd.getProject(ctrl),
-         "LAUNCH",fd.getLaunchId(),
-         "FRAME",fd.getId(),
-         "THREAD",fd.getThreadId() );
-   Element xml = sendStemReply(ctrl,"HISTORY",args,prob);
-   assert IvyXml.isElement(xml,"RESULT");
-   
-   return IvyXml.getChild(xml,"NODES");
-}
+
 
 
 
@@ -439,21 +351,12 @@ private String getStartFrame(MintControl ctrl,String prob,String loc,long max)
 }
 
 
-private SuggestionSet getSuggestionsFor(MintControl ctrl,RoseEvalFrameData fd,String prob,Element node) 
+private SuggestionSet getSuggestionsFor(MintControl ctrl,RoseEvalFrameData fd,String prob) 
 {
    String id = "SUGGEST_" + source_id + "_" + random_gen.nextInt(100000);
    CommandArgs args = new CommandArgs("NAME",id);
    
-   String loc = null;
-   if (node != null) {
-      Element locelt = IvyXml.getChild(node,"LOCATION");
-      if (locelt != null) loc = IvyXml.convertXmlToString(locelt);
-    }
    String cnts = prob;
-   if (loc != null) {
-      if (cnts == null) cnts = loc;
-      else cnts += loc;
-    }
    
    SuggestionSet ss = new SuggestionSet();
    suggest_set.put(id,ss);
@@ -470,59 +373,7 @@ private SuggestionSet getSuggestionsFor(MintControl ctrl,RoseEvalFrameData fd,St
 
 
 
-/********************************************************************************/
-/*                                                                              */
-/*      Reporting methods                                                       */
-/*                                                                              */
-/********************************************************************************/
 
-private void processSuggestions(String name,SuggestionSet ss,String expect,long time)
-{
-   if (expect == null) return;
-   String [] elts = expect.split("@");
-   List<Integer> lines = parseLines(elts[0]);
-   String find = elts[1];
-   String file = null;
-   if (elts.length > 2) file = elts[2];
-   
-   int ctr = 0;
-   int showctr = 0;
-   int fnd = -1;
-   long fixtime = 0;
-   int fixcnt = 0;
-   long fixseede = 0;
-   double max = 0;
-   for (RoseEvalSuggestion sug : ss.getSuggestions()) {
-      if (max == 0) max = sug.getPriority()*0.1;
-      if (fnd < 0) {
-         System.err.println("CHECK " + sug.getPriority() + " " + sug.getLine() + " " + sug.getDescription() +
-               " " + sug.getTime() + " " + sug.getCount());
-       }
-      if (lines.isEmpty() || lines.contains(sug.getLine())) {
-         if (file == null || sug.getFile().contains(file)) {
-            int idx = sug.getDescription().indexOf(find);
-            if (idx >= 0 && fnd < 0) {
-               fnd = ctr+1;
-               fixtime = sug.getTime();
-               fixcnt = sug.getCount();
-               fixseede = sug.getSeedeCount();
-             }
-          }
-       }
-      ++ctr;
-      if (sug.getPriority() >= max) ++showctr;
-    }
-   
-   int ct = ss.getNumChecked();
-   
-   if (output_file != null) {
-      output_file.println(name + "," + ctr + "," + showctr + "," + fnd + "," + 
-            time + "," + fixtime + "," + fixcnt + "," + fixseede + "," + ct);
-    }
-   
-   System.err.println("PROCESS SUGGESTIONS: " + name +": " + ctr + " " + showctr + " " + 
-         fnd + " " + time + " " + fixtime + " " + fixcnt + " " + fixseede + " " + ct);
-}
 
 
 
@@ -566,33 +417,17 @@ private void processSuggestions(String name,SuggestionSet ss,RoseEvalSolution so
 
 
 
-private List<Integer> parseLines(String cnts)
+private void processTestCase(String name,RoseEvalTestResult tc,long time)
 {
-   List<Integer> rslt = new ArrayList<>();
-   StringTokenizer tok = new StringTokenizer(cnts,",-",true);
-   int last = -1;
-   int from = -1;
-   while (tok.hasMoreTokens()) {
-      String s = tok.nextToken();
-      if (Character.isDigit(s.charAt(0))) {
-         int v = Integer.parseInt(s);
-         if (from > 0) {
-            for (int i = from+1; i <= v; ++i) {
-               rslt.add(i);
-             }
-          }
-         else {
-            rslt.add(v);
-            last = v;
-          }
-         from = -1;
-       }
-      else if (s.equals("-")) from = last;
-      else from = -1;
+   if (output_file != null) {
+      output_file.println(name + "," + (tc != null) + "," + time);
     }
-
-   return rslt;
+   System.err.println("PROCESS TEST CASE: " + name + ": " + tc + " " + time);
 }
+
+
+
+
 
 
 
@@ -1210,13 +1045,20 @@ private class SuggestHandler implements MintHandler {
    Element e = msg.getXml();
    String name = IvyXml.getAttrString(e,"NAME");
    SuggestionSet ss = null;
-   if (name != null) ss = suggest_set.get(name);
+   RoseEvalTestResult tr = null;
+   if (name != null) {
+      ss = suggest_set.get(name);
+      tr = testresult_set.get(name);
+    }
    switch (cmd) {
       case "SUGGEST" :
          if (ss != null) ss.addSuggestion(e);
          break;
       case "ENDSUGGEST" :
          if (ss != null) ss.endSuggestions(IvyXml.getAttrInt(e,"CHECKED"));
+         break;
+      case "TESTCREATE" :
+         if (tr != null) tr.handleTestResult(e);
          break;
     }
 }

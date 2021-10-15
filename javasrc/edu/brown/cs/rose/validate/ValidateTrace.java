@@ -50,10 +50,11 @@ import edu.brown.cs.rose.bud.BudStackFrame;
 import edu.brown.cs.rose.bud.BudType;
 import edu.brown.cs.rose.bud.BudValue;
 import edu.brown.cs.rose.root.RootTestCase;
+import edu.brown.cs.rose.root.RootValidate;
 import edu.brown.cs.rose.root.RoseException;
 import edu.brown.cs.rose.root.RoseLog;
 
-public class ValidateTrace implements ValidateConstants
+public class ValidateTrace implements ValidateConstants, RootValidate.RootTrace
 {
 
 
@@ -98,19 +99,19 @@ ValidateTrace(Element rslt,String tid)
 /*                                                                              */
 /********************************************************************************/
 
-long getProblemTime()   
+@Override public long getProblemTime()   
 {
    return problem_time;
 }
 
 
-ValidateCall getProblemContext()
+@Override public ValidateCall getProblemContext()
 {
    return problem_context;
 }
 
 
-ValidateCall getRootContext()
+@Override public ValidateCall getRootContext()
 {
    Element runner = getRunner();
   
@@ -140,7 +141,7 @@ String getThread()
 
 
 
-ValidateValue getException()
+@Override public ValidateValue getException()
 {
    ValidateCall prob = getProblemContext();
    if (prob != null) {
@@ -183,7 +184,7 @@ boolean isCompilerError()
 
 
 
-ValidateValue getReturnValue()
+@Override public ValidateValue getReturnValue()
 {
    Element runner = getRunner();
    Element ret = IvyXml.getChild(runner,"RETURN");

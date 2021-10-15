@@ -84,6 +84,17 @@ RoseEvalSuite(Element xml)
 
 
 
+RoseEvalSuite(String ws,String proj)
+{
+   suite_name = ws;
+   workspace_name = ws;
+   project_name = proj;
+   test_set = new LinkedHashMap<>();
+   default_time = 100000;
+}
+
+
+
 /********************************************************************************/
 /*                                                                              */
 /*      Setup methods                                                           */

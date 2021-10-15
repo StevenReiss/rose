@@ -86,10 +86,24 @@ RoseEvalSolution(Element xml)
 }
 
 
-
-
-private Set<Integer> parseLines(String cnts)
+RoseEvalSolution(String expect)
 {
+   String [] elts = expect.split("@");
+   String find = elts[1];
+   line_set = parseLines(elts[0]);
+   patch_file = null;
+   if (elts.length > 2) patch_file = elts[2];
+   match_strings = new ArrayList<>();
+   match_strings.add(find);
+}
+
+
+
+
+private static Set<Integer> parseLines(String cnts)
+{
+   if (cnts == null) return null;
+   
    Set<Integer> rslt = new HashSet<>();
    StringTokenizer tok = new StringTokenizer(cnts,",-",true);
    int last = -1;

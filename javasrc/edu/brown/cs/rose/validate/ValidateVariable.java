@@ -41,8 +41,11 @@ import java.util.List;
 import org.w3c.dom.Element;
 
 import edu.brown.cs.ivy.xml.IvyXml;
+import edu.brown.cs.rose.root.RootValidate;
+import edu.brown.cs.rose.root.RootValidate.RootTrace;
+import edu.brown.cs.rose.root.RootValidate.RootTraceValue;
 
-class ValidateVariable implements ValidateConstants
+class ValidateVariable implements ValidateConstants, RootValidate.RootTraceVariable
 {
 
 
@@ -73,7 +76,7 @@ ValidateVariable(Element v)
 /*                                                                              */
 /********************************************************************************/
 
-String getName()                       
+@Override public String getName()                       
 {
    return IvyXml.getAttrString(variable_element,"NAME");
 }
@@ -91,8 +94,25 @@ List<ValidateValue> getValues(ValidateTrace trace)
 }
 
 
-ValidateValue getValueAtTime(ValidateTrace trace,long time)
+@Override public List<RootTraceValue> getTraceValues(RootTrace rtrace)
 {
+   ValidateTrace trace = (ValidateTrace) rtrace;
+   List<RootTraceValue> rslt = new ArrayList<>();
+   for (Element e : IvyXml.children(variable_element,"VALUE")) {
+      Element v1 = e;
+      if (trace != null) v1 = trace.dereference(e);
+      rslt.add(new ValidateValue(v1));
+    }
+   
+   return rslt;
+}
+
+
+
+
+@Override public ValidateValue getValueAtTime(RootTrace rtrace,long time)
+{
+   ValidateTrace trace = (ValidateTrace) rtrace;
    Element prior = null;
    for (Element e : IvyXml.children(variable_element,"VALUE")) {
       long t0 = IvyXml.getAttrLong(e,"TIME");
@@ -105,7 +125,7 @@ ValidateValue getValueAtTime(ValidateTrace trace,long time)
 }
 
 
-int getLineAtTime(long time) 
+@Override public int getLineAtTime(long time) 
 {
    ValidateValue vv = getValueAtTime(null,time);
    if (vv == null) return 0;

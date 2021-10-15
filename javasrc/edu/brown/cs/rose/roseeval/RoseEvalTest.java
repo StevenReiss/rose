@@ -61,6 +61,7 @@ private RoseEvalSolution test_solution;
 private boolean         local_test;
 private int             up_frames;
 private List<String>    use_files;
+private TestType        test_type;
 
 
 
@@ -88,7 +89,10 @@ RoseEvalTest(RoseEvalSuite suite,Element xml)
       if (fnm != null) use_files.add(fnm);
     }
    if (use_files.isEmpty()) use_files = null;
+   test_type = IvyXml.getAttrEnum(xml,"TYPE",TestType.ROSE);
 }
+
+
 
 
 private RoseEvalTest(RoseEvalTest t)
@@ -100,8 +104,12 @@ private RoseEvalTest(RoseEvalTest t)
    test_skip = t.test_skip;
    test_solution = t.test_solution;
    local_test = t.local_test;
+   test_type = t.test_type;
    up_frames = t.up_frames;
+   use_files = null;
+   if (t.use_files != null) use_files = new ArrayList<>(t.use_files);
 }
+
 
 
 
@@ -135,6 +143,9 @@ RoseEvalTest getDummyTest()
    dummy.test_solution = null;
    return dummy;
 }
+
+TestType getTestType()                          { return test_type; }
+
 
 
 }       // end of class RoseEvalTest

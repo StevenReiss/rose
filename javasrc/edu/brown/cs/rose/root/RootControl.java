@@ -36,6 +36,7 @@
 package edu.brown.cs.rose.root;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -126,6 +127,13 @@ IDocument getSourceDocument(File f);
 String getSourceContents(File file);
 
 
+/** 
+ *      Compile a set of files together for later access
+ **/
+
+void compileAll(Collection<File> f);
+
+
 /**
  *      Return locations associated with a problem
  **/
@@ -187,6 +195,7 @@ LeashIndex getGlobalIndex();
 
 Set<File> getLoadedFiles();
 Set<File> getSeedeFiles(String threadid); 
+void loadFilesIntoFait(String threadid,Element files) throws RoseException;
 
 
 }       // end of interface RoseControl

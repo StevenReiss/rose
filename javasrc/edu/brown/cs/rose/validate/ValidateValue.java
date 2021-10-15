@@ -38,8 +38,10 @@ package edu.brown.cs.rose.validate;
 import org.w3c.dom.Element;
 
 import edu.brown.cs.ivy.xml.IvyXml;
+import edu.brown.cs.rose.root.RootValidate;
+import edu.brown.cs.rose.root.RootValidate.RootTrace;
 
-class ValidateValue implements ValidateConstants
+class ValidateValue implements ValidateConstants, RootValidate.RootTraceValue
 {
 
 
@@ -70,24 +72,24 @@ ValidateValue(Element v)
 /*                                                                              */
 /********************************************************************************/
 
-long getStartTime()                     
+@Override public long getStartTime()                     
 {
    return IvyXml.getAttrLong(value_element,"TIME");
 }
 
-boolean isNull()
+@Override public boolean isNull()
 {
    return IvyXml.getAttrBool(value_element,"NULL");
 }
 
 
-String getDataType()
+@Override public String getDataType()
 {
    return IvyXml.getAttrString(value_element,"TYPE");
 }
 
 
-Long getNumericValue()
+@Override public Long getNumericValue()
 {
    try {
       return Long.parseLong(IvyXml.getText(value_element));
@@ -98,7 +100,7 @@ Long getNumericValue()
 }
 
 
-int getLineValue()
+@Override public int getLineValue()
 {
    try {
       return Integer.parseInt(IvyXml.getText(value_element));
@@ -110,10 +112,14 @@ int getLineValue()
 
 
 
-String getValue()
+@Override public String getValue()
 {
    if (IvyXml.getAttrBool(value_element,"NULL")) return null;
    else if (IvyXml.getAttrBool(value_element,"OBJECT")) {
+      String cls = IvyXml.getAttrString(value_element,"CLASS");
+      if (cls != null) return cls;
+      String fil = IvyXml.getAttrString(value_element,"FILE");
+      if (fil != null) return fil;
       // getting more detailed info requires handling REFS
       return "{" + getDataType() + "}";
     }
@@ -126,9 +132,11 @@ String getValue()
 }
 
 
-ValidateValue getFieldValue(ValidateTrace vtr,String fld,long when)
+@Override public ValidateValue getFieldValue(RootTrace rvtr,String fld,long when)
 {
+   ValidateTrace vtr = (ValidateTrace) rvtr;
    Element use = null;
+   
    for (Element flde : IvyXml.children(value_element,"FIELD")) {
       String nm = IvyXml.getAttrString(flde,"NAME");
       if (nm.equals(fld)) {
@@ -145,6 +153,41 @@ ValidateValue getFieldValue(ValidateTrace vtr,String fld,long when)
    
    return null;
 }
+
+
+
+@Override public ValidateValue getIndexValue(RootTrace rvtr,int idx,long when)
+{
+   ValidateTrace vtr = (ValidateTrace) rvtr;
+   Element use = null;
+   for (Element flde : IvyXml.children(value_element,"ELEMENT")) {
+      int eidx = IvyXml.getAttrInt(flde,"INDEX");
+      if (eidx == idx) {
+         use = flde;
+         break;
+       }
+    }
+   
+   if (use != null) {
+      ValidateVariable vvar = new ValidateVariable(use);
+      return vvar.getValueAtTime(vtr,when);
+    }
+   
+   return null;
+}
+
+
+@Override public String getId()
+{
+   return IvyXml.getAttrString(value_element,"ID");
+}
+
+
+@Override public int getArrayLength()
+{
+   return IvyXml.getAttrInt(value_element,"SIZE");
+}
+
 
 
 }       // end of class ValidateValue

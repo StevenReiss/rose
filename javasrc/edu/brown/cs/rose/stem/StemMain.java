@@ -40,6 +40,7 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -76,6 +77,7 @@ import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
 import edu.brown.cs.rose.bract.BractFactory;
 import edu.brown.cs.rose.bud.BudStackFrame;
+import edu.brown.cs.rose.picot.PicotFactory;
 import edu.brown.cs.rose.root.RootMetrics;
 import edu.brown.cs.rose.root.RootProblem;
 import edu.brown.cs.rose.root.RootValidate;
@@ -823,6 +825,35 @@ private void handleMetricsCommand(MintMessage msg)
 
 
 
+
+/********************************************************************************/
+/*                                                                              */
+/*      Handle test creation                                                    */
+/*                                                                              */
+/********************************************************************************/
+
+private void handleCreateTest(MintMessage msg)
+{
+   PicotFactory pf = new PicotFactory(this);
+   Element xml = msg.getXml();
+   String rid = IvyXml.getAttrString(xml,"REPLYID");
+   if (rid == null) {
+      rid = "PICOT_" + IvyExecQuery.getProcessId() + "_" + id_counter.incrementAndGet();
+    }
+ 
+   IvyXmlWriter xw = new IvyXmlWriter();
+   xw.begin("RESULT");
+   xw.field("NAME",rid);
+   xw.end();
+   msg.replyTo(xw.toString());
+   xw.close();
+   
+   pf.createTestCase(rid,xml);
+}
+
+
+
+
 /********************************************************************************/
 /*                                                                              */
 /*      Start seede process                                                     */
@@ -1258,6 +1289,9 @@ private class CommandHandler implements MintHandler {
                serverDone();
                msg.replyTo();
                break;
+            case "CREATETEST" :
+               handleCreateTest(msg);
+               break;
           }
        }
       catch (Throwable t) {
@@ -1451,7 +1485,7 @@ private class WaitForExit extends Thread {
 
 
 
-private void loadFilesIntoFait(String tid,Element fileelt) throws RoseException
+@Override public void loadFilesIntoFait(String tid,Element fileelt) throws RoseException
 {
    Set<File> files = new HashSet<>();
    if (fileelt != null) {
@@ -1951,6 +1985,7 @@ private static class EvalData {
    synchronized (this) {
       if (stem_compiler == null) stem_compiler = new StemCompiler(this);
     }
+   if (proj == null && f != null) proj = getProjectForFile(f);
    
    ASTNode n = stem_compiler.getSourceNode(proj,f,offset,line,resolve);
    
@@ -1995,6 +2030,25 @@ private static class EvalData {
    return stem_compiler.getSourceContents(f);
 }
 
+
+
+@Override public void compileAll(Collection<File> f) 
+{
+   Collection<File> use = new ArrayList<>();
+   if (f != null) use.addAll(f);
+   else if (loaded_files == null || loaded_files.isEmpty()) {
+      use.addAll(findAllSourceFiles());
+    }
+   else {
+      use.addAll(loaded_files);
+    }
+   
+   synchronized (this) {
+      if (stem_compiler == null) stem_compiler = new StemCompiler(this);
+    }
+   
+   stem_compiler.compileAll(use);
+}
 
 
 

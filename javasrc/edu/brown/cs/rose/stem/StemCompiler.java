@@ -1,34 +1,34 @@
 /********************************************************************************/
-/*                                                                              */
-/*              StemCompiler.java                                               */
-/*                                                                              */
-/*      Handle getting ASTs and resolved ASTs related to problems               */
-/*                                                                              */
+/*										*/
+/*		StemCompiler.java						*/
+/*										*/
+/*	Handle getting ASTs and resolved ASTs related to problems		*/
+/*										*/
 /********************************************************************************/
-/*      Copyright 2011 Brown University -- Steven P. Reiss                    */
+/*	Copyright 2011 Brown University -- Steven P. Reiss		      */
 /*********************************************************************************
- *  Copyright 2011, Brown University, Providence, RI.                            *
- *                                                                               *
- *                        All Rights Reserved                                    *
- *                                                                               *
- *  Permission to use, copy, modify, and distribute this software and its        *
- *  documentation for any purpose other than its incorporation into a            *
- *  commercial product is hereby granted without fee, provided that the          *
- *  above copyright notice appear in all copies and that both that               *
- *  copyright notice and this permission notice appear in supporting             *
- *  documentation, and that the name of Brown University not be used in          *
- *  advertising or publicity pertaining to distribution of the software          *
- *  without specific, written prior permission.                                  *
- *                                                                               *
- *  BROWN UNIVERSITY DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS                *
- *  SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND            *
- *  FITNESS FOR ANY PARTICULAR PURPOSE.  IN NO EVENT SHALL BROWN UNIVERSITY      *
- *  BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY          *
- *  DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,              *
- *  WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS               *
- *  ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE          *
- *  OF THIS SOFTWARE.                                                            *
- *                                                                               *
+ *  Copyright 2011, Brown University, Providence, RI.				 *
+ *										 *
+ *			  All Rights Reserved					 *
+ *										 *
+ *  Permission to use, copy, modify, and distribute this software and its	 *
+ *  documentation for any purpose other than its incorporation into a		 *
+ *  commercial product is hereby granted without fee, provided that the 	 *
+ *  above copyright notice appear in all copies and that both that		 *
+ *  copyright notice and this permission notice appear in supporting		 *
+ *  documentation, and that the name of Brown University not be used in 	 *
+ *  advertising or publicity pertaining to distribution of the software 	 *
+ *  without specific, written prior permission. 				 *
+ *										 *
+ *  BROWN UNIVERSITY DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS		 *
+ *  SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND		 *
+ *  FITNESS FOR ANY PARTICULAR PURPOSE.  IN NO EVENT SHALL BROWN UNIVERSITY	 *
+ *  BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY 	 *
+ *  DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,		 *
+ *  WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS		 *
+ *  ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE 	 *
+ *  OF THIS SOFTWARE.								 *
+ *										 *
  ********************************************************************************/
 
 
@@ -38,6 +38,7 @@ package edu.brown.cs.rose.stem;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -67,24 +68,24 @@ class StemCompiler implements StemConstants
 
 
 /********************************************************************************/
-/*                                                                              */
-/*      Private Storage                                                         */
-/*                                                                              */
+/*										*/
+/*	Private Storage 							*/
+/*										*/
 /********************************************************************************/
 
-private StemMain                stem_main;
+private StemMain		stem_main;
 private Map<SourceFile,JcompProject> project_map;
 private Map<String,JcodeFactory> binary_map;
-private Map<File,SourceFile>    file_map;
-private JcompControl            jcomp_control;
+private Map<File,SourceFile>	file_map;
+private JcompControl		jcomp_control;
 
 
 
 
 /********************************************************************************/
-/*                                                                              */
-/*      Constructors                                                            */
-/*                                                                              */
+/*										*/
+/*	Constructors								*/
+/*										*/
 /********************************************************************************/
 
 StemCompiler(StemMain sm)
@@ -99,24 +100,46 @@ StemCompiler(StemMain sm)
 
 
 /********************************************************************************/
-/*                                                                              */
-/*      Processing methods                                                      */
-/*                                                                              */
+/*										*/
+/*	Processing methods							*/
+/*										*/
 /********************************************************************************/
+
+void compileAll(Collection<File> use)
+{
+   List<JcompSource> files = new ArrayList<>();
+   String proj = null;
+   for (File f : use) {
+      SourceFile sf = getSourceFile(f);
+      if (proj == null) {
+	 proj = stem_main.getProjectForFile(f);
+       }
+      files.add(sf);
+    }
+   addRelatedSources(files);
+   JcodeFactory jf = getJcodeFactory(proj);
+   JcompProject jp = jcomp_control.getProject(jf,files);
+   for (JcompSource js : files) {
+      SourceFile sf = (SourceFile) js;
+      project_map.put(sf,jp);
+    }
+}
+
+
 
 ASTNode getSourceNode(String proj,File f,int offset,int line,boolean resolve)
 {
    SourceFile sf = getSourceFile(f);
    CompilationUnit cu = getAstForFile(proj,sf,resolve);
    if (cu == null) return null;
-   
+
    if (offset <= 0 && line <= 0) return cu;
    if (offset < 0) {
       offset = getLineOffset(cu,sf,line);
     }
-   
+
    ASTNode n = findNode(cu,offset);
-   
+
    return n;
 }
 
@@ -127,9 +150,9 @@ ASTNode getNewSourceNode(String proj,File f,int line,int col)
    CompilationUnit cu = JcompAst.parseSourceFile(sf.getFileContents());
    if (cu == null) return null;
    int offset = cu.getPosition(line,col);
-   
+
    ASTNode n = findNode(cu,offset);
-   
+
    return n;
 }
 
@@ -140,9 +163,9 @@ static ASTNode getStatementOfNode(ASTNode node)
    while (node != null) {
       if (node instanceof Statement) break;
       node = node.getParent();
-    }  
-   
-   return node; 
+    }
+
+   return node;
 }
 
 
@@ -162,16 +185,16 @@ String getSourceContents(File f)
 
 
 /********************************************************************************/
-/*                                                                              */
-/*      Handle getting Jcode factory for project                                */
-/*                                                                              */
+/*										*/
+/*	Handle getting Jcode factory for project				*/
+/*										*/
 /********************************************************************************/
 
 private JcodeFactory getJcodeFactory(String proj)
 {
    JcodeFactory jf = binary_map.get(proj);
    if (jf != null) return jf;
-   
+
    CommandArgs cargs = new CommandArgs("PATHS",true,"PROJECT",proj);
    Element pxml = stem_main.sendBubblesMessage("OPENPROJECT",cargs,null);
    Element cp = IvyXml.getChild(pxml,"CLASSPATH");
@@ -211,30 +234,30 @@ private JcodeFactory getJcodeFactory(String proj)
 	 String nm = it.next();
 	 if (nm.startsWith(ignore)) it.remove();
        }
-    }  
-   
+    }
+
    int ct = Runtime.getRuntime().availableProcessors();
    ct = Math.max(1,ct/2);
    jf = new JcodeFactory(ct);
-   
+
    for (String s : classpaths) {
       jf.addToClassPath(s);
     }
    jf.load();
-   
+
    synchronized (this) {
       JcodeFactory njf = binary_map.putIfAbsent(proj,jf);
       if (njf != null) jf = njf;
    }
-   
-   return jf;  
+
+   return jf;
 }
 
 
 /********************************************************************************/
-/*                                                                              */
-/*      Handle getting file information                                         */
-/*                                                                              */
+/*										*/
+/*	Handle getting file information 					*/
+/*										*/
 /********************************************************************************/
 
 private synchronized SourceFile getSourceFile(File f)
@@ -244,32 +267,32 @@ private synchronized SourceFile getSourceFile(File f)
       sf = new SourceFile(f);
       file_map.put(f,sf);
     }
-   
+
    return sf;
 }
 
 
 
 /********************************************************************************/
-/*                                                                              */
-/*      Handle getting AST for file                                             */
-/*                                                                              */
+/*										*/
+/*	Handle getting AST for file						*/
+/*										*/
 /********************************************************************************/
 
 private CompilationUnit getAstForFile(String proj,SourceFile file,boolean resolve)
 {
    JcompProject jproj = getJcompProject(proj,file);
-   
+
    if (resolve && !jproj.isResolved()) {
       jproj.resolve();
     }
-   
+
    for (JcompSemantics js : jproj.getSources()) {
       if (js.getFile() == file) {
-         return (CompilationUnit) js.getAstNode();
+	 return (CompilationUnit) js.getAstNode();
        }
     }
-   
+
    return null;
 }
 
@@ -280,22 +303,22 @@ private JcompProject getJcompProject(String proj,SourceFile file)
 {
    JcompProject jp = project_map.get(file);
    if (jp != null) return jp;
-   
+
    JcodeFactory jf = getJcodeFactory(proj);
    List<JcompSource> srcs = new ArrayList<>();
    srcs.add(file);
    addRelatedSources(srcs);
    jp = jcomp_control.getProject(jf,srcs);
    if (jp == null) return null;
-   
+
    synchronized (this) {
       JcompProject njp = project_map.putIfAbsent(file,jp);
       if (njp != null) jp = njp;
       for (JcompSource src : srcs) {
-         project_map.putIfAbsent((SourceFile) src,njp);
+	 project_map.putIfAbsent((SourceFile) src,njp);
        }
     }
-   
+
    return jp;
 }
 
@@ -303,12 +326,12 @@ private JcompProject getJcompProject(String proj,SourceFile file)
 
 
 /********************************************************************************/
-/*                                                                              */
-/*      Find node for given offset\\\                                           */
-/*                                                                              */
+/*										*/
+/*	Find node for given offset\\\						*/
+/*										*/
 /********************************************************************************/
 
-private int getLineOffset(CompilationUnit cu,SourceFile sf,int line) 
+private int getLineOffset(CompilationUnit cu,SourceFile sf,int line)
 {
    if (line <= 0) return 0;
    String text = sf.getFileContents();
@@ -322,12 +345,12 @@ private int getLineOffset(CompilationUnit cu,SourceFile sf,int line)
    return off;
 }
 
-private ASTNode findNode(CompilationUnit cu,int offset) 
+private ASTNode findNode(CompilationUnit cu,int offset)
 {
    if (cu == null) return null;
-   
-   ASTNode node = JcompAst.findNodeAtOffset(cu,offset);   
-   
+
+   ASTNode node = JcompAst.findNodeAtOffset(cu,offset); 
+
    return node;
 }
 
@@ -335,9 +358,9 @@ private ASTNode findNode(CompilationUnit cu,int offset)
 
 
 /********************************************************************************/
-/*                                                                              */
-/*      Augment sources as needed                                               */
-/*                                                                              */
+/*										*/
+/*	Augment sources as needed						*/
+/*										*/
 /********************************************************************************/
 
 private void addRelatedSources(List<JcompSource> srcs)
@@ -346,29 +369,29 @@ private void addRelatedSources(List<JcompSource> srcs)
    for (JcompSource jcs : srcs) {
       used.add(jcs.getFileName());
     }
-   
+
    List<JcompSource> add = new ArrayList<>();
    for (JcompSource jcs : srcs) {
       SourceFile sf = (SourceFile) jcs;
       File f = sf.getFile();
       File dir = f.getParentFile();
       for (File srcf : dir.listFiles()) {
-         if (srcf.getName().endsWith(".java")) {
-            if (used.contains(srcf.getPath())) continue;
-            SourceFile sf1 = getSourceFile(srcf);
-            used.add(sf1.getFileName());
-            add.add(sf1);
-          }
+	 if (srcf.getName().endsWith(".java")) {
+	    if (used.contains(srcf.getPath())) continue;
+	    SourceFile sf1 = getSourceFile(srcf);
+	    used.add(sf1.getFileName());
+	    add.add(sf1);
+	  }
        }
     }
-   
+
    srcs.addAll(add);
 }
 
 /********************************************************************************/
-/*                                                                              */
-/*      File representation                                                     */
-/*                                                                              */
+/*										*/
+/*	File representation							*/
+/*										*/
 /********************************************************************************/
 
 private static class SourceFile implements JcompSource {
@@ -376,37 +399,37 @@ private static class SourceFile implements JcompSource {
    private File for_file;
    private String file_body;
    private Document file_document;
-   
+
    SourceFile(File f) {
       for_file = f;
       file_body = null;
       file_document = null;
     }
-   
-   File getFile()                               { return for_file; }
-   
-   @Override public String getFileName()        { return for_file.getPath(); }
-   
+
+   File getFile()				{ return for_file; }
+
+   @Override public String getFileName()	{ return for_file.getPath(); }
+
    synchronized IDocument getDocument() {
       if (file_document == null) {
-         file_document = new Document(getFileContents());
+	 file_document = new Document(getFileContents());
        }
       return file_document;
     }
-   
+
    @Override public String getFileContents() {
       if (file_body != null) return file_body;
       try {
-         file_body = IvyFile.loadFile(for_file);
-         return file_body;
+	 file_body = IvyFile.loadFile(for_file);
+	 return file_body;
        }
       catch (IOException e) { }
       return null;
     }
-   
-}       // end of inner class SourceFile
 
-}       // end of class StemCompiler
+}	// end of inner class SourceFile
+
+}	// end of class StemCompiler
 
 
 

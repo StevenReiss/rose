@@ -162,7 +162,7 @@ private boolean isGoodSetter(JcompSymbol m)
    MethodDeclaration md = (MethodDeclaration) n;
    Block blk = md.getBody();
    if (blk == null) return false;
-   if (blk.statements().size() < 2) return false;
+   if (blk.statements().size() > 2) return false;
    
    return true;
 }

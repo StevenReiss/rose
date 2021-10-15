@@ -35,7 +35,7 @@
       <PROBLEM TYPE='VARIABLE' NAME='start' CURRENT='3' TARGET='4' />
       <SOLUTION LINE='30'>
 	 <MATCH><![CDATA[mid + 1]]></MATCH>
-      </SOLUTION>							
+      </SOLUTION>	
    </TEST>
    <TEST NAME='Flatten' SKIP='1'>
       <PROBLEM TYPE='LOCATION'/>
@@ -566,25 +566,57 @@
 
 </SUITE>
 
+<SUITE NAME='rosetest' WORKSPACE='rosetest' PROJECT='rosetest'>
+   <TEST NAME='test01'>
+      <PROBLEM TYPE='EXCEPTION' CATCH='java.lang.NullPointerException' />
+      <SOLUTION LINE='105'>
+	 <MATCH><![CDATA[if (baby != null) {]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='test02'>
+      <PROBLEM TYPE='EXCEPTION' CATCH='java.lang.ArrayIndexOutOfBoundsException' />
+      <SOLUTION LINE='136'>
+	 <MATCH><![CDATA[i <= baby.length-1]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='test03'>
+      <PROBLEM TYPE='VARIABLE' NAME='rslt' CURRENT='java.lang.String "The cow jumped over the moon."'
+			TARGET='"The calf jumped over the moon."' />
+      <SOLUTION LINE='181'>
+	 <MATCH><![CDATA[wd' with `baby']]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='test04'>
+      <PROBLEM TYPE='VARIABLE' NAME='baby' CURRENT='null' TARGET='Non-Null' />
+      <SOLUTION LINE='197'>
+	 <MATCH><![CDATA[getBabyName' with `getBabyWord]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='test05'>
+      <PROBLEM TYPE='LOCATION' />
+      <SOLUTION LINE='147'>
+	 <MATCH><![CDATA[index i with i-1]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='test06'>
+      <PROBLEM TYPE='VARIABLE' NAME='baby' CURRENT='java.lang.String piglet' TARGET='piglets' />
+      <SOLUTION LINE='215'>
+	 <MATCH><![CDATA[ + "s"]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='test07'>
+      <PROBLEM TYPE='JUNIT' />
+      <SOLUTION LINE='119'>
+	 <MATCH><![CDATA[baby' with `newbaby']]></MATCH>
+      </SOLUTION>
+   </TEST>
+</SUITE>
+
+<SUITE NAME='romp' WORKSPACE='rompspr' PROJECT='romp'>
+   <TEST NAME='Romp Collide' TYPE='PICOT' SKIP='1'>
+      <PROBLEM TYPE='ASSERTION' />
+   </TEST>
+</SUITE>
+
+
 </ROSEEVAL>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

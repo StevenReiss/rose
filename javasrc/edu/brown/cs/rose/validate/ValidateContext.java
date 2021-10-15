@@ -120,7 +120,12 @@ BudLaunch getLaunch()                                   { return for_launch; }
 
 RootControl getControl()                                { return root_control; }
 
-ValidateExecution getBaseExecution()                    { return base_execution; }
+ValidateExecution getBaseExecution()   { return base_execution; }
+
+@Override public ValidateTrace getExecutionTrace()     
+{
+   return base_execution.getSeedeResult();
+}
 
 long getMaxTime()
 {

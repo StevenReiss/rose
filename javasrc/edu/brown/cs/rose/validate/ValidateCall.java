@@ -44,8 +44,10 @@ import java.util.Map;
 import org.w3c.dom.Element;
 
 import edu.brown.cs.ivy.xml.IvyXml;
+import edu.brown.cs.rose.root.RootValidate;
+import edu.brown.cs.rose.root.RootValidate.RootTraceCall;
 
-class ValidateCall implements ValidateConstants
+class ValidateCall implements ValidateConstants, RootValidate.RootTraceCall
 {
 
 
@@ -79,13 +81,13 @@ ValidateCall(ValidateTrace vt,Element ctx)
 /*                                                                              */
 /********************************************************************************/
 
-String getMethod()
+@Override public String getMethod()
 {
    return IvyXml.getAttrString(context_element,"METHOD");
 }
 
 
-File getFile()
+@Override public File getFile()
 {
    String fnm = IvyXml.getAttrString(context_element,"FILE");
    if (fnm == null) return null;
@@ -93,13 +95,13 @@ File getFile()
 }
 
 
-long getStartTime()
+@Override public long getStartTime()
 {
    return IvyXml.getAttrLong(context_element,"START");
 }
 
 
-long getEndTime()
+@Override public long getEndTime()
 {
    return IvyXml.getAttrLong(context_element,"END");
 }
@@ -131,8 +133,18 @@ List<ValidateCall> getInnerCalls()
    return rslt;
 }
 
+@Override public List<RootTraceCall> getInnerTraceCalls()
+{
+   List<RootTraceCall> rslt = new ArrayList<>();
+   for (Element c : IvyXml.children(context_element,"CONTEXT")) {
+      rslt.add(for_trace.getCallForContext(c));
+    }
+   return rslt;
+}
 
-ValidateVariable getLineNumbers()
+
+
+@Override public ValidateVariable getLineNumbers()
 {
    for (Element e : IvyXml.children(context_element,"VARIABLE")) {
       String nm = IvyXml.getAttrString(e,"NAME");
@@ -146,6 +158,18 @@ ValidateVariable getLineNumbers()
 Map<String,ValidateVariable> getVariables()
 {
    Map<String,ValidateVariable> rslt = new LinkedHashMap<>();
+   for (Element e : IvyXml.children(context_element,"VARIABLE")) {
+      String nm = IvyXml.getAttrString(e,"NAME");
+      if (nm.equals("*LINE*")) continue;
+      rslt.put(nm,new ValidateVariable(e));
+    }
+   return rslt;
+}
+
+
+@Override public Map<String,RootValidate.RootTraceVariable> getTraceVariables()
+{
+   Map<String,RootValidate.RootTraceVariable> rslt = new LinkedHashMap<>();
    for (Element e : IvyXml.children(context_element,"VARIABLE")) {
       String nm = IvyXml.getAttrString(e,"NAME");
       if (nm.equals("*LINE*")) continue;
