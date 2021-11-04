@@ -37,7 +37,9 @@ package edu.brown.cs.rose.validate;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.w3c.dom.Element;
 
@@ -46,6 +48,7 @@ import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
 import edu.brown.cs.rose.bud.BudLaunch;
 import edu.brown.cs.rose.root.RootControl;
+import edu.brown.cs.rose.root.RootLocation;
 import edu.brown.cs.rose.root.RootProblem;
 import edu.brown.cs.rose.root.RootProcessor;
 import edu.brown.cs.rose.root.RootRepair;
@@ -73,6 +76,7 @@ private List<ValidateAction> setup_actions;
 private int             num_checked;
 private long            seede_total;
 private double          best_score;
+private Map<File,ValidateExecution> testfile_map;
 
 private static final int        MAX_CHECKED_OK = 100;
 private static final long       MAX_SEEDE_OK = 600000;
@@ -91,17 +95,33 @@ private static final long       TIME_MULTIPLIER = 10;
 
 ValidateContext(RootControl ctrl,RootProblem p,String fid)
 {
-   root_control = ctrl;
+   this(ctrl);
+   
    for_problem = p;
    for_launch = new BudLaunch(root_control,for_problem);
    frame_id = fid;
    if (frame_id == null) frame_id = for_launch.getFrame();
+   
+   testfile_map = new HashMap<>();
+}
+
+
+
+
+
+
+
+private ValidateContext(RootControl ctrl)
+{
+   root_control = ctrl;
+   for_problem = null;
+   for_launch = null;
+   frame_id = null;
    setup_actions = new ArrayList<>();
    num_checked = 0;
    seede_total = 0;
    best_score = 0;
 }
-
 
 
 
@@ -114,13 +134,15 @@ ValidateContext(RootControl ctrl,RootProblem p,String fid)
 
 @Override public RootProblem getProblem()               { return for_problem; }
 
+
+
 BudLaunch getLaunch()                                   { return for_launch; }
 
 
 
 RootControl getControl()                                { return root_control; }
 
-ValidateExecution getBaseExecution()   { return base_execution; }
+ValidateExecution getBaseExecution()                    { return base_execution; }
 
 @Override public ValidateTrace getExecutionTrace()     
 {
@@ -151,6 +173,112 @@ long getMaxTime()
 
 
 
+@Override public boolean addLocalFile(File f,String src)
+{
+   // Add all the loaded files
+   IvyXmlWriter xw = new IvyXmlWriter();
+   xw.begin("FILE");
+   xw.field("NAME",f.getPath());
+   xw.cdataElement("CONTENTS",src);
+   xw.end("FILE");
+   String cnts = xw.toString();
+   xw.close();
+   root_control.sendSeedeMessage(base_session,"ADDFILE",null,cnts);
+   return true;
+}
+
+
+
+@Override public boolean editLocalFile(File f,int start,int end,String cnts)
+{
+   IvyXmlWriter xw = new IvyXmlWriter();
+   xw.begin("EDIT");
+   xw.field("FILE",f.getPath());
+   xw.begin("EDIT");
+   xw.field("FILE",f.getPath());
+   xw.field("OFFSET",start);
+   xw.field("LENGTH",end-start);
+   xw.field("INCEND",end);
+   xw.field("EXCEND",end);
+   xw.field("ID",1);
+   xw.field("COUNTER",1);
+   if (cnts == null) {
+      xw.field("TYPE","DELETE");
+    }
+   else if (start == end) {
+      xw.field("TYPE","INSERT");
+      xw.cdataElement("TEXT",cnts);
+    }
+   else { 
+      xw.field("TYPE","REPLACE");
+      xw.cdataElement("TEXT",cnts);
+    }
+   xw.end("EDIT");
+   xw.end("EDIT");
+   String edits = xw.toString();
+   xw.close();
+   
+   ValidateExecution ve = testfile_map.get(f);
+   String ssid = base_session;
+   if (ve != null) ssid = ve.getSessionId();
+   
+   String sts = handleEdits(ssid,edits);
+   
+   return (!sts.equals("FAIL"));
+}
+
+
+
+@Override public void createTestSession(File f,RootLocation loc)
+{
+   if (base_session == null) return;
+   if (testfile_map.get(f) != null) return;
+   
+   IvyXmlWriter xw = new IvyXmlWriter();
+   loc.outputXml(xw);
+   
+   String cnts = xw.toString();
+   xw.close();
+   
+   
+   Element rslt = root_control.sendSeedeMessage(base_session,"SUBSESSION",null,cnts);
+   if (!IvyXml.isElement(rslt,"RESULT")) return;
+   Element sessxml = IvyXml.getChild(rslt,"SESSION");
+   String ssid = IvyXml.getAttrString(sessxml,"ID");  
+   if (ssid == null) return;
+   if (setup_actions != null) {
+      boolean first = true;
+      for (ValidateAction va : setup_actions) {
+         va.perform(root_control,ssid,for_launch.getThread(),first);
+         first = false;
+       }
+    }
+   
+   ValidateExecution ve = new ValidateExecution(ssid,this,null);
+   
+   testfile_map.put(f,ve);
+}
+
+
+@Override public RootTrace getTestTrace(File f)
+{
+   ValidateExecution ve = testfile_map.get(f);
+   if (ve == null) return null;
+   ve.start(root_control);
+   
+   return ve.getSeedeResult();
+}
+
+
+
+@Override public void finishTestSession(File f)
+{
+   ValidateExecution ve = testfile_map.remove(f);
+   if (ve == null) return;
+   
+   removeSubsession(ve.getSessionId());
+}
+
 
 
 /********************************************************************************/
@@ -164,6 +292,14 @@ public void validateAndSend(RootProcessor rp,RootRepair rr)
    ValidateRunner vr = new ValidateRunner(this,rp,rr);
    RootThreadPool.start(vr);
    rp.addSubtask(vr);
+}
+
+
+
+public void runTestSession(ValidateExecution ve)
+{
+   ValidateTestSetupRunner vr = new ValidateTestSetupRunner(ve);
+   RootThreadPool.start(vr);
 }
 
 
@@ -321,6 +457,7 @@ double checkValidResult(ValidateExecution ve)
    ValidateTrace e2 = base_execution.getSeedeResult();
    ValidateTrace e1 = ve.getSeedeResult();
    if (e1.isCompilerError()) return 0;
+   if (ve.getRepair() == null) return 1;
    
    ValidateChecker checker = new ValidateChecker(this,e2,e1,ve.getRepair());
    

@@ -1,8 +1,8 @@
 /********************************************************************************/
 /*                                                                              */
-/*              BushLocation.java                                               */
+/*              PicotValueChecker.java                                          */
 /*                                                                              */
-/*      Location for use inside BUSH interface                                  */
+/*      Check a set of values by running it through SEEDE                       */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
@@ -33,13 +33,19 @@
 
 
 
-package edu.brown.cs.rose.bush;
+package edu.brown.cs.rose.picot;
 
-import edu.brown.cs.bubbles.bump.BumpLocation;
-import edu.brown.cs.bubbles.bump.BumpConstants.BumpStackFrame;
+import java.io.File;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import edu.brown.cs.rose.bract.BractFactory;
+import edu.brown.cs.rose.root.RootControl;
 import edu.brown.cs.rose.root.RootLocation;
+import edu.brown.cs.rose.root.RootValidate;
+import edu.brown.cs.rose.root.RootValidate.RootTraceCall;
+import edu.brown.cs.rose.root.RootValidate.RootTrace;
 
-class BushLocation extends RootLocation implements BushConstants
+class PicotValueChecker implements PicotConstants
 {
 
 
@@ -49,7 +55,14 @@ class BushLocation extends RootLocation implements BushConstants
 /*                                                                              */
 /********************************************************************************/
 
-private BumpLocation    bump_location;
+private RootValidate base_execution;
+private String  setup_contents;
+private File    local_file;
+
+private static AtomicInteger method_ctr = new AtomicInteger(0);
+
+private static final String START_STRING = "/*START*/\n";
+private static final String END_STRING = "/*END*/\n";
 
 
 
@@ -59,45 +72,101 @@ private BumpLocation    bump_location;
 /*                                                                              */
 /********************************************************************************/
 
-BushLocation(BumpLocation loc,double pri) 
+PicotValueChecker(RootControl ctrl,RootValidate base)
 {
-   super(loc.getFile(),loc.getOffset(),loc.getEndOffset(),-1,loc.getProject(),null,pri);
+   base_execution = base;
+   setup_contents = null;
+   local_file = null;
    
-   setMethodData(loc.getKey(),loc.getDefinitionOffset(),
-         loc.getDefinitionEndOffset()-loc.getDefinitionOffset());
+   setupSession();              
 }
 
 
-
-
-
-
-BushLocation(BumpStackFrame frm)
+void finished()
 {
-   super(frm.getFile(),-1,-1,frm.getLineNumber(),
-         frm.getThread().getLaunch().getConfiguration().getProject(),
-         frm.getMethod() + frm.getRawSignature(),
-         0.5);
+   if (local_file != null) {
+      base_execution.finishTestSession(local_file);
+    }
 }
 
 
 
 /********************************************************************************/
 /*                                                                              */
-/*      Access methods                                                          */
+/*      Run a code sequence to get trace result                                 */
 /*                                                                              */
 /********************************************************************************/
 
-BumpLocation getBumpLocation()
+RootTrace generateTrace(PicotCodeFragment pcf)
 {
-   return bump_location;
+   if (local_file == null) setupSession();
+   
+   int start = setup_contents.indexOf(START_STRING);
+   start += START_STRING.length();
+   int end = setup_contents.indexOf(END_STRING);
+   String code = pcf.getCode();
+   
+   String newcnts = setup_contents.substring(0,start) + code + 
+      setup_contents.substring(end);
+   
+   base_execution.editLocalFile(local_file,start,end,code);
+   setup_contents = newcnts;
+   
+   return base_execution.getTestTrace(local_file);
 }
 
 
-}       // end of class BushLocation
+/********************************************************************************/
+/*                                                                              */
+/*      Create subsession for test                                              */
+/*                                                                              */
+/********************************************************************************/
+
+private void setupSession()
+{
+   if (local_file != null) return;
+   
+   RootTraceCall tc = base_execution.getExecutionTrace().getRootContext();
+   String mthd = tc.getMethod();
+   int idx1 = mthd.lastIndexOf(".");            // get end of class name
+   int idx2 = mthd.lastIndexOf(".",idx1-1);     // get end of package name
+   String pkg = mthd.substring(0,idx2);
+   int id = method_ctr.incrementAndGet();
+   String cls = "PicotTestClass_" + id;
+   
+   local_file = new File("/SEEDE_LOCAL_FILE/SEEDE_" + cls + ".java");
+   
+   StringBuffer buf = new StringBuffer();
+   buf.append("package " + pkg + ";\n");
+   buf.append("public class " + cls + " {\n");
+   buf.append("public static boolean tester" + id + "() {\n");
+   buf.append(START_STRING);
+   buf.append("   // dummy code\n");
+   buf.append(END_STRING);
+   buf.append("   return true;\n");
+   buf.append("}\n");
+   buf.append("}\n");
+   setup_contents = buf.toString();
+   base_execution.addLocalFile(local_file,setup_contents);
+   
+   int loc = setup_contents.indexOf("public static boolean tester");
+   int eloc = setup_contents.indexOf("}\n")+1;
+   String proj = null;
+   
+   BractFactory bf = BractFactory.getFactory();
+   String mnm = pkg + "." + cls + ".tester" + id;
+   RootLocation baseloc = bf.createLocation(local_file,loc,eloc,3,proj,mnm);
+   base_execution.createTestSession(local_file,baseloc);
+}
 
 
 
 
-/* end of BushLocation.java */
+
+}       // end of class PicotValueChecker
+
+
+
+
+/* end of PicotValueChecker.java */
 

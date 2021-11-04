@@ -1,8 +1,8 @@
 /********************************************************************************/
 /*                                                                              */
-/*              BushLocation.java                                               */
+/*              ValidateTestSetupRunner.java                                    */
 /*                                                                              */
-/*      Location for use inside BUSH interface                                  */
+/*      Run the initializations for a test case                                 */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
@@ -33,13 +33,11 @@
 
 
 
-package edu.brown.cs.rose.bush;
+package edu.brown.cs.rose.validate;
 
-import edu.brown.cs.bubbles.bump.BumpLocation;
-import edu.brown.cs.bubbles.bump.BumpConstants.BumpStackFrame;
-import edu.brown.cs.rose.root.RootLocation;
+import edu.brown.cs.rose.root.RootTask;
 
-class BushLocation extends RootLocation implements BushConstants
+class ValidateTestSetupRunner extends RootTask implements ValidateConstants
 {
 
 
@@ -49,8 +47,7 @@ class BushLocation extends RootLocation implements BushConstants
 /*                                                                              */
 /********************************************************************************/
 
-private BumpLocation    bump_location;
-
+private ValidateExecution       seede_exec;
 
 
 /********************************************************************************/
@@ -59,45 +56,29 @@ private BumpLocation    bump_location;
 /*                                                                              */
 /********************************************************************************/
 
-BushLocation(BumpLocation loc,double pri) 
+ValidateTestSetupRunner(ValidateExecution ve)
 {
-   super(loc.getFile(),loc.getOffset(),loc.getEndOffset(),-1,loc.getProject(),null,pri);
-   
-   setMethodData(loc.getKey(),loc.getDefinitionOffset(),
-         loc.getDefinitionEndOffset()-loc.getDefinitionOffset());
+   seede_exec = ve;
 }
-
-
-
-
-
-
-BushLocation(BumpStackFrame frm)
-{
-   super(frm.getFile(),-1,-1,frm.getLineNumber(),
-         frm.getThread().getLaunch().getConfiguration().getProject(),
-         frm.getMethod() + frm.getRawSignature(),
-         0.5);
-}
-
 
 
 /********************************************************************************/
 /*                                                                              */
-/*      Access methods                                                          */
+/*      Running methods                                                         */
 /*                                                                              */
 /********************************************************************************/
 
-BumpLocation getBumpLocation()
+@Override public void run()
 {
-   return bump_location;
+   seede_exec.start(seede_exec.getContext().getControl());
 }
 
 
-}       // end of class BushLocation
+
+}       // end of class ValidateTestSetupRunner
 
 
 
 
-/* end of BushLocation.java */
+/* end of ValidateTestSetupRunner.java */
 

@@ -1,8 +1,8 @@
 /********************************************************************************/
 /*                                                                              */
-/*              BushLocation.java                                               */
+/*              PicotFactory.java                                               */
 /*                                                                              */
-/*      Location for use inside BUSH interface                                  */
+/*      Program Interface for Creation Of Testcases -- main entries             */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
@@ -33,13 +33,13 @@
 
 
 
-package edu.brown.cs.rose.bush;
+package edu.brown.cs.rose.picot;
 
-import edu.brown.cs.bubbles.bump.BumpLocation;
-import edu.brown.cs.bubbles.bump.BumpConstants.BumpStackFrame;
-import edu.brown.cs.rose.root.RootLocation;
+import org.w3c.dom.Element;
 
-class BushLocation extends RootLocation implements BushConstants
+import edu.brown.cs.rose.root.RootControl;
+
+public class PicotFactory implements PicotConstants
 {
 
 
@@ -49,7 +49,7 @@ class BushLocation extends RootLocation implements BushConstants
 /*                                                                              */
 /********************************************************************************/
 
-private BumpLocation    bump_location;
+private RootControl root_control;
 
 
 
@@ -59,45 +59,32 @@ private BumpLocation    bump_location;
 /*                                                                              */
 /********************************************************************************/
 
-BushLocation(BumpLocation loc,double pri) 
+public PicotFactory(RootControl rc)
 {
-   super(loc.getFile(),loc.getOffset(),loc.getEndOffset(),-1,loc.getProject(),null,pri);
-   
-   setMethodData(loc.getKey(),loc.getDefinitionOffset(),
-         loc.getDefinitionEndOffset()-loc.getDefinitionOffset());
+   root_control = rc;
 }
-
-
-
-
-
-
-BushLocation(BumpStackFrame frm)
-{
-   super(frm.getFile(),-1,-1,frm.getLineNumber(),
-         frm.getThread().getLaunch().getConfiguration().getProject(),
-         frm.getMethod() + frm.getRawSignature(),
-         0.5);
-}
-
 
 
 /********************************************************************************/
 /*                                                                              */
-/*      Access methods                                                          */
+/*      Generate test cases for current stopping point                          */
 /*                                                                              */
 /********************************************************************************/
 
-BumpLocation getBumpLocation()
+public void createTestCase(String rid,Element xml)
 {
-   return bump_location;
+   PicotTestCreator ptc = new PicotTestCreator(root_control,rid,xml);
+   ptc.start();
 }
 
 
-}       // end of class BushLocation
+
+}       // end of class PicotFactory
 
 
 
 
-/* end of BushLocation.java */
+
+
+/* end of PicotFactory.java */
 

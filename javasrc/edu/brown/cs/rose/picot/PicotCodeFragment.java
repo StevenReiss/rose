@@ -1,8 +1,8 @@
 /********************************************************************************/
 /*                                                                              */
-/*              ValidateExecution.java                                          */
+/*              PicotCodeFragment.java                                          */
 /*                                                                              */
-/*      Representation of a SEEDE execution                                     */
+/*      Fragment of code for test case generation                               */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
@@ -33,18 +33,10 @@
 
 
 
-package edu.brown.cs.rose.validate;
+package edu.brown.cs.rose.picot;
 
-import org.w3c.dom.Element;
 
-import edu.brown.cs.ivy.mint.MintConstants.CommandArgs;
-import edu.brown.cs.ivy.xml.IvyXml;
-import edu.brown.cs.rose.root.RootControl;
-import edu.brown.cs.rose.root.RootRepair;
-import edu.brown.cs.rose.root.RootTestCase;
-import edu.brown.cs.rose.root.RoseLog;
-
-class ValidateExecution implements ValidateConstants
+class PicotCodeFragment implements PicotConstants
 {
 
 
@@ -54,13 +46,7 @@ class ValidateExecution implements ValidateConstants
 /*                                                                              */
 /********************************************************************************/
 
-enum ExecState { INITIAL, PENDING, READY };
-
-private String          session_id;
-private ValidateTrace   seede_result;
-private ExecState       exec_state;
-private ValidateContext for_context;
-private RootRepair      for_repair;
+private String          code_string;
 
 
 
@@ -70,139 +56,82 @@ private RootRepair      for_repair;
 /*                                                                              */
 /********************************************************************************/
 
-ValidateExecution(String sid,ValidateContext ctx,RootRepair repair)
+PicotCodeFragment(String code)
 {
-   session_id = sid;
-   for_context = ctx;
-   seede_result = null;
-   exec_state = ExecState.INITIAL;
-   for_repair = repair;
+   code_string = code;
+}
+
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*        Access methods                                                        */
+/*                                                                              */
+/********************************************************************************/
+
+String getCode()
+{
+   return code_string;
 }
 
 
 
 /********************************************************************************/
 /*                                                                              */
-/*      Access methods                                                          */
+/*      Construction methods                                                    */
 /*                                                                              */
 /********************************************************************************/
 
-String getSessionId()                   { return session_id; }
-
-RootRepair getRepair()                  { return for_repair; }
-
-long getExecutionTime()
+static PicotCodeFragment append(PicotCodeFragment ... frags)
 {
-   if (exec_state != ExecState.READY || seede_result == null) return 0;
-   return seede_result.getExecutionTime();
-}
-
-ValidateContext getContext()            { return for_context; }
-
-
-
-/********************************************************************************/
-/*                                                                              */
-/*      Start method                                                            */
-/*                                                                              */
-/********************************************************************************/
-
-void start(RootControl rc)
-{
-   synchronized(this) {
-      seede_result = null;
-      exec_state = ExecState.PENDING;
-    }
+   PicotCodeFragment pcf = null;
    
-   ValidateFactory vfac = ValidateFactory.getFactory(rc);
-   vfac.register(this);
-   
-   CommandArgs args = new CommandArgs("EXECID",session_id,
-         "CONTINUOUS",false,"MAXTIME",for_context.getMaxTime(),"MAXDEPTH",100);
-   Element r1 = rc.sendSeedeMessage(session_id,"EXEC",args,null);
-   if (!IvyXml.isElement(r1,"RESULT")) {
-      RoseLog.logD("VALIDATE","Exec setup returned: " + IvyXml.convertXmlToString(r1));     exec_state = ExecState.READY;
-      return;
-    }
-}
-
-
-
-
-/********************************************************************************/
-/*                                                                              */
-/*      Update methods                                                          */
-/*                                                                              */
-/********************************************************************************/
-
-synchronized void handleResult(Element xml)
-{
-   seede_result = new ValidateTrace(xml,for_context.getLaunch().getThread());
-   exec_state = ExecState.READY;
-   notifyAll();
-}
-
-
-synchronized void handleReset()
-{
-   seede_result = null;
-   exec_state = ExecState.PENDING;
-}
-
-
-synchronized String handleInput(String file)
-{
-   return null; 
-}
-
-
-synchronized String handleInitialValue(String what)
-{
-   return null;
-}
-
-
-
-/********************************************************************************/
-/*                                                                              */
-/*      Get result                                                              */
-/*                                                                              */
-/********************************************************************************/
-
-ValidateTrace getSeedeResult()
-{
-   synchronized (this) {
-      while (exec_state != ExecState.READY) {
-         try {
-            wait(3000);
-          }
-         catch (InterruptedException e) { }
+   for (PicotCodeFragment f : frags) {
+      if (f != null) {
+         if (pcf == null) pcf = f;
+         else pcf = pcf.append(f,true);
        }
-      return seede_result;
     }
-}
-
-
-
-/********************************************************************************/
-/*                                                                              */
-/*      Handle test cases                                                       */
-/*                                                                              */
-/********************************************************************************/
-
-double checkTest(RootTestCase rtc)
-{
-   if (rtc == null) return 1;
    
-   return seede_result.checkTest(rtc);
+   return pcf;
 }
 
 
 
-}       // end of class ValidateExecution
+PicotCodeFragment append(PicotCodeFragment pcf,boolean line)
+{
+   return append(pcf.code_string,line);
+}
+
+
+PicotCodeFragment append(String addcode,boolean line)
+{
+   String code = code_string;
+   if (line && !code.endsWith("\n")) code += "\n";
+   code += addcode;
+   return new PicotCodeFragment(code);
+}
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Output methods                                                          */
+/*                                                                              */
+/********************************************************************************/
+
+@Override public String toString()
+{
+   return code_string;
+}
+
+
+
+}       // end of class PicotCodeFragment
 
 
 
 
-/* end of ValidateExecution.java */
+/* end of PicotCodeFragment.java */
 

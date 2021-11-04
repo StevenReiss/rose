@@ -35,6 +35,8 @@
 
 package edu.brown.cs.rose.bract;
 
+import java.io.File;
+
 import org.w3c.dom.Element;
 
 import edu.brown.cs.rose.root.RootControl;
@@ -53,6 +55,12 @@ class BractLocation extends RootLocation implements BractConstants
 BractLocation(RootControl ctrl,Element xml)
 {
    super(ctrl,xml);
+}
+
+
+BractLocation(File f,int loc,int eloc,int lin,String proj,String mthd)
+{
+   super(f,loc,eloc,lin,proj,mthd,0);
 }
 
 

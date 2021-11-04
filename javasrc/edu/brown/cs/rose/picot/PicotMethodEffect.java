@@ -1,8 +1,8 @@
 /********************************************************************************/
 /*                                                                              */
-/*              ValidateExecution.java                                          */
+/*              PicotMethodEffect.java                                          */
 /*                                                                              */
-/*      Representation of a SEEDE execution                                     */
+/*      Describe an effect of invoking a methods                                */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
@@ -33,19 +33,64 @@
 
 
 
-package edu.brown.cs.rose.validate;
+package edu.brown.cs.rose.picot;
 
-import org.w3c.dom.Element;
+import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.ReturnStatement;
+import org.eclipse.jdt.core.dom.SimpleName;
 
-import edu.brown.cs.ivy.mint.MintConstants.CommandArgs;
-import edu.brown.cs.ivy.xml.IvyXml;
-import edu.brown.cs.rose.root.RootControl;
-import edu.brown.cs.rose.root.RootRepair;
-import edu.brown.cs.rose.root.RootTestCase;
-import edu.brown.cs.rose.root.RoseLog;
+import edu.brown.cs.ivy.jcomp.JcompAst;
+import edu.brown.cs.ivy.jcomp.JcompSymbol;
 
-class ValidateExecution implements ValidateConstants
+abstract class PicotMethodEffect implements PicotConstants
 {
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Factory methods                                                         */
+/*                                                                              */
+/********************************************************************************/
+
+static PicotMethodEffect createAssignment(ASTNode lhs,ASTNode rhs,PicotLocalMap lcls,boolean cond)
+{
+   PicotEffectItem rhsitm = PicotEffectItem.createEffectItem(rhs,lcls);
+   if (rhsitm == null) rhsitm = PicotEffectItem.createExpressionItem();
+   
+   JcompSymbol lhssym = JcompAst.getReference(lhs);
+   if (lhssym == null) lhssym = JcompAst.getDefinition(lhs);
+   if (lhssym == null) return null;
+   
+   if (lhssym.isTypeSymbol() || lhssym.isEnumSymbol() ||
+         lhssym.isMethodSymbol())
+      return null;
+   
+   if (lhssym.isFieldSymbol()) {
+      PicotEffectItem lhsitm = PicotEffectItem.createEffectItem(lhs,null);
+      if (lhsitm != null) {
+         return new FieldEffect(lhsitm,rhsitm,cond);
+       }
+    }
+   else if (lhs instanceof SimpleName) {
+       lcls.put(lhssym,rhsitm);
+    }
+   
+   return null;
+}
+
+
+static PicotMethodEffect createReturn(ReturnStatement s,PicotLocalMap lcls,boolean cond)
+{
+   PicotEffectItem retitm = PicotEffectItem.createEffectItem(s.getExpression(),lcls);
+   
+   if (retitm != null) {
+      return new ReturnEffect(retitm,cond);
+    }
+   
+   return null;
+}
+
 
 
 /********************************************************************************/
@@ -54,14 +99,7 @@ class ValidateExecution implements ValidateConstants
 /*                                                                              */
 /********************************************************************************/
 
-enum ExecState { INITIAL, PENDING, READY };
-
-private String          session_id;
-private ValidateTrace   seede_result;
-private ExecState       exec_state;
-private ValidateContext for_context;
-private RootRepair      for_repair;
-
+private boolean is_conditional;
 
 
 /********************************************************************************/
@@ -70,13 +108,9 @@ private RootRepair      for_repair;
 /*                                                                              */
 /********************************************************************************/
 
-ValidateExecution(String sid,ValidateContext ctx,RootRepair repair)
+protected PicotMethodEffect(boolean cond)
 {
-   session_id = sid;
-   for_context = ctx;
-   seede_result = null;
-   exec_state = ExecState.INITIAL;
-   for_repair = repair;
+   is_conditional = cond;
 }
 
 
@@ -87,122 +121,74 @@ ValidateExecution(String sid,ValidateContext ctx,RootRepair repair)
 /*                                                                              */
 /********************************************************************************/
 
-String getSessionId()                   { return session_id; }
+abstract PicotEffectType getEffectType();
 
-RootRepair getRepair()                  { return for_repair; }
+PicotEffectItem getEffectTarget()                       { return null; }
 
-long getExecutionTime()
-{
-   if (exec_state != ExecState.READY || seede_result == null) return 0;
-   return seede_result.getExecutionTime();
-}
+PicotEffectItem getEffectSource()                       { return null; }
 
-ValidateContext getContext()            { return for_context; }
+PicotEffectItem getEffectArgument()                     { return null; }
+
+
+boolean isEffectConditional()                           { return is_conditional; }
 
 
 
 /********************************************************************************/
 /*                                                                              */
-/*      Start method                                                            */
+/*      Assignment effect                                                       */
 /*                                                                              */
 /********************************************************************************/
 
-void start(RootControl rc)
-{
-   synchronized(this) {
-      seede_result = null;
-      exec_state = ExecState.PENDING;
+private static class FieldEffect extends PicotMethodEffect {
+   
+   private PicotEffectItem target_item;
+   private PicotEffectItem source_item;
+   
+   FieldEffect(PicotEffectItem lhs,PicotEffectItem rhs,boolean cond) {
+      super(cond);
+      target_item = lhs;
+      source_item = rhs;
     }
    
-   ValidateFactory vfac = ValidateFactory.getFactory(rc);
-   vfac.register(this);
+   @Override PicotEffectType getEffectType()            { return PicotEffectType.SET_FIELD; }
    
-   CommandArgs args = new CommandArgs("EXECID",session_id,
-         "CONTINUOUS",false,"MAXTIME",for_context.getMaxTime(),"MAXDEPTH",100);
-   Element r1 = rc.sendSeedeMessage(session_id,"EXEC",args,null);
-   if (!IvyXml.isElement(r1,"RESULT")) {
-      RoseLog.logD("VALIDATE","Exec setup returned: " + IvyXml.convertXmlToString(r1));     exec_state = ExecState.READY;
-      return;
-    }
-}
-
-
-
-
-/********************************************************************************/
-/*                                                                              */
-/*      Update methods                                                          */
-/*                                                                              */
-/********************************************************************************/
-
-synchronized void handleResult(Element xml)
-{
-   seede_result = new ValidateTrace(xml,for_context.getLaunch().getThread());
-   exec_state = ExecState.READY;
-   notifyAll();
-}
-
-
-synchronized void handleReset()
-{
-   seede_result = null;
-   exec_state = ExecState.PENDING;
-}
-
-
-synchronized String handleInput(String file)
-{
-   return null; 
-}
-
-
-synchronized String handleInitialValue(String what)
-{
-   return null;
-}
-
-
-
-/********************************************************************************/
-/*                                                                              */
-/*      Get result                                                              */
-/*                                                                              */
-/********************************************************************************/
-
-ValidateTrace getSeedeResult()
-{
-   synchronized (this) {
-      while (exec_state != ExecState.READY) {
-         try {
-            wait(3000);
-          }
-         catch (InterruptedException e) { }
-       }
-      return seede_result;
-    }
-}
-
-
-
-/********************************************************************************/
-/*                                                                              */
-/*      Handle test cases                                                       */
-/*                                                                              */
-/********************************************************************************/
-
-double checkTest(RootTestCase rtc)
-{
-   if (rtc == null) return 1;
+   @Override PicotEffectItem getEffectSource()          { return source_item; }
    
-   return seede_result.checkTest(rtc);
-}
+   @Override PicotEffectItem getEffectTarget()          { return target_item; }   
+   
+}       // end of inner class FieldEffect
 
 
 
-}       // end of class ValidateExecution
+/********************************************************************************/
+/*                                                                              */
+/*      Return effect                                                           */
+/*                                                                              */
+/********************************************************************************/
+
+private static class ReturnEffect extends PicotMethodEffect {
+
+   private PicotEffectItem target_item;
+   
+   ReturnEffect(PicotEffectItem exp,boolean cond) {
+      super(cond);
+      target_item = exp;
+    }
+   
+   @Override PicotEffectType getEffectType()            { return PicotEffectType.RETURN; }
+   
+   @Override PicotEffectItem getEffectTarget()          { return target_item; }   
+   
+}       // end of inner class FieldEffect
 
 
 
 
-/* end of ValidateExecution.java */
+}       // end of class PicotMethodEffect
+
+
+
+
+/* end of PicotMethodEffect.java */
 

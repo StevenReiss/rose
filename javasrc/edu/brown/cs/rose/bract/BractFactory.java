@@ -35,6 +35,7 @@
 
 package edu.brown.cs.rose.bract;
 
+import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -123,6 +124,14 @@ public RootLocation createLocation(RootControl ctrl,Element xml)
    if (xml == null) return null;
    
    return new BractLocation(ctrl,xml);
+}
+
+
+
+public RootLocation createLocation(File f,int loc,int eloc,int lin,String proj,
+      String mthd)
+{
+   return new BractLocation(f,loc,eloc,lin,proj,mthd);
 }
 
 

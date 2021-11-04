@@ -1,0 +1,18 @@
+#! /bin/csh -f
+
+set CP = /pro/rose/java:/pro/ivy/java
+
+foreach i (/pro/ivy/lib/eclipsejar/*.jar)
+   set CP = ${CP}:$i
+end
+
+java -cp $CP edu.brown.cs.rose.roseeval.RoseEvalCounter $*
+
+
+
+
+
+
+
+
+											

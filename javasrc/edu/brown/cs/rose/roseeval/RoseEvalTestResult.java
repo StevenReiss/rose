@@ -1,8 +1,8 @@
 /********************************************************************************/
 /*                                                                              */
-/*              BushLocation.java                                               */
+/*              RoseEvalTestResult.java                                         */
 /*                                                                              */
-/*      Location for use inside BUSH interface                                  */
+/*      Test case that results from Picot for a problem                         */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
@@ -33,13 +33,11 @@
 
 
 
-package edu.brown.cs.rose.bush;
+package edu.brown.cs.rose.roseeval;
 
-import edu.brown.cs.bubbles.bump.BumpLocation;
-import edu.brown.cs.bubbles.bump.BumpConstants.BumpStackFrame;
-import edu.brown.cs.rose.root.RootLocation;
+import org.w3c.dom.Element;
 
-class BushLocation extends RootLocation implements BushConstants
+class RoseEvalTestResult implements RoseEvalConstants
 {
 
 
@@ -49,8 +47,7 @@ class BushLocation extends RootLocation implements BushConstants
 /*                                                                              */
 /********************************************************************************/
 
-private BumpLocation    bump_location;
-
+private Element         result_element;
 
 
 /********************************************************************************/
@@ -59,45 +56,42 @@ private BumpLocation    bump_location;
 /*                                                                              */
 /********************************************************************************/
 
-BushLocation(BumpLocation loc,double pri) 
+RoseEvalTestResult()
 {
-   super(loc.getFile(),loc.getOffset(),loc.getEndOffset(),-1,loc.getProject(),null,pri);
-   
-   setMethodData(loc.getKey(),loc.getDefinitionOffset(),
-         loc.getDefinitionEndOffset()-loc.getDefinitionOffset());
-}
-
-
-
-
-
-
-BushLocation(BumpStackFrame frm)
-{
-   super(frm.getFile(),-1,-1,frm.getLineNumber(),
-         frm.getThread().getLaunch().getConfiguration().getProject(),
-         frm.getMethod() + frm.getRawSignature(),
-         0.5);
+   result_element = null;
 }
 
 
 
 /********************************************************************************/
 /*                                                                              */
-/*      Access methods                                                          */
+/*      Handle test result                                                      */
 /*                                                                              */
 /********************************************************************************/
 
-BumpLocation getBumpLocation()
+synchronized void handleTestResult(Element xml)
 {
-   return bump_location;
+   result_element = xml;
+   notifyAll();
 }
 
 
-}       // end of class BushLocation
+synchronized void waitForResult()
+{
+   while (result_element == null) {
+      try {
+         wait(3000);
+       }
+      catch (InterruptedException e) { }
+    }
+}
+
+
+
+}       // end of class RoseEvalTestResult
 
 
 
 
-/* end of BushLocation.java */
+/* end of RoseEvalTestCase.java */
 

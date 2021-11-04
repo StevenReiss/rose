@@ -67,6 +67,14 @@ boolean haveGoodResult();
 
 RootTrace getExecutionTrace();
 
+boolean addLocalFile(File f,String src);
+boolean editLocalFile(File f,int start,int len,String cnts);
+void createTestSession(File f,RootLocation loc);
+RootTrace getTestTrace(File f);
+void finishTestSession(File f);
+
+
+
 interface RootTrace {
    long getProblemTime();
    RootTraceCall getProblemContext();

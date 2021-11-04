@@ -1,8 +1,8 @@
 /********************************************************************************/
 /*                                                                              */
-/*              BushLocation.java                                               */
+/*              PicotClassData.java                                             */
 /*                                                                              */
-/*      Location for use inside BUSH interface                                  */
+/*      Data about all the methods of a class                                   */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
@@ -33,13 +33,22 @@
 
 
 
-package edu.brown.cs.rose.bush;
+package edu.brown.cs.rose.picot;
 
-import edu.brown.cs.bubbles.bump.BumpLocation;
-import edu.brown.cs.bubbles.bump.BumpConstants.BumpStackFrame;
-import edu.brown.cs.rose.root.RootLocation;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
-class BushLocation extends RootLocation implements BushConstants
+import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
+import org.eclipse.jdt.core.dom.FieldDeclaration;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
+
+import edu.brown.cs.ivy.jcomp.JcompAst;
+import edu.brown.cs.ivy.jcomp.JcompSymbol;
+import edu.brown.cs.ivy.jcomp.JcompType;
+import edu.brown.cs.ivy.jcomp.JcompTyper;
+
+class PicotClassData implements PicotConstants
 {
 
 
@@ -49,7 +58,9 @@ class BushLocation extends RootLocation implements BushConstants
 /*                                                                              */
 /********************************************************************************/
 
-private BumpLocation    bump_location;
+private JcompType                        for_type;
+private Map<JcompSymbol,PicotMethodData> method_data;
+private Map<String,JcompType>            field_types;
 
 
 
@@ -59,25 +70,32 @@ private BumpLocation    bump_location;
 /*                                                                              */
 /********************************************************************************/
 
-BushLocation(BumpLocation loc,double pri) 
+PicotClassData(JcompType typ,JcompTyper typer)
 {
-   super(loc.getFile(),loc.getOffset(),loc.getEndOffset(),-1,loc.getProject(),null,pri);
+   for_type = typ;
+   method_data = new HashMap<>();
+   field_types = for_type.getFields(typer);
    
-   setMethodData(loc.getKey(),loc.getDefinitionOffset(),
-         loc.getDefinitionEndOffset()-loc.getDefinitionOffset());
-}
-
-
-
-
-
-
-BushLocation(BumpStackFrame frm)
-{
-   super(frm.getFile(),-1,-1,frm.getLineNumber(),
-         frm.getThread().getLaunch().getConfiguration().getProject(),
-         frm.getMethod() + frm.getRawSignature(),
-         0.5);
+   JcompSymbol tsym = for_type.getDefinition();
+   if (tsym == null) return;
+   
+   AbstractTypeDeclaration atd = (AbstractTypeDeclaration) tsym.getDefinitionNode();
+   if (atd == null) return;
+   
+   for (Object o : atd.bodyDeclarations()) {
+      if (o instanceof MethodDeclaration) {
+         MethodDeclaration md = (MethodDeclaration) o;
+         JcompSymbol msym = JcompAst.getDefinition(md);
+         if (msym != null && !msym.isPrivate()) {
+            PicotMethodData pmd = new PicotMethodData(md);
+            pmd.getEffects();                              // force processing for now
+            method_data.put(msym,pmd);
+          }
+       }
+      else if (o instanceof FieldDeclaration) {
+         // handle field initializations
+       }
+    }
 }
 
 
@@ -88,16 +106,23 @@ BushLocation(BumpStackFrame frm)
 /*                                                                              */
 /********************************************************************************/
 
-BumpLocation getBumpLocation()
+Collection<JcompSymbol> getMethods()
 {
-   return bump_location;
+   return method_data.keySet();
 }
 
 
-}       // end of class BushLocation
+PicotMethodData getDataForMethod(JcompSymbol js)
+{
+   return method_data.get(js);
+}
+
+
+
+}       // end of class PicotClassData
 
 
 
 
-/* end of BushLocation.java */
+/* end of PicotClassData.java */
 
