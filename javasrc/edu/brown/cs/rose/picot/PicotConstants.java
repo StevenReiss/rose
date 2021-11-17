@@ -72,9 +72,23 @@ enum PicotEffectType {
 }
 
 
+enum PicotAccessorType {
+   VARIABLE,
+   FIELD,
+   ARRAY ,
+}
+
+
+
 class PicotLocalMap extends HashMap<JcompSymbol,PicotEffectItem> {
    private static final long serialVersionUID = 1;
 }
+
+
+class PicotFieldMap extends HashMap<JcompSymbol,PicotCodeFragment> {
+   private static final long serialVersionUID = 1;
+}
+
 
 
 }	// end of interface PicotConstants

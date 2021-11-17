@@ -1,9 +1,8 @@
 /********************************************************************************/
 /*                                                                              */
-/*              PicotValueContents.java                                         */
+/*              PicotValueContext.java                                          */
 /*                                                                              */
-/*      Information about value building to date.                               */
-/*      This class is immutable after fixupValues is called                     */
+/*      Context holding set of initializations for a test                       */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
@@ -36,9 +35,11 @@
 
 package edu.brown.cs.rose.picot;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -50,7 +51,7 @@ import edu.brown.cs.rose.root.RootValidate.RootTraceCall;
 import edu.brown.cs.rose.root.RootValidate.RootTraceValue;
 import edu.brown.cs.rose.root.RootValidate.RootTraceVariable;
 
-class PicotValueContents implements PicotConstants
+class PicotValueContext implements PicotConstants
 {
 
 
@@ -60,13 +61,14 @@ class PicotValueContents implements PicotConstants
 /*                                                                              */
 /********************************************************************************/
 
-
+private PicotValueBuilder value_builder;
 private Map<String,PicotCodeFragment> value_map;
 private PicotValueChecker value_checker;
 private PicotCodeFragment init_code;
 private Boolean setup_value;
 private RootTrace value_result;
 private RootTrace target_result;
+private long target_time;
 private JcompTyper jcomp_typer;
 
 
@@ -74,10 +76,13 @@ private JcompTyper jcomp_typer;
 private Map<String,String> base_value_map;
 
 // set of all computed objects with a particular type
-private Map<JcompType,Set<PicotCodeFragment>> computed_values;
+private Map<JcompType,Set<PicotValueAccessor>> computed_values;
 
 // set of computed variables and their target (original) value
 private Map<String,RootTraceValue> variable_values;
+private Set<String> known_variables;
+
+private Set<PicotValueProblem> found_problems;
 
 
 private static final PicotCodeFragment bad_fragment;
@@ -88,16 +93,17 @@ static {
 
 
 
-
 /********************************************************************************/
 /*                                                                              */
 /*      Constructors                                                            */
 /*                                                                              */
 /********************************************************************************/
 
-PicotValueContents(PicotValueChecker vc,JcompTyper typer,RootTrace trace)
+PicotValueContext(PicotValueBuilder bldr,PicotValueChecker vc,
+      JcompTyper typer,RootTrace trace,long tgttime)
 {
    value_checker = vc;
+   value_builder = bldr;
    value_map = new HashMap<>();
    computed_values = new HashMap<>();
    base_value_map = new HashMap<>();
@@ -105,16 +111,20 @@ PicotValueContents(PicotValueChecker vc,JcompTyper typer,RootTrace trace)
    setup_value = false;
    value_result = null;
    target_result = trace;
+   target_time = tgttime;
    jcomp_typer = typer;
    variable_values = new HashMap<>();
+   known_variables = new HashSet<>();
+   found_problems = null;
 }
 
 
 
-PicotValueContents(PicotValueContents vc,PicotCodeFragment addedcode,
+PicotValueContext(PicotValueContext vc,PicotCodeFragment addedcode,
       String var,RootTraceValue val)
 {
    value_checker = vc.value_checker;
+   value_builder = vc.value_builder;
    value_map = new HashMap<>(vc.value_map);
    computed_values = new HashMap<>(vc.computed_values);
    base_value_map = new HashMap<>(vc.base_value_map);
@@ -124,17 +134,18 @@ PicotValueContents(PicotValueContents vc,PicotCodeFragment addedcode,
    if (var != null && val != null) {
       variable_values.put(var,val);
     }
+   known_variables = new HashSet<>(vc.known_variables);
    
-   if (init_code == null) init_code = addedcode;
+   if (vc.init_code == null) init_code = addedcode;
    else {
-      init_code = init_code.append(addedcode,true);
+      init_code = vc.init_code.append(addedcode,true);
     }
    
    value_result = null;
    setup_value = null;
+   found_problems = null;
    setupContents();
 }
-
 
 
 
@@ -144,11 +155,9 @@ PicotValueContents(PicotValueContents vc,PicotCodeFragment addedcode,
 /*                                                                              */
 /********************************************************************************/
 
-RootTrace getTrace()
-{
-   return value_result;
-}
+RootTrace getTrace()                            { return value_result; }
 
+long getTargetTime()                            { return target_time; }
 
 
 PicotCodeFragment getPreviousValue(String id)
@@ -178,6 +187,29 @@ boolean isValidSetup()
    return setup_value;
 }
 
+void setVariableKnown(String var)
+{
+   known_variables.add(var);
+}
+
+
+Set<PicotValueAccessor> getValuesForType(JcompType typ)
+{
+   return computed_values.get(typ);
+}
+
+
+Collection<PicotValueProblem> getProblems()
+{
+   return found_problems;
+}
+
+
+PicotCodeFragment getInitializationCode()   
+{
+   return init_code;
+}
+
 
 
 /********************************************************************************/
@@ -196,56 +228,74 @@ private void setupContents()
    
    if (value_result == null || value_result.getException() != null) setup_value = false;
    else if (value_result.getReturnValue() == null) setup_value = false;
-   else setup_value = true;
+   else {
+      boolean fg = fixupValues();
+      setup_value = fg;
+    }
 }
 
 
 
-/********************************************************************************/
-/*                                                                              */
-/*      Processing methods                                                      */
-/*                                                                              */
-/********************************************************************************/
-
-PicotValueContents fixupValues()
+private boolean fixupValues()
 {
-   if (setup_value == null || setup_value == false) return null;
-   if (value_result == null) return null;
+   if (value_result == null) return false;
+   
+   RootTraceCall rtc = value_result.getRootContext();
+   long srctime = rtc.getEndTime();
    
    for (Map.Entry<String,RootTraceValue> ent : variable_values.entrySet()) {
       String var = ent.getKey();
-      PicotCodeFragment acc = new PicotCodeFragment(var);
       RootTraceValue targetval = ent.getValue();
-      RootTraceCall rtc = value_result.getRootContext();
+      boolean force = known_variables.contains(var);
+      PicotValueAccessor acc = PicotValueAccessor.createVariableAccessor(var,
+            targetval.getDataType());
       RootTraceVariable rtvar = rtc.getTraceVariables().get(var);
       if (rtvar == null) continue;
-      RootTraceValue sourceval = rtvar.getValueAtTime(value_result,rtc.getEndTime());
-      PicotValueContents npvc = checkValue(acc,sourceval,targetval,rtc.getEndTime());
-      if (npvc == null) return null;
+      RootTraceValue sourceval = rtvar.getValueAtTime(value_result,srctime);
+      boolean fg = checkValue(acc,sourceval,targetval,null,srctime,target_time,force);
+      if (force && !fg) return false;
     }
    
-   return this;
+   return true; 
 }
 
 
 
 /********************************************************************************/
 /*                                                                              */
-/*      Check desired value (target) with computed value (source)               */
+/*      Compare values with target                                              */
 /*                                                                              */
 /********************************************************************************/
 
-PicotValueContents checkValue(PicotCodeFragment acc,RootTraceValue sourceval,RootTraceValue targetval,long time)
+boolean checkValue(PicotValueAccessor acc,RootTraceValue sourceval,
+      RootTraceValue targetval,RootTraceValue baseval,
+      long stime,long ttime,boolean force)
 {
-   PicotValueContents rslt = this;
+   if (targetval == null) return true;
    
+   boolean fg = checkValueCompute(acc,sourceval,targetval,stime,ttime,force);
+   
+   if (!fg && !force) {
+      PicotValueProblem prob = new PicotValueProblem(acc,sourceval,targetval,baseval);
+      if (found_problems == null) found_problems = new LinkedHashSet<>();
+      found_problems.add(prob);
+    }
+   
+   return fg;
+}
+
+
+
+boolean checkValueCompute(PicotValueAccessor acc,RootTraceValue sourceval,
+      RootTraceValue targetval,long stime,long ttime,boolean force)
+{
    String srctyp = sourceval.getDataType();
    String tgttyp = targetval.getDataType();
-   if (!srctyp.equals(tgttyp)) return null;
+   if (!srctyp.equals(tgttyp)) return false;
    
    switch (srctyp) {
       case "*ANY*" :
-         return rslt;
+         return true;
       case "int" :
       case "short" :
       case "long" :
@@ -262,45 +312,47 @@ PicotValueContents checkValue(PicotCodeFragment acc,RootTraceValue sourceval,Roo
       case "java.lang.Character" :
       case "java.lang.Float" :
       case "java.lang.Double" :
-         if (!sourceval.getValue().equals(targetval.getValue())) return null;
-         return rslt;   
+         if (!sourceval.getValue().equals(targetval.getValue())) return false;
+         return true;  
+      case "java.util.Random" :
+         return true;
       default :
          break;
     }
    
+   boolean rslt = true;
    String srcid = sourceval.getId();
    String tgtid = targetval.getId();
    if (srcid != null && tgtid != null) {
       String mapid = base_value_map.get(srcid);
-      if (mapid != null && !tgtid.equals(mapid)) return null;
+      if (mapid != null && !tgtid.equals(mapid)) return false;
       if (mapid == null) base_value_map.put(srcid,tgtid);
     }
-   else if (srcid != null || tgtid != null) return null;
+   else if (srcid != null || tgtid != null) return false;
    
    JcompType jtyp = jcomp_typer.findSystemType(srctyp);
-   if (jtyp == null) return null;
+   if (jtyp == null) return false;
    JcompType coltyp = jcomp_typer.findSystemType("java.util.Collection");
    JcompType maptyp = jcomp_typer.findSystemType("java.util.Map");
    if (jtyp.isCompatibleWith(coltyp)) {
       // handle collections
-      return rslt;
+      return true;
     }
    else if (jtyp.isCompatibleWith(maptyp)) {
       // handle maps
-      return rslt;
+      return true;
     }
-   
-   long start = target_result.getRootContext().getStartTime();
    
    if (jtyp.isArrayType()) {
       int i1 = sourceval.getArrayLength();
       int i2 = targetval.getArrayLength();
-      if (i1 != i2) return null;
+      if (i1 != i2) return false;
       for (int i = 0; i < i1; ++i) {
-         RootTraceValue srcelt = sourceval.getIndexValue(value_result,i,time);
-         RootTraceValue tgtelt = targetval.getIndexValue(target_result,i,start);
-         PicotCodeFragment idxval = acc.append("[" + i + "]",false);
-         compare(idxval,jtyp.getBaseType(),srcelt,tgtelt,time);
+         RootTraceValue srcelt = sourceval.getIndexValue(value_result,i,stime);
+         RootTraceValue tgtelt = targetval.getIndexValue(target_result,i,ttime);
+         PicotValueAccessor idxval = PicotValueAccessor.createArrayAccessor(acc,
+               jtyp.getBaseType(),i);
+         rslt &= compare(idxval,jtyp.getBaseType(),srcelt,tgtelt,targetval,stime,ttime,force);
        }
     }
    else {
@@ -310,14 +362,16 @@ PicotValueContents checkValue(PicotCodeFragment acc,RootTraceValue sourceval,Roo
          String ftl = fnm;
          int idx = ftl.lastIndexOf(".");
          if (idx > 0) ftl = ftl.substring(idx+1);
-         PicotCodeFragment fldval = acc.append("." + ftl,false);
-         JcompType ftyp = ent.getValue();
-         RootTraceValue srcfld = sourceval.getFieldValue(value_result,fnm,time);
-         RootTraceValue tgtfld = targetval.getFieldValue(target_result,fnm,start);
-         compare(fldval,ftyp,srcfld,tgtfld,time);
+         RootTraceValue srcfld = sourceval.getFieldValue(value_result,fnm,stime);
+         RootTraceValue tgtfld = targetval.getFieldValue(target_result,fnm,ttime);
+         if (tgtfld == null) continue;
+         String tgtfldtypname = tgtfld.getDataType();
+         JcompType tgtfldtyp = jcomp_typer.findSystemType(tgtfldtypname);
+         PicotValueAccessor fldacc = PicotValueAccessor.createFieldAccessor(acc,ftl,tgtfldtyp);
+         rslt &= compare(fldacc,tgtfldtyp,srcfld,tgtfld,targetval,stime,ttime,force);
        }
     }
-  
+   
    addComputedValue(jtyp,acc);
    
    return rslt;
@@ -325,9 +379,9 @@ PicotValueContents checkValue(PicotCodeFragment acc,RootTraceValue sourceval,Roo
 
 
 
-private void addComputedValue(JcompType jtyp,PicotCodeFragment pcf)
+private void addComputedValue(JcompType jtyp,PicotValueAccessor pcf)
 {
-   Set<PicotCodeFragment> typl = computed_values.get(jtyp);
+   Set<PicotValueAccessor> typl = computed_values.get(jtyp);
    if (typl == null) {
       typl = new HashSet<>();
       computed_values.put(jtyp,typl);
@@ -337,30 +391,29 @@ private void addComputedValue(JcompType jtyp,PicotCodeFragment pcf)
 
 
 
-private PicotValueContents compare(PicotCodeFragment acc,JcompType typ,
-      RootTraceValue src,RootTraceValue tgt,long time)
+private boolean compare(PicotValueAccessor acc,JcompType typ,
+      RootTraceValue src,RootTraceValue tgt,RootTraceValue base,
+      long stime,long ttime,boolean force)
 {
-   if (src == null && tgt == null) return this;
-      
+   if (src == null && tgt == null) return true;
+   
    if (tgt == null) {
       // target not needed
       addComputedValue(typ,acc);
-      return this;
+      return true;
     }  
    
-   RoseLog.logD("PICOT","COMPARE " + src + " AND " + tgt);
+   RoseLog.logD("PICOT","COMPAREA " + src + " AND " + tgt);
    
-   PicotValueContents pvc = checkValue(acc,src,tgt,time);
-   if (pvc == null) return null;
-   
-   return pvc;
+   return checkValue(acc,src,tgt,base,stime,ttime,force);
 }
 
 
-}       // end of class PicotValueContents
+
+}       // end of class PicotValueContext
 
 
 
 
-/* end of PicotValueContents.java */
+/* end of PicotValueContext.java */
 

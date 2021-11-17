@@ -36,6 +36,8 @@
 package edu.brown.cs.rose.picot;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -48,6 +50,7 @@ import org.w3c.dom.Element;
 
 import edu.brown.cs.ivy.jcomp.JcompAst;
 import edu.brown.cs.ivy.jcomp.JcompSymbol;
+import edu.brown.cs.ivy.jcomp.JcompType;
 import edu.brown.cs.ivy.jcomp.JcompTyper;
 import edu.brown.cs.ivy.mint.MintConstants.CommandArgs;
 import edu.brown.cs.ivy.xml.IvyXml;
@@ -167,7 +170,17 @@ PicotTestCase createTestCase()
    PicotCodeFragment callfrag = buildCall(rt,rtc,pvb);
    if (callfrag == null) return null;
    
-   // then create test case
+   // then create test case (done in PicotValueChecker)
+   // package <tgtpkg>;
+   // public class Test<tgtcls><#> {
+   // public Test<tgtcls><#>() { }
+   // @Test public test<#>()
+   //    <classfrag>
+   //    <check for problem>
+   //           If problem is assertion/exception -- already done
+   //           Else assert result is different from validationn result
+   // } 
+   // }
    
    pvb.finished();
    
@@ -190,22 +203,45 @@ private PicotCodeFragment buildCall(RootTrace rt,RootTraceCall rtc,PicotValueBui
    JcompSymbol js = JcompAst.getDefinition(md);
    if (js == null) return null;
    
+   PicotCodeFragment thisfrag = null;
+   List<PicotCodeFragment> args = new ArrayList<>();
+   
    if (!js.isStatic()) {
       RootTraceVariable thisvar = rtc.getTraceVariables().get("this");
-      pvb.buildValue(thisvar);
+      thisfrag = pvb.buildValue(thisvar);
     }
    // handle this$0 if needed
    for (Object o : md.parameters()) {
       SingleVariableDeclaration svd = (SingleVariableDeclaration) o;
       String nm = svd.getName().getIdentifier();
       RootTraceVariable pvar = rtc.getTraceVariables().get(nm);
-      pvb.buildValue(pvar);
+      PicotCodeFragment arg = pvb.buildValue(pvar);
+      if (arg == null) return null;
+      args.add(arg);
     }
    
    // look for static fields accessed by code in the trace
-   // generate the actual call
    
-   return null;
+   PicotCodeFragment initcode = pvb.getInitializationCode();
+   // should clean up initcode by removing unneeded items
+   
+   String call = "";
+   if (!js.getType().getBaseType().isVoidType()) {
+      call = js.getType().getBaseType().getName() + " result = ";
+    }
+   if (thisfrag != null) call += thisfrag.getCode() + ".";
+   call += md.getName() + "(";
+   for (int i = 0; i < args.size(); ++i) {
+      if (i > 0) call += ",";
+      call += args.get(i).getCode();
+    }
+   call += ");\n";
+   
+   PicotCodeFragment result = null;
+   if (initcode == null) result = new PicotCodeFragment(call);
+   else result = initcode.append(call,true);
+   
+   return result;
 }
 
 

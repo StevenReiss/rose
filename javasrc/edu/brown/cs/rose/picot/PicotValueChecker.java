@@ -58,6 +58,8 @@ class PicotValueChecker implements PicotConstants
 private RootValidate base_execution;
 private String  setup_contents;
 private File    local_file;
+private String  package_name;
+private String  test_class;
 
 private static AtomicInteger method_ctr = new AtomicInteger(0);
 
@@ -77,6 +79,8 @@ PicotValueChecker(RootControl ctrl,RootValidate base)
    base_execution = base;
    setup_contents = null;
    local_file = null;
+   package_name = null;
+   test_class = null;
    
    setupSession();              
 }
@@ -88,6 +92,18 @@ void finished()
       base_execution.finishTestSession(local_file);
     }
 }
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Access methods                                                          */
+/*                                                                              */
+/********************************************************************************/
+
+String getPackageName()                         { return package_name; }
+
+String getTestClassName()                       { return test_class; }
 
 
 
@@ -130,15 +146,18 @@ private void setupSession()
    String mthd = tc.getMethod();
    int idx1 = mthd.lastIndexOf(".");            // get end of class name
    int idx2 = mthd.lastIndexOf(".",idx1-1);     // get end of package name
-   String pkg = mthd.substring(0,idx2);
+   package_name = mthd.substring(0,idx2);
    int id = method_ctr.incrementAndGet();
-   String cls = "PicotTestClass_" + id;
+   test_class = "PicotTestClass_" + id;
    
-   local_file = new File("/SEEDE_LOCAL_FILE/SEEDE_" + cls + ".java");
+   local_file = new File("/SEEDE_LOCAL_FILE/SEEDE_" + test_class + ".java");
    
    StringBuffer buf = new StringBuffer();
-   buf.append("package " + pkg + ";\n");
-   buf.append("public class " + cls + " {\n");
+   buf.append("package " + package_name + ";\n");
+   buf.append("public class " + test_class + " {\n");
+   buf.append("public " + test_class + "() { }\n");
+   buf.append("@Test public void test" + id + "()\n");
+   buf.append("{ tester" + id + "();\n");      
    buf.append("public static boolean tester" + id + "() {\n");
    buf.append(START_STRING);
    buf.append("   // dummy code\n");
@@ -154,7 +173,7 @@ private void setupSession()
    String proj = null;
    
    BractFactory bf = BractFactory.getFactory();
-   String mnm = pkg + "." + cls + ".tester" + id;
+   String mnm = package_name + "." + test_class + ".tester" + id;
    RootLocation baseloc = bf.createLocation(local_file,loc,eloc,3,proj,mnm);
    base_execution.createTestSession(local_file,baseloc);
 }

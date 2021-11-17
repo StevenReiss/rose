@@ -264,10 +264,6 @@ private String getFieldKey(String fnm,String cnm)
    
    if (fnm.startsWith("[")) return fnm;
    
-   if (cnm == null) {
-      System.err.println("CHECK NULL HERE");
-    }
-   
    if (cnm != null) return cnm.replace("$",".") + "." + fnm;
    
    return fnm;

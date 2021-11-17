@@ -1641,7 +1641,7 @@ private Set<File> findFaitFiles(String threadid) throws RoseException
          boolean fnd = false;
 	 for (Element frm : IvyXml.children(th,"STACKFRAME")) {
             String fty = IvyXml.getAttrString(frm,"FILETYPE");
-            if (!fty.equals("JAVAFILE")) {
+            if (fty == null || !fty.equals("JAVAFILE")) {
                if (!fnd) continue;
                break;
              }

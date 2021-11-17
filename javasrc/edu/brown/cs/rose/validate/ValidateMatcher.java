@@ -173,8 +173,6 @@ void computeMatch()
     }
    catch (Throwable e) {
       RoseLog.logE("Problem matching contexts",e);
-      e.printStackTrace();
-      System.err.println("Problem matching contexts");
     }
    
    RoseLog.logD("VALIDATE ","Match result " + control_change + " " +

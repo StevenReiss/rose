@@ -143,10 +143,6 @@ private void work()
       uselocs.add(at_location);
     }
    
-   if (uselocs.size() == 0) {
-      System.err.println("CHECK HERE");
-    }
-   
    RoseLog.logI("BRACT","Start processing " + uselocs.size() + " " +
          location_classes.size());
    

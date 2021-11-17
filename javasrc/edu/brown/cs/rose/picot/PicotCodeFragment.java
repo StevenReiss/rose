@@ -113,6 +113,42 @@ PicotCodeFragment append(String addcode,boolean line)
    return new PicotCodeFragment(code);
 }
 
+PicotCodeFragment append(String code1,String ... code2)
+{
+   String code = code_string;
+   if (code1 != null) code += code1;
+   for (int i = 0; i < code2.length; ++i) {
+      if (code2[i] != null) code += code2[i];
+    }
+   
+   return new PicotCodeFragment(code);
+}
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Comparison methods                                                      */
+/*                                                                              */
+/********************************************************************************/
+
+@Override public boolean equals(Object o)
+{
+   if (o instanceof PicotCodeFragment) {
+      PicotCodeFragment pcf = (PicotCodeFragment) o;
+      return getCode().equals(pcf.getCode());
+    }
+   
+   return false;
+}
+
+
+
+@Override public int hashCode()
+{
+   return getCode().hashCode();
+}
+
 
 
 /********************************************************************************/
