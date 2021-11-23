@@ -312,15 +312,17 @@ public void runTestSession(ValidateExecution ve)
 /*                                                                              */
 /********************************************************************************/
 
-void setupBaseExecution()
+void setupBaseExecution(boolean showall,boolean tostring,boolean toarray)
 {
    // set up the base session in SEEDE
    CommandArgs args = new CommandArgs("TYPE","LAUNCH",
          "PROJECT",for_problem.getBugLocation().getProject(),
          "LAUNCHID",for_launch.getLaunch(),
          "THREADID",for_launch.getThread(),
-//       "SHOWALL",true,
          "FRAMEID",frame_id); 
+   if (showall) args.put("SHOWALL",true);
+   if (tostring) args.put("TOSTRING",true);
+   if (toarray) args.put("TOARRAY",true);
    
    Element rslt = root_control.sendSeedeMessage(null,"BEGIN",args,null);
    if (!IvyXml.isElement(rslt,"RESULT")) return;
@@ -358,6 +360,15 @@ void setupBaseExecution()
        }
     }
    RoseLog.logE("VALIDATE","BAD BASE EXECUTION");
+}
+
+
+@Override public void setOutputOptions(boolean showall,boolean tostring,boolean toarray)
+{
+   CommandArgs args = new CommandArgs("SHOWALL",showall,
+         "TOSTRING",tostring,
+         "TOARRAY",toarray);
+   root_control.sendSeedeMessage(base_session,"SHOW",args,null);
 }
 
 

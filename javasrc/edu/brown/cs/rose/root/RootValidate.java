@@ -69,6 +69,7 @@ RootTrace getExecutionTrace();
 
 boolean addLocalFile(File f,String src);
 boolean editLocalFile(File f,int start,int len,String cnts);
+void setOutputOptions(boolean showall,boolean tostring,boolean toarray);
 void createTestSession(File f,RootLocation loc);
 RootTrace getTestTrace(File f);
 void finishTestSession(File f);
@@ -113,6 +114,8 @@ interface RootTraceValue {
    RootTraceValue getIndexValue(RootTrace rt,int idx,long when);
    String getId();
    int getArrayLength();
+   String getEnum();
+   
 }
 
 }       // end of class RootValidate

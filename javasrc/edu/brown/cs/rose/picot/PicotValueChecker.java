@@ -38,6 +38,9 @@ package edu.brown.cs.rose.picot;
 import java.io.File;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.eclipse.jdt.core.dom.CompilationUnit;
+
+import edu.brown.cs.ivy.jcomp.JcompAst;
 import edu.brown.cs.rose.bract.BractFactory;
 import edu.brown.cs.rose.root.RootControl;
 import edu.brown.cs.rose.root.RootLocation;
@@ -156,8 +159,8 @@ private void setupSession()
    buf.append("package " + package_name + ";\n");
    buf.append("public class " + test_class + " {\n");
    buf.append("public " + test_class + "() { }\n");
-   buf.append("@Test public void test" + id + "()\n");
-   buf.append("{ tester" + id + "();\n");      
+   buf.append("@org.junit.Test public void test" + id + "()\n");
+   buf.append("{ tester" + id + "(); }\n");      
    buf.append("public static boolean tester" + id + "() {\n");
    buf.append(START_STRING);
    buf.append("   // dummy code\n");
@@ -169,12 +172,15 @@ private void setupSession()
    base_execution.addLocalFile(local_file,setup_contents);
    
    int loc = setup_contents.indexOf("public static boolean tester");
-   int eloc = setup_contents.indexOf("}\n")+1;
+   int eloc = setup_contents.indexOf("}\n",loc)+1;
+   CompilationUnit cu = JcompAst.parseSourceFile(setup_contents);
+   int lin = cu.getLineNumber(loc);
+   
    String proj = null;
    
    BractFactory bf = BractFactory.getFactory();
    String mnm = package_name + "." + test_class + ".tester" + id;
-   RootLocation baseloc = bf.createLocation(local_file,loc,eloc,3,proj,mnm);
+   RootLocation baseloc = bf.createLocation(local_file,loc,eloc,lin,proj,mnm);
    base_execution.createTestSession(local_file,baseloc);
 }
 

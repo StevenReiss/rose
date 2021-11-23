@@ -119,9 +119,7 @@ PicotValueContext(PicotValueBuilder bldr,PicotValueChecker vc,
 }
 
 
-
-PicotValueContext(PicotValueContext vc,PicotCodeFragment addedcode,
-      String var,RootTraceValue val)
+PicotValueContext(PicotValueContext vc,PicotCodeFragment addedcode)
 {
    value_checker = vc.value_checker;
    value_builder = vc.value_builder;
@@ -131,9 +129,6 @@ PicotValueContext(PicotValueContext vc,PicotCodeFragment addedcode,
    jcomp_typer = vc.jcomp_typer;
    variable_values = new LinkedHashMap<>(vc.variable_values);
    target_result = vc.target_result;
-   if (var != null && val != null) {
-      variable_values.put(var,val);
-    }
    known_variables = new HashSet<>(vc.known_variables);
    
    if (vc.init_code == null) init_code = addedcode;
@@ -144,6 +139,19 @@ PicotValueContext(PicotValueContext vc,PicotCodeFragment addedcode,
    value_result = null;
    setup_value = null;
    found_problems = null;
+}
+
+
+
+PicotValueContext(PicotValueContext vc,PicotCodeFragment addedcode,
+      String var,RootTraceValue val)
+{
+   this(vc,addedcode);
+   
+   if (var != null && val != null) {
+      variable_values.put(var,val);
+    }
+   
    setupContents();
 }
 
@@ -154,11 +162,6 @@ PicotValueContext(PicotValueContext vc,PicotCodeFragment addedcode,
 /*      Access methods                                                          */
 /*                                                                              */
 /********************************************************************************/
-
-RootTrace getTrace()                            { return value_result; }
-
-long getTargetTime()                            { return target_time; }
-
 
 PicotCodeFragment getPreviousValue(String id)
 {
@@ -172,6 +175,14 @@ PicotCodeFragment getPreviousValue(String id)
    value_map.put(id,bad_fragment);
    
    return null;
+}
+
+
+boolean hasBeenDone(String id)
+{
+   if (id == null) return false;
+   
+   return value_map.get(id) != null;
 }
 
 
@@ -218,6 +229,20 @@ PicotCodeFragment getInitializationCode()
 /*                                                                              */
 /********************************************************************************/
 
+
+RootTrace getTrace()                            
+{ 
+   if (value_result == null) {
+      value_result = value_checker.generateTrace(init_code);
+    }
+   
+   return value_result;
+}
+
+
+long getTargetTime()                            { return target_time; }
+
+
 private void setupContents()
 {
    if (setup_value != null) return;
@@ -233,6 +258,9 @@ private void setupContents()
       setup_value = fg;
     }
 }
+
+
+
 
 
 
@@ -271,7 +299,7 @@ boolean checkValue(PicotValueAccessor acc,RootTraceValue sourceval,
       RootTraceValue targetval,RootTraceValue baseval,
       long stime,long ttime,boolean force)
 {
-   if (targetval == null) return true;
+   if (targetval == null || sourceval == null) return true;
    
    boolean fg = checkValueCompute(acc,sourceval,targetval,stime,ttime,force);
    
@@ -335,8 +363,16 @@ boolean checkValueCompute(PicotValueAccessor acc,RootTraceValue sourceval,
    JcompType coltyp = jcomp_typer.findSystemType("java.util.Collection");
    JcompType maptyp = jcomp_typer.findSystemType("java.util.Map");
    if (jtyp.isCompatibleWith(coltyp)) {
-      // handle collections
-      return true;
+      JcompType arrtyp = jcomp_typer.findSystemType("java.lang.Object[]");
+      RootTraceValue srccnts = sourceval.getFieldValue(value_result,"@toArray",stime);
+      RootTraceValue tgtcnts = targetval.getFieldValue(target_result,"@toArray",ttime);
+      if (srccnts != null && tgtcnts != null) {
+         boolean nrslt = compare(acc,arrtyp,srccnts,tgtcnts,targetval,stime,ttime,force);
+         if (!nrslt) {
+            RoseLog.logD("PICOT","Collection Contents don't match ");
+          }
+       }
+      return rslt;
     }
    else if (jtyp.isCompatibleWith(maptyp)) {
       // handle maps

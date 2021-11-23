@@ -775,7 +775,7 @@ private void handleSuggestCommand(MintMessage msg) throws RoseException
    ValidateFactory vfac = ValidateFactory.getFactory(this);
    String fid = IvyXml.getAttrString(msgxml,"VALIDATE");
    if (fid != null && fid.equals("*")) fid = null;
-   RootValidate validate = vfac.createValidate(problem,fid,loc);
+   RootValidate validate = vfac.createValidate(problem,fid,loc,false,false,false);
    
    IvyXmlWriter xw = new IvyXmlWriter();
    xw.begin("RESULT");

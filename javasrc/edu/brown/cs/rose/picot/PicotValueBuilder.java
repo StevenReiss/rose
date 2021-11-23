@@ -114,9 +114,9 @@ void finished()
 JcompTyper getJcompTyper()                      { return jcomp_typer; }
 
 
-PicotCodeFragment getInitializationCode()
+PicotValueContext getInitializationContext()
 {
-   return cur_context.getInitializationCode();
+   return cur_context;
 }
 
 
@@ -151,8 +151,10 @@ PicotCodeFragment buildNewValue(RootTraceValue rtv)
    PicotCodeFragment rslt = null;
    
    String id = rtv.getId();
-   rslt = cur_context.getPreviousValue(id);
-   if (rslt != null) return rslt;
+   if (cur_context.hasBeenDone(id)) {
+      rslt = cur_context.getPreviousValue(id);
+      return rslt;
+    }
    
    String typ = rtv.getDataType();
    JcompType jtyp = jcomp_typer.findType(typ);
@@ -174,6 +176,12 @@ PicotCodeFragment buildNewValue(RootTraceValue rtv)
     }
    else if (jtyp.isFunctionRef()) {
       
+    }
+   else if (jtyp.isEnumType()) {
+      String efld = rtv.getEnum();
+      if (efld != null) {
+         rslt = new PicotCodeFragment(jtyp.getName() + "." + efld);
+       }
     }
    else if (jtyp.isCompiledType()) {
       rslt = buildUserObjectValue(rtv,jtyp);
@@ -326,14 +334,18 @@ private PicotCodeFragment buildObjectValue(RootTraceValue rtv,JcompType typ)
       String fnm = fld;
       int idx = fnm.lastIndexOf(".");
       if (idx > 0) fnm = fld.substring(idx+1);
+      if (fnm.equals("this") || fnm.startsWith("this$")) continue;
+
       JcompSymbol fldsym = typ.lookupField(jcomp_typer,fnm);
       if (fldsym == null) {
          RoseLog.logE("PICOT","Can't find field " + fld);
          continue;
        }
-      
+     
       RootTraceValue ftv = rtv.getFieldValue(for_trace,fld,start_time);
       if (ftv == null) continue;                // not needed
+      RoseLog.logD("PICOT","Build value for field " + fnm + " " + ftv.getId() + " " +
+           ftv.getDataType());
       if (paramtypes.contains(fldsym.getType())) {
          PicotCodeFragment rslt = buildValue(ftv);
          if (rslt != null) {
@@ -361,6 +373,7 @@ private PicotCodeFragment buildObjectValue(RootTraceValue rtv,JcompType typ)
    for (JcompSymbol js : mthds) {
       PicotMethodData pmd = null;
       if (js.isConstructorSymbol()) {
+         if (typ.needsOuterClass()) continue;
          pmd = pcd.getDataForMethod(js);
        }
       else if (js.isStatic() && js.getType().getBaseType() == typ) {
@@ -371,6 +384,7 @@ private PicotCodeFragment buildObjectValue(RootTraceValue rtv,JcompType typ)
          buildCodeForMethod(js,pmd,null,fldval,rslts);
        }
     }
+   // if type has outer_type, try using it to find factory method
    
    RoseLog.logD("PICOT","FOR " + typ.getName());
 
@@ -587,7 +601,7 @@ List<PicotCodeFragment> buildFieldSetter(PicotCodeFragment lhs,JcompSymbol fldsy
 {
    List<PicotCodeFragment> rslt = new ArrayList<>();
    
-   if (lhs == null) return rslt;
+   if (lhs == null || rhs == null) return rslt;
    
    if (!fldsym.isPrivate() && !fldsym.isProtected()) {
       PicotCodeFragment fldacc = lhs.append(".",fldsym.getName()," = ",rhs.getCode(),";\n");
@@ -644,9 +658,11 @@ List<PicotCodeFragment> buildFieldSetter(PicotCodeFragment lhs,JcompSymbol fldsy
             if (js.getName().startsWith("set")) {
                JcompType mtyp = js.getType();
                List<JcompType> atyps = mtyp.getComponents();
-               // insure that ftyp is in atyps
-               // if atyps has only one element, ensure name after set doesnt correspond to a field
-               // build all possible calls with types
+               if (atyps != null && fldtyp != null) {
+                  // insure that ftyp is in atyps
+                  // if atyps has only one element, ensure name after set doesnt correspond to a field
+                  // build all possible calls with types
+                }
              }
           }
        }
@@ -741,10 +757,13 @@ private List<PicotCodeFragment> computeFixes(PicotValueProblem p)
    PicotValueAccessor pva = p.getAccessor();
    RootTraceValue tgt = p.getTargetValue();
    RootTraceValue base = p.getTargetBaseValue();
+   
    PicotCodeFragment rslt = buildValue(tgt);
+   if (rslt == null) return null;
+   
    List<PicotCodeFragment> rslts = pva.getSetterCodes(this,rslt,base);
    
-   if (rslt == null || rslts.isEmpty()) return null;
+   if (rslts.isEmpty()) return null;
    
    return rslts;
 }

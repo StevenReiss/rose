@@ -50,7 +50,6 @@ import org.w3c.dom.Element;
 
 import edu.brown.cs.ivy.jcomp.JcompAst;
 import edu.brown.cs.ivy.jcomp.JcompSymbol;
-import edu.brown.cs.ivy.jcomp.JcompType;
 import edu.brown.cs.ivy.jcomp.JcompTyper;
 import edu.brown.cs.ivy.mint.MintConstants.CommandArgs;
 import edu.brown.cs.ivy.xml.IvyXml;
@@ -154,7 +153,8 @@ PicotTestCase createTestCase()
    if (bsf == null) return null;
    
    ValidateFactory vf = ValidateFactory.getFactory(root_control);
-   RootValidate rv = vf.createValidate(for_problem,bsf.getFrameId(),at_location);
+   RootValidate rv = vf.createValidate(for_problem,bsf.getFrameId(),
+         at_location,false,false,true);
    if (rv == null) return null;
    
    long start = getStartTime(rv);
@@ -169,6 +169,8 @@ PicotTestCase createTestCase()
    
    PicotCodeFragment callfrag = buildCall(rt,rtc,pvb);
    if (callfrag == null) return null;
+   
+  
    
    // then create test case (done in PicotValueChecker)
    // package <tgtpkg>;
@@ -222,7 +224,8 @@ private PicotCodeFragment buildCall(RootTrace rt,RootTraceCall rtc,PicotValueBui
    
    // look for static fields accessed by code in the trace
    
-   PicotCodeFragment initcode = pvb.getInitializationCode();
+   PicotValueContext initctx = pvb.getInitializationContext();
+   
    // should clean up initcode by removing unneeded items
    
    String call = "";
@@ -237,11 +240,13 @@ private PicotCodeFragment buildCall(RootTrace rt,RootTraceCall rtc,PicotValueBui
     }
    call += ");\n";
    
-   PicotCodeFragment result = null;
-   if (initcode == null) result = new PicotCodeFragment(call);
-   else result = initcode.append(call,true);
+   PicotCodeFragment callfrag = new PicotCodeFragment(call);
+   PicotValueContext runctx = new PicotValueContext(initctx,callfrag);
+   RootTrace testtrace = runctx.getTrace();
+        
+   if (!validateTest(testtrace)) return null;
    
-   return result;
+   return new PicotCodeFragment(callfrag.getCode());   
 }
 
 
@@ -337,6 +342,18 @@ private MethodDeclaration getMethod(RootTraceCall rtc)
    return md;
 }
 
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Validate the test                                                       */
+/*                                                                              */
+/********************************************************************************/
+
+private boolean validateTest(RootTrace testrace)
+{
+   return true;
+}
 
 }       // end of class PicotTestCreator
 

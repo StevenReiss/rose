@@ -132,6 +132,15 @@ ValidateValue(Element v)
 }
 
 
+@Override public String getEnum()
+{
+   if (IvyXml.getAttrBool(value_element,"ENUM")) {
+      return IvyXml.getAttrString(value_element,"NAME");
+    }
+   return null;
+}
+
+
 @Override public ValidateValue getFieldValue(RootTrace rvtr,String fld,long when)
 {
    ValidateTrace vtr = (ValidateTrace) rvtr;

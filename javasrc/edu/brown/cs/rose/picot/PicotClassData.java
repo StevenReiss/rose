@@ -60,7 +60,6 @@ class PicotClassData implements PicotConstants
 
 private JcompType                        for_type;
 private Map<JcompSymbol,PicotMethodData> method_data;
-private Map<String,JcompType>            field_types;
 
 
 
@@ -74,7 +73,6 @@ PicotClassData(JcompType typ,JcompTyper typer)
 {
    for_type = typ;
    method_data = new HashMap<>();
-   field_types = for_type.getFields(typer);
    
    JcompSymbol tsym = for_type.getDefinition();
    if (tsym == null) return;

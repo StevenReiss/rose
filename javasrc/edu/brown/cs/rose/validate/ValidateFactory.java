@@ -125,7 +125,7 @@ public RootControl getControl()                 { return root_control; }
 /*										*/
 /********************************************************************************/
 
-public RootValidate createValidate(RootProblem prob,String frameid,RootLocation atloc)
+public RootValidate createValidate(RootProblem prob,String frameid,RootLocation atloc,boolean showall,boolean tostring,boolean toarray)
 {
    BudLaunch bl = new BudLaunch(root_control,prob);
    
@@ -146,7 +146,7 @@ public RootValidate createValidate(RootProblem prob,String frameid,RootLocation 
 
    ValidateContext ctx = new ValidateContext(root_control,prob,frameid);
    
-   ctx.setupBaseExecution();
+   ctx.setupBaseExecution(showall,tostring,toarray);
    
    return ctx;
 }
