@@ -183,6 +183,10 @@ private static class VariableAccessor extends PicotValueAccessor
       return new PicotCodeFragment(variable_name + " = " + val.getCode() + ";\n");
     }
    
+   @Override public String toString() {
+      return "@" + variable_name;
+    }
+   
 }       // end of inner class VariableAccessor
 
 
@@ -236,6 +240,10 @@ private static class FieldAccessor extends PicotValueAccessor {
       return rlst;
     }
    
+   @Override public String toString() {
+      return base_value.toString() + "." + field_name;
+    }
+   
 }       // end of inner class FieldAccessor
 
 
@@ -272,6 +280,10 @@ private static class ArrayAccessor extends PicotValueAccessor {
       PicotCodeFragment pcf = base_value.getGetterCode(bldr,arrtyp);
       if (pcf == null) return null;
       return pcf.append("[",Integer.toString(array_index),"] = ",val.getCode(),";\n");
+    }
+   
+   @Override public String toString() {
+      return base_value.toString() + "[" + array_index + "]";
     }
 }       // end of inner class ArrayAccessor
 

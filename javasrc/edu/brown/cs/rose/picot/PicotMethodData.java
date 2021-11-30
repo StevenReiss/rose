@@ -83,6 +83,7 @@ private List<PicotMethodEffect> method_effects;
 private List<JcompSymbol>       method_parameters; 
 private int                     block_depth;
 private PicotLocalMap           local_variables;
+private JcompSymbol             method_symbol;
 
 
 
@@ -95,10 +96,21 @@ private PicotLocalMap           local_variables;
 PicotMethodData(MethodDeclaration n)
 {
    method_declaration = n;
+   method_symbol = JcompAst.getDefinition(n);
    method_effects = null;
    method_parameters = null;
    local_variables = null;
    block_depth = 0;
+}
+
+PicotMethodData(JcompSymbol js)
+{
+   method_declaration = null;
+   method_symbol = js;
+   method_effects = new ArrayList<>();
+   method_parameters = null;
+   block_depth = 0;
+   local_variables = null;
 }
 
 
@@ -127,6 +139,23 @@ List<JcompSymbol> getParameters()
    
    return method_parameters;
 }
+
+
+
+List<JcompType> getParameterTypes()
+{
+   if (method_symbol != null) {
+      return method_symbol.getType().getComponents();
+    }
+   List<JcompType> typs = new ArrayList<>();
+   for (JcompSymbol js : method_parameters) {
+      typs.add(js.getType());
+    }
+   return typs;
+}
+
+
+
 
 /********************************************************************************/
 /*                                                                              */

@@ -37,6 +37,7 @@ package edu.brown.cs.rose.picot;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
@@ -75,10 +76,20 @@ PicotClassData(JcompType typ,JcompTyper typer)
    method_data = new HashMap<>();
    
    JcompSymbol tsym = for_type.getDefinition();
-   if (tsym == null) return;
+   if (tsym == null) {
+      return;
+    }
    
    AbstractTypeDeclaration atd = (AbstractTypeDeclaration) tsym.getDefinitionNode();
-   if (atd == null) return;
+   if (atd == null) {
+      List<JcompSymbol> syms = for_type.getDefinedMethods(typer);
+      for (JcompSymbol js : syms) {
+         if (js.isPublic()) {
+            method_data.put(js,new PicotMethodData(js));
+          }
+       }
+      return;
+    }
    
    for (Object o : atd.bodyDeclarations()) {
       if (o instanceof MethodDeclaration) {

@@ -158,6 +158,7 @@ PicotCodeFragment buildNewValue(RootTraceValue rtv)
    
    String typ = rtv.getDataType();
    JcompType jtyp = jcomp_typer.findType(typ);
+   JcompType coltyp = jcomp_typer.findSystemType("java.util.Collection");
    if (jtyp == null) return null;
    if (jtyp.isPrimitiveType()) {
       rslt = buildPrimitiveValue(jtyp,rtv.getValue());
@@ -182,6 +183,9 @@ PicotCodeFragment buildNewValue(RootTraceValue rtv)
       if (efld != null) {
          rslt = new PicotCodeFragment(jtyp.getName() + "." + efld);
        }
+    }
+   else if (jtyp.isCompatibleWith(coltyp)) {
+      rslt = buildCollection(rtv,jtyp);
     }
    else if (jtyp.isCompiledType()) {
       rslt = buildUserObjectValue(rtv,jtyp);
@@ -420,7 +424,8 @@ private PicotCodeFragment buildSystemObjectValue(RootTraceValue rtv,JcompType ty
          break;
     }
    
-   buildObjectValue(rtv,typ);
+   PicotCodeFragment pcf = buildObjectValue(rtv,typ);
+   if (pcf != null) return pcf;
    
 // Collection<JcompSymbol> mthds = typ.getDefinedMethods(jcomp_typer);
 // for (JcompSymbol js : mthds) {
@@ -466,13 +471,18 @@ private void addParameter(String pfx,PicotMethodData pmd,int pno,
       PicotFieldMap fldvals,List<PicotCodeFragment> rslts)
 {
    List<JcompSymbol> params = pmd.getParameters();
-   if (pno >= params.size()) {
+   List<JcompType> ptyps = pmd.getParameterTypes();
+   
+   if (pno >= ptyps.size()) {
       rslts.add(new PicotCodeFragment(pfx + ")"));
       return;
     }
+   
    if (pno > 0) pfx += ",";
-   JcompSymbol param = params.get(pno);
-   List<String> pvals = getParameterValues(param,pmd,fldvals);
+   JcompType ptyp = ptyps.get(pno);
+   JcompSymbol param = null;
+   if (params != null) param = params.get(pno);
+   List<String> pvals = getParameterValues(param,ptyp,pmd,fldvals);
    for (String s : pvals) {
       String call = pfx + s;
       addParameter(call,pmd,pno+1,fldvals,rslts);
@@ -481,19 +491,19 @@ private void addParameter(String pfx,PicotMethodData pmd,int pno,
 
 
 
-private List<String> getParameterValues(JcompSymbol param,PicotMethodData pmd,
+private List<String> getParameterValues(JcompSymbol param,JcompType ptyp,
+      PicotMethodData pmd,
       PicotFieldMap fldvals)
 {
    List<String> rslt = new ArrayList<>();
    Set<PicotCodeFragment> used = new HashSet<>();
-   JcompType ptyp = param.getType();
    
    // first see if there is a relevant field assignment
    for (PicotMethodEffect meff : pmd.getEffects()) {
       switch (meff.getEffectType()) {
          case SET_FIELD :
             PicotEffectItem srcitm = meff.getEffectSource();
-            if (srcitm.getSymbolValue() == param) {
+            if (param != null && srcitm.getSymbolValue() == param) {
                PicotEffectItem flditm = meff.getEffectTarget();
                JcompSymbol fldsym = flditm.getSymbolValue();
                PicotCodeFragment fldpcf = fldvals.get(fldsym);
@@ -548,6 +558,40 @@ private List<String> getParameterValues(JcompSymbol param,PicotMethodData pmd,
 
 
 
+/********************************************************************************/
+/*                                                                              */
+/*      Handle Collections                                                      */
+/*                                                                              */
+/********************************************************************************/
+
+private PicotCodeFragment buildCollection(RootTraceValue rtv,JcompType typ)
+{
+   List<PicotCodeFragment> elts = new ArrayList<>();
+   RootTraceValue rtv1 = rtv.getFieldValue(for_trace,"@toArray",start_time);
+   if (rtv1 == null) return null;
+   int ct = rtv1.getArrayLength();
+   long arraytime = 1000000000;
+   for (int i = 0; i < ct; ++i) {
+      RootTraceValue rtv2 = rtv1.getIndexValue(for_trace,i,arraytime);
+      PicotCodeFragment cf2 = buildValue(rtv2);
+      if (cf2 == null) return null;
+      elts.add(cf2);
+    }
+   
+   String var = "v" + variable_counter.incrementAndGet();
+   String decl = typ.getName() + " " + var + " = new " + typ.getName() + "();\n";
+   for (PicotCodeFragment elt : elts) {
+      decl += var + ".add(" + elt.getCode() + ");\n";
+    }
+   PicotCodeFragment bldfrg = new PicotCodeFragment(decl);
+   PicotValueContext npvc = new PicotValueContext(cur_context,bldfrg,var,rtv);
+   if (npvc.isValidSetup()) {
+      cur_context = npvc;
+      return new PicotCodeFragment(var);
+    }
+   
+   return null;
+}
 
 /********************************************************************************/
 /*                                                                              */

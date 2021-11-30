@@ -367,9 +367,11 @@ boolean checkValueCompute(PicotValueAccessor acc,RootTraceValue sourceval,
       RootTraceValue srccnts = sourceval.getFieldValue(value_result,"@toArray",stime);
       RootTraceValue tgtcnts = targetval.getFieldValue(target_result,"@toArray",ttime);
       if (srccnts != null && tgtcnts != null) {
-         boolean nrslt = compare(acc,arrtyp,srccnts,tgtcnts,targetval,stime,ttime,force);
+         PicotValueAccessor aacc = PicotValueAccessor.createFieldAccessor(acc,"@toArray",arrtyp);
+         boolean nrslt = checkValueCompute(aacc,srccnts,tgtcnts,stime,ttime,force);
          if (!nrslt) {
             RoseLog.logD("PICOT","Collection Contents don't match ");
+            rslt = false;
           }
        }
       return rslt;

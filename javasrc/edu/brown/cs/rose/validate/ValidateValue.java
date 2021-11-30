@@ -134,10 +134,7 @@ ValidateValue(Element v)
 
 @Override public String getEnum()
 {
-   if (IvyXml.getAttrBool(value_element,"ENUM")) {
-      return IvyXml.getAttrString(value_element,"NAME");
-    }
-   return null;
+   return IvyXml.getAttrString(value_element,"ENUM");
 }
 
 
@@ -198,6 +195,35 @@ ValidateValue(Element v)
 }
 
 
+
+/********************************************************************************/
+/*                                                                              */
+/*      Equality methods                                                        */
+/*                                                                              */
+/********************************************************************************/
+
+@Override public boolean equals(Object o) 
+{
+   if (o instanceof ValidateValue) {
+      ValidateValue vv = (ValidateValue) o;
+      return value_element.equals(vv.value_element);
+    }
+   return false;
+}
+
+
+@Override public int hashCode()
+{
+   return value_element.hashCode();
+}
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Output methods                                                          */
+/*                                                                              */
+/********************************************************************************/
 
 @Override public String toString() 
 {

@@ -87,6 +87,25 @@ RootTraceValue getTargetBaseValue()             { return target_base; }
 
 
 
+@Override public String toString()
+{
+   StringBuffer buf = new StringBuffer();
+   buf.append("PROBLEM[");
+   if (value_accessor != null){
+      buf.append(value_accessor.toString());
+      buf.append(": ");
+    }
+   buf.append(source_value);
+   buf.append("->");
+   buf.append(target_value);
+   if (target_base != null) {
+      buf.append(" @" + target_base);
+    }
+   return buf.toString();
+}
+
+
+
 }       // end of class PicotValueProblem
 
 

@@ -138,6 +138,29 @@ List<ValidateValue> getValues(ValidateTrace trace)
 
 
 
+/********************************************************************************/
+/*                                                                              */
+/*      Equality methods                                                        */
+/*                                                                              */
+/********************************************************************************/
+
+@Override public boolean equals(Object o) 
+{
+   if (o instanceof ValidateVariable) {
+      ValidateVariable vv = (ValidateVariable) o;
+      return variable_element.equals(vv.variable_element);
+    }
+   return false;
+}
+
+
+@Override public int hashCode()
+{
+   return variable_element.hashCode();
+}
+
+
+
 
 
 
