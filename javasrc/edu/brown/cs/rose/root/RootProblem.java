@@ -68,6 +68,7 @@ private List<RootTestCase> other_tests;
 private boolean         ignore_main;
 private boolean         ignore_tests;
 private List<String>    ignore_patterns;
+private int             max_up;
 
 private static double DEFAULT_PRECISION = 1e-6;
 
@@ -97,6 +98,7 @@ protected RootProblem(RoseProblemType typ,String item,String orig,String tgt,
    ignore_tests = false;
    ignore_patterns = new ArrayList<>();
    target_precision = DEFAULT_PRECISION;
+   max_up = 5;
 }
 
 
@@ -136,7 +138,8 @@ protected RootProblem(RootControl ctrl,Element xml)
    for (Element telt : IvyXml.children(xml,"IGNORE")) {
       ignore_patterns.add(IvyXml.getText(telt));
     }
-         
+   
+   max_up = IvyXml.getAttrInt(xml,"MAXUP",-1);
 }
 
 
@@ -216,6 +219,9 @@ public void setIgnoreMain(boolean fg)           { ignore_main = fg; }
 public void setIgnoreTests(boolean fg)          { ignore_tests = fg; }
 public void addIgnorePattern(String pat)        { ignore_patterns.add(pat); }
 
+public int getMaxUp()                           { return max_up; }
+public void setMaxUp(int mup)                   { max_up = mup; }
+
  
 
 
@@ -264,6 +270,7 @@ public void outputXml(IvyXmlWriter xw)
    if (ignore_main) xw.field("IGNOREMAIN",ignore_main);
    if (ignore_tests) xw.field("IGNORETESTS",ignore_tests);
    if (target_precision != DEFAULT_PRECISION) xw.field("PRECISION",target_precision);
+   if (max_up >= 0) xw.field("MAX_UP",max_up);
    
    if (problem_item != null) xw.textElement("ITEM",problem_item);
    if (original_value != null) xw.textElement("ORIGINAL",original_value);

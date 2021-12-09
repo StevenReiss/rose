@@ -237,6 +237,7 @@ private static class FieldAccessor extends PicotValueAccessor {
       PicotCodeFragment lhs = base_value.getGetterCode(bldr,tgttyp);
       
       List<PicotCodeFragment> rlst = bldr.buildFieldSetter(lhs,fldsym,base_value.getDataType(bldr),val,base);
+      
       return rlst;
     }
    

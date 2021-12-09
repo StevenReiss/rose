@@ -61,6 +61,7 @@ private RootControl  root_control;
 private BudLaunch    for_launch;
 private RootProblem  base_problem;
 private RootLocation at_location;
+private int          max_up;
 
 
 /********************************************************************************/
@@ -75,6 +76,8 @@ ValidateStartLocator(RootProblem rp,BudLaunch bl,RootLocation at)
    for_launch = bl;
    base_problem = rp;
    at_location = at;
+   max_up = rp.getMaxUp();
+   if (max_up < 0) max_up = 5;
 }
 
 
@@ -95,6 +98,13 @@ String getStartingFrame(boolean usecur)
     }
    else if (usecur) {
       // might want to check that startframe is a source frame
+    }
+   else if (base_problem.getMaxUp() >= 0) {
+      int ct = 0;
+      for (BudStackFrame bsf : for_launch.getStack().getFrames()) {
+         if (ct == base_problem.getMaxUp()) return bsf.getFrameId();
+         ++ct;
+       }
     }
    else {
       List<RootLocation> locs = root_control.getLocations(base_problem);
@@ -177,7 +187,7 @@ private String findValidStart(String fid)
        }
     }
    
-   if (prior != null && ct < 5) {
+   if (prior != null && ct < max_up) {
       fid = prior.getFrameId();
     }
 

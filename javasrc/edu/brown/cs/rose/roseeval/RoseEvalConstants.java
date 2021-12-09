@@ -46,7 +46,7 @@ public interface RoseEvalConstants extends MintConstants, RootConstants
 enum TestType { ROSE, PICOT };
 
 
-String ECLIPSE_PATH_MAC = "/vol/Developer/eclipse-2020-03/Eclipse.app/Contents/MacOS/eclipse";
+String ECLIPSE_PATH_MAC = "/vol/Developer/jee-2020-09/Eclipse.app/Contents/MacOS/eclipse";
 String ECLIPSE_DIR_MAC = "/Users/spr/Eclipse/";
 
 

@@ -53,7 +53,7 @@ abstract class PicotMethodEffect implements PicotConstants
 /*                                                                              */
 /********************************************************************************/
 
-static PicotMethodEffect createAssignment(ASTNode lhs,ASTNode rhs,PicotLocalMap lcls,boolean cond)
+static PicotMethodEffect createAssignment(ASTNode lhs,ASTNode rhs,PicotLocalMap lcls)
 {
    PicotEffectItem rhsitm = PicotEffectItem.createEffectItem(rhs,lcls);
    if (rhsitm == null) rhsitm = PicotEffectItem.createExpressionItem();
@@ -69,7 +69,7 @@ static PicotMethodEffect createAssignment(ASTNode lhs,ASTNode rhs,PicotLocalMap 
    if (lhssym.isFieldSymbol()) {
       PicotEffectItem lhsitm = PicotEffectItem.createEffectItem(lhs,null);
       if (lhsitm != null) {
-         return new FieldEffect(lhsitm,rhsitm,cond);
+         return new FieldEffect(lhsitm,rhsitm);
        }
     }
    else if (lhs instanceof SimpleName) {
@@ -80,26 +80,27 @@ static PicotMethodEffect createAssignment(ASTNode lhs,ASTNode rhs,PicotLocalMap 
 }
 
 
-static PicotMethodEffect createReturn(ReturnStatement s,PicotLocalMap lcls,boolean cond)
+static PicotMethodEffect createReturn(ReturnStatement s,PicotLocalMap lcls)
 {
    PicotEffectItem retitm = PicotEffectItem.createEffectItem(s.getExpression(),lcls);
    
    if (retitm != null) {
-      return new ReturnEffect(retitm,cond);
+      return new ReturnEffect(retitm);
     }
    
    return null;
 }
 
+static PicotMethodEffect createReturn(PicotEffectItem pei) 
+{
+   return new ReturnEffect(pei);
+}
 
+static PicotMethodEffect createField(PicotEffectItem lhs,PicotEffectItem rhs)
+{
+   return new FieldEffect(lhs,rhs);
+}
 
-/********************************************************************************/
-/*                                                                              */
-/*      Private Storage                                                         */
-/*                                                                              */
-/********************************************************************************/
-
-private boolean is_conditional;
 
 
 /********************************************************************************/
@@ -108,10 +109,8 @@ private boolean is_conditional;
 /*                                                                              */
 /********************************************************************************/
 
-protected PicotMethodEffect(boolean cond)
-{
-   is_conditional = cond;
-}
+protected PicotMethodEffect()
+{ }
 
 
 
@@ -130,9 +129,6 @@ PicotEffectItem getEffectSource()                       { return null; }
 PicotEffectItem getEffectArgument()                     { return null; }
 
 
-boolean isEffectConditional()                           { return is_conditional; }
-
-
 
 /********************************************************************************/
 /*                                                                              */
@@ -145,8 +141,7 @@ private static class FieldEffect extends PicotMethodEffect {
    private PicotEffectItem target_item;
    private PicotEffectItem source_item;
    
-   FieldEffect(PicotEffectItem lhs,PicotEffectItem rhs,boolean cond) {
-      super(cond);
+   FieldEffect(PicotEffectItem lhs,PicotEffectItem rhs) {
       target_item = lhs;
       source_item = rhs;
     }
@@ -171,8 +166,7 @@ private static class ReturnEffect extends PicotMethodEffect {
 
    private PicotEffectItem target_item;
    
-   ReturnEffect(PicotEffectItem exp,boolean cond) {
-      super(cond);
+   ReturnEffect(PicotEffectItem exp) {
       target_item = exp;
     }
    

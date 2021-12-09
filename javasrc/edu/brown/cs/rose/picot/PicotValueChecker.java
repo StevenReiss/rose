@@ -147,6 +147,8 @@ private void setupSession()
    
    RootTraceCall tc = base_execution.getExecutionTrace().getRootContext();
    String mthd = tc.getMethod();
+   int idx0 = mthd.indexOf("(");
+   if (idx0 > 0) mthd = mthd.substring(0,idx0);
    int idx1 = mthd.lastIndexOf(".");            // get end of class name
    int idx2 = mthd.lastIndexOf(".",idx1-1);     // get end of package name
    package_name = mthd.substring(0,idx2);

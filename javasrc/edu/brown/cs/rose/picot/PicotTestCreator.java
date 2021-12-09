@@ -103,6 +103,8 @@ PicotTestCreator(RootControl rc,String rid,Element xml)
    BractFactory bf = BractFactory.getFactory();
    Element pxml = IvyXml.getChild(xml,"PROBLEM");
    for_problem = bf.createProblemDescription(rc,pxml);
+   int upframes = IvyXml.getAttrInt(xml,"UPFRAMES");
+   if (upframes >= 0) for_problem.setMaxUp(upframes);
    at_location = for_problem.getBugLocation();
    if (at_location == null) {
       Element locxml = IvyXml.getChild(xml,"LOCATION");
@@ -122,7 +124,7 @@ PicotTestCreator(RootControl rc,String rid,Element xml)
 @Override public void run()
 {
    CommandArgs args = new CommandArgs("NAME",reply_id);
-   // test creation processing goes here
+
    if (test_description == null) {
       args.put("STATUS","NOTEST");
     }
@@ -170,7 +172,6 @@ PicotTestCase createTestCase()
    PicotCodeFragment callfrag = buildCall(rt,rtc,pvb);
    if (callfrag == null) return null;
    
-  
    
    // then create test case (done in PicotValueChecker)
    // package <tgtpkg>;
@@ -211,6 +212,11 @@ private PicotCodeFragment buildCall(RootTrace rt,RootTraceCall rtc,PicotValueBui
    if (!js.isStatic()) {
       RootTraceVariable thisvar = rtc.getTraceVariables().get("this");
       thisfrag = pvb.buildValue(thisvar);
+      if (thisfrag == null) return null;
+    }
+   else {
+      String cnm = js.getClassType().getName();
+      thisfrag = new PicotCodeFragment(cnm);
     }
    // handle this$0 if needed
    for (Object o : md.parameters()) {
@@ -259,11 +265,7 @@ private PicotCodeFragment buildCall(RootTrace rt,RootTraceCall rtc,PicotValueBui
 
 RootProblem getProblem()
 {
-   Element probxml = IvyXml.getChild(test_description,"PROBLEM");
-   BractFactory bract = BractFactory.getFactory();
-   RootProblem problem = bract.createProblemDescription(root_control,probxml);
-   
-   return problem;
+   return for_problem;
 }
 
 

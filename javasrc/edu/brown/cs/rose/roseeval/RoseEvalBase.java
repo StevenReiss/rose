@@ -260,6 +260,8 @@ private RoseEvalTestResult runPicotTest(MintControl ctrl,RoseEvalFrameData fd,St
       RoseEvalTest test)
 {
    String id = "PICOT_" + source_id + "_" + random_gen.nextInt(100000);  CommandArgs args = new CommandArgs("REPLYID",id);
+   if (test.getUpFrames() >= 0) args.put("UPFRAMES",test.getUpFrames());
+   
    RoseEvalTestResult tr = new RoseEvalTestResult();
    testresult_set.put(id,tr);
          

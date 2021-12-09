@@ -96,6 +96,8 @@ BudStackFrame findStartingPoint()
    ValidateFactory validate = ValidateFactory.getFactory(test_creator.getRootControl());
    BudStackFrame frame0 = validate.getStartingFrame(problem,null,false);
    
+   if (problem.getMaxUp() >= 0) return frame0;
+   
    BudLaunch bl = new BudLaunch(test_creator.getRootControl(),problem);
    boolean fnd = false;
    Map<BudStackFrame,Double> scores = new HashMap<>();

@@ -1,0 +1,78 @@
+<ROSEEVAL>
+
+<SUITE NAME='romp' WORKSPACE='rompspr' PROJECT='romp'>
+   <TEST NAME='Romp Collide' TYPE='PICOT' SKIP='1'>
+      <PROBLEM TYPE='ASSERTION' />
+   </TEST>
+</SUITE>
+
+<SUITE NAME='quixpicot' WORKSPACE='quixspr' PROJECT='quixbugs' TIME='10000'>
+   <TEST NAME='BreadthFirstSearch' TYPE='PICOT' FRAMES='1'>
+      <PROBLEM TYPE='EXCEPTION' CATCH='java.util.NoSuchElementException'/>
+      <SOLUTION LINE='33' MATCH='if (queue.size() == 0) return ' />
+   </TEST>
+   <TEST NAME='DepthFirstSearch' SKIP='3' TYPE='PICOT' FRAMES='4'>
+      <PROBLEM TYPE='LOCATION'/>
+      <SOLUTION LINE='44' MATCH='nodes_visited.add' />
+   </TEST>
+   <TEST NAME='DetectCycle' TYPE='PICOT' FRAMES='0'>
+      <PROBLEM TYPE='EXCEPTION' CATCH='java.lang.NullPointerException'/>
+      <SOLUTION LINE='26' MATCH='(hare == null) ||' />
+   </TEST>
+   <TEST NAME='FindFirstInSorted' TYPE='PICOT' FRAMES='0'>
+      <PROBLEM TYPE='EXCEPTION' CATCH='java.lang.ArrayIndexOutOfBoundsException' />
+      <SOLUTION LINE='24'>
+	 <MATCH><![CDATA[lo < hi]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='FindInSorted' SKIP='4'  TYPE='PICOT' FRAMES='1'>
+      <PROBLEM TYPE='VARIABLE' NAME='start' CURRENT='3' TARGET='4' />
+      <SOLUTION LINE='30'>
+	 <MATCH><![CDATA[mid + 1]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Flatten' SKIP='1' TYPE='PICOT' FRAMES='3'>
+      <PROBLEM TYPE='LOCATION'/>
+      <SOLUTION LINE='29'>
+	 <MATCH><![CDATA[flatten(x)]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Gcd' SKIP='2' TYPE='PICOT' FRAMES='2'>
+      <PROBLEM TYPE='VARIABLE' NAME='b' CURRENT='600' />
+      <SOLUTION LINE='26'>
+	 <MATCH><![CDATA[gcd(b,]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Kth' TYPE='PICOT' FRAMES='10'>
+      <PROBLEM TYPE='EXCEPTION' CATCH='java.lang.IndexOutOfBoundsException' />
+      <SOLUTION LINE='39'>
+	 <MATCH><![CDATA[k - numlessoreq]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='MergeSort' SKIP='2' TYPE='PICOT' FRAMES='2'>
+      <PROBLEM TYPE='VARIABLE' NAME='arr' />
+      <SOLUTION LINE='56'>
+	 <MATCH><![CDATA[<= 1]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Pascal' TYPE='PICOT' FRAMES='3'>
+      <PROBLEM TYPE='EXCEPTION' CATCH='java.lang.IndexOutOfBoundsException' />
+      <SOLUTION LINE='28'>
+	 <MATCH><![CDATA[c <= r]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='PossibleChange' TYPE='PICOT' FRAMES='14'>
+      <PROBLEM TYPE='EXCEPTION' CATCH='java.lang.ArrayIndexOutOfBoundsException' />
+      <SOLUTION LINE='28'>
+	 <MATCH><![CDATA[.length]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Sqrt' SKIP='4' TYPE='PICOT' FRAMES='0'>
+      <PROBLEM TYPE='LOCATION' />
+      <SOLUTION LINE='23'>
+	 <MATCH><![CDATA[approx * approx]]></MATCH>
+      </SOLUTION>
+   </TEST>
+</SUITE>
+
+</ROSEEVAL>

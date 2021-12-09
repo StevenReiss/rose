@@ -35,7 +35,7 @@
       <PROBLEM TYPE='VARIABLE' NAME='start' CURRENT='3' TARGET='4' />
       <SOLUTION LINE='30'>
 	 <MATCH><![CDATA[mid + 1]]></MATCH>
-      </SOLUTION>	
+      </SOLUTION>
    </TEST>
    <TEST NAME='Flatten' SKIP='1'>
       <PROBLEM TYPE='LOCATION'/>
@@ -235,7 +235,7 @@
 	 <MATCH><![CDATA[lines.add(text)]]></MATCH>
       </SOLUTION>
    </TEST>
-   </SUITE>
+</SUITE>
 
 <SUITE NAME='math3' WORKSPACE='d4jmath3' PROJECT='d4jmath3' TIME='100000'>
    <TEST NAME='Math02'>
@@ -617,6 +617,5 @@
       <PROBLEM TYPE='ASSERTION' />
    </TEST>
 </SUITE>
-
 
 </ROSEEVAL>

@@ -52,6 +52,7 @@ import org.eclipse.jdt.core.dom.TypeLiteral;
 import edu.brown.cs.ivy.jcomp.JcompAst;
 import edu.brown.cs.ivy.jcomp.JcompSymbol;
 import edu.brown.cs.ivy.jcomp.JcompType;
+import edu.brown.cs.ivy.jcomp.JcompTyper;
 
 abstract class PicotEffectItem implements PicotConstants
 {
@@ -129,7 +130,8 @@ static PicotEffectItem createEffectItem(ASTNode n,Map<JcompSymbol,PicotEffectIte
          refitm = createEffectItem(lhs,locals);
        }
       if (ndef.getLocationInParent() == MethodDeclaration.PARAMETERS_PROPERTY) {
-         rslt = new ParameterItem(jsym);
+         int idx = ((MethodDeclaration) ndef.getParent()).parameters().indexOf(ndef);
+         rslt = new ParameterItem(jsym,idx);
        }
       else if (jsym.isFieldSymbol()) {
          Expression init = jsym.getInitializer();
@@ -153,12 +155,43 @@ static PicotEffectItem createEffectItem(ASTNode n,Map<JcompSymbol,PicotEffectIte
 }
 
 
+static PicotEffectItem createBinaryParameter(int pno,JcompType jt)
+{
+   return new ParameterItem(jt,pno);
+}
+
+static PicotEffectItem createThisItem()
+{
+   return new ThisItem();
+}
+
+
+static PicotEffectItem createConstantItem(Object o,JcompTyper typer)
+{
+   return new ConstantItem(o,typer);
+}
+
+static PicotEffectItem createNewItem(JcompType jt)
+{
+   return new NewObjectItem(jt);
+}
+
+
 static PicotEffectItem createExpressionItem()
 {
    return new ExpressionItem();
 }
 
+static PicotEffectItem createExpressionItem(JcompType jt)
+{
+   return new ExpressionItem(jt);
+}
 
+
+static PicotEffectItem createFieldItem(PicotEffectItem lhs,JcompSymbol js)
+{
+   return new FieldItem(js,lhs);
+}
 
 
 /********************************************************************************/
@@ -200,6 +233,8 @@ Object getConstantValue()                       { return null; }
 
 JcompSymbol getSymbolValue()                    { return null; }
 
+int getParameterNumber()                        { return -1; }
+
 protected void setDataType(JcompType jt)        { data_type = jt; }
 
 
@@ -238,6 +273,25 @@ private static class ConstantItem extends PicotEffectItem {
       initialize(n);
       constant_value = JcompAst.getJavaType(n);
     }
+   
+   ConstantItem(Object o,JcompTyper typer) {
+      constant_value = o;
+      String s = "int";
+      if (o == null) {
+         setDataType(typer.ANY_TYPE);
+       }
+      else {
+         if (o instanceof String) s = "java.lang.String";
+         else if (o instanceof Float) s = "float";
+         else if (o instanceof Double) s = "double";
+         else if (o instanceof Long) s = "long";
+         else if (o instanceof Integer) s = "int";
+         else s = "java.lang.Class";
+         JcompType jt = typer.findSystemType(s);
+         setDataType(jt);
+       }
+    }
+   
    
    @Override PicotItemType getItemType()        { return PicotItemType.CONSTANT; }
    
@@ -278,15 +332,27 @@ private static class ThisItem extends PicotEffectItem {
 private static class ParameterItem extends PicotEffectItem {
    
    private JcompSymbol parameter_symbol;
+   private int parameter_number;
    
-   ParameterItem(JcompSymbol p) {
+   ParameterItem(JcompSymbol p,int pno) {
       parameter_symbol = p;
+      parameter_number = pno;
       setDataType(p.getType());
+    }
+   
+   ParameterItem(JcompType jt,int pno) {
+      parameter_symbol = null;
+      parameter_number = pno;
+      setDataType(jt);
+      
+      
     }
    
    @Override PicotItemType getItemType()        { return PicotItemType.PARAMETER; }
    
    @Override JcompSymbol getSymbolValue()       { return parameter_symbol; }
+   
+   @Override int getParameterNumber()           { return parameter_number; }
    
 }       // end of inner class ParameterItem
 
@@ -329,6 +395,10 @@ private static class ExpressionItem extends PicotEffectItem {
    
    ExpressionItem() { }
    
+   ExpressionItem(JcompType jt) {
+      setDataType(jt);
+    }
+   
    @Override PicotItemType getItemType()        { return PicotItemType.EXPRESSION; }
    
 }       // end of inner class ParameterItem
@@ -348,6 +418,11 @@ private static class NewObjectItem extends PicotEffectItem {
    NewObjectItem(JcompSymbol cnst) {
       constructor_symbol = cnst;
       setDataType(cnst.getClassType());
+    }
+   
+   NewObjectItem(JcompType typ) {
+      constructor_symbol = null;
+      setDataType(typ);
     }
    
    @Override PicotItemType getItemType()        { return PicotItemType.NEW_OBJECT; }

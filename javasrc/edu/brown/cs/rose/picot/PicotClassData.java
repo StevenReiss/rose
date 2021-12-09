@@ -85,7 +85,7 @@ PicotClassData(JcompType typ,JcompTyper typer)
       List<JcompSymbol> syms = for_type.getDefinedMethods(typer);
       for (JcompSymbol js : syms) {
          if (js.isPublic()) {
-            method_data.put(js,new PicotMethodData(js));
+            method_data.put(js,new PicotMethodDataBinary(js,typer));
           }
        }
       return;
@@ -96,7 +96,7 @@ PicotClassData(JcompType typ,JcompTyper typer)
          MethodDeclaration md = (MethodDeclaration) o;
          JcompSymbol msym = JcompAst.getDefinition(md);
          if (msym != null && !msym.isPrivate()) {
-            PicotMethodData pmd = new PicotMethodData(md);
+            PicotMethodData pmd = new PicotMethodDataAst(md);
             pmd.getEffects();                              // force processing for now
             method_data.put(msym,pmd);
           }
