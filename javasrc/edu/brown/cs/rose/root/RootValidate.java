@@ -82,6 +82,7 @@ interface RootTrace {
    RootTraceCall getRootContext();
    RootTraceValue getException();
    RootTraceValue getReturnValue();
+   Map<String,RootTraceVariable> getGlobalVariables();
 }
 
 interface RootTraceCall {

@@ -108,6 +108,8 @@ String getPackageName()                         { return package_name; }
 
 String getTestClassName()                       { return test_class; }
 
+String getCode()                                { return setup_contents; }
+
 
 
 /********************************************************************************/

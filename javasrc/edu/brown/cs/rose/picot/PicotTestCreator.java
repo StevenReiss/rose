@@ -38,6 +38,7 @@ package edu.brown.cs.rose.picot;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -50,9 +51,11 @@ import org.w3c.dom.Element;
 
 import edu.brown.cs.ivy.jcomp.JcompAst;
 import edu.brown.cs.ivy.jcomp.JcompSymbol;
+import edu.brown.cs.ivy.jcomp.JcompType;
 import edu.brown.cs.ivy.jcomp.JcompTyper;
 import edu.brown.cs.ivy.mint.MintConstants.CommandArgs;
 import edu.brown.cs.ivy.xml.IvyXml;
+import edu.brown.cs.ivy.xml.IvyXmlWriter;
 import edu.brown.cs.rose.bract.BractFactory;
 import edu.brown.cs.rose.bud.BudStackFrame;
 import edu.brown.cs.rose.root.RootControl;
@@ -124,6 +127,7 @@ PicotTestCreator(RootControl rc,String rid,Element xml)
 @Override public void run()
 {
    CommandArgs args = new CommandArgs("NAME",reply_id);
+   String cnts = null;
 
    if (test_description == null) {
       args.put("STATUS","NOTEST");
@@ -131,9 +135,21 @@ PicotTestCreator(RootControl rc,String rid,Element xml)
    else {
       PicotTestCase test = createTestCase();
       if (test == null) args.put("STATUS","FAIL");
+      else {
+         args.put("STATUS",test.getStatus());
+         if (test.getRunCode() != null) {
+            IvyXmlWriter xw = new IvyXmlWriter();
+            xw.begin("TESTCASE");
+            xw.cdataElement("RUNCODE",test.getRunCode());
+            xw.cdataElement("TESTCODE",test.getCode());
+            xw.end("TESTCASE");
+            cnts = xw.toString();
+            xw.close();
+          }
+       }
     }
    
-   root_control.sendRoseMessage("TESTCREATE",args,null,0);
+   root_control.sendRoseMessage("TESTCREATE",args,cnts,0);
 }
 
 
@@ -169,25 +185,21 @@ PicotTestCase createTestCase()
    JcompTyper typer = JcompAst.getTyper(md);
    PicotValueBuilder pvb = new PicotValueBuilder(root_control,rv,start,typer);
    
-   PicotCodeFragment callfrag = buildCall(rt,rtc,pvb);
-   if (callfrag == null) return null;
+   PicotValueContext runctx = buildCall(rt,rtc,pvb);
    
-   
-   // then create test case (done in PicotValueChecker)
-   // package <tgtpkg>;
-   // public class Test<tgtcls><#> {
-   // public Test<tgtcls><#>() { }
-   // @Test public test<#>()
-   //    <classfrag>
-   //    <check for problem>
-   //           If problem is assertion/exception -- already done
-   //           Else assert result is different from validationn result
-   // } 
-   // }
+   TestCase rslt = null;
+   if (runctx == null) {
+      rslt = new TestCase(PicotTestStatus.FAIL,null,null);
+    }
+   else {
+      RootTrace testtrace = runctx.getTrace();
+      PicotTestStatus sts = validateTest(rv,testtrace);
+      rslt = new TestCase(sts,runctx.getInitializationCode(),runctx.getCode());
+    }
    
    pvb.finished();
    
-   return null;
+   return rslt;
 }
 
 
@@ -199,7 +211,7 @@ PicotTestCase createTestCase()
 /*                                                                              */
 /********************************************************************************/
 
-private PicotCodeFragment buildCall(RootTrace rt,RootTraceCall rtc,PicotValueBuilder pvb)
+private PicotValueContext buildCall(RootTrace rt,RootTraceCall rtc,PicotValueBuilder pvb)
 {
    MethodDeclaration md = getMethod(rtc);
    if (md == null) return null;
@@ -211,7 +223,35 @@ private PicotCodeFragment buildCall(RootTrace rt,RootTraceCall rtc,PicotValueBui
    
    if (!js.isStatic()) {
       RootTraceVariable thisvar = rtc.getTraceVariables().get("this");
-      thisfrag = pvb.buildValue(thisvar);
+      pvb.computeValue(thisvar);
+      RootTraceVariable this0var = rtc.getTraceVariables().get("this$0");
+      pvb.computeValue(this0var);
+    }
+   // handle this$0 if needed
+   for (Object o : md.parameters()) {
+      SingleVariableDeclaration svd = (SingleVariableDeclaration) o;
+      String nm = svd.getName().getIdentifier();
+      RootTraceVariable pvar = rtc.getTraceVariables().get(nm);
+      pvb.computeValue(pvar);
+    }
+   Map<String,RootTraceVariable> glbls = rt.getGlobalVariables();
+   for (String vnm : glbls.keySet()) {
+      int idx = vnm.lastIndexOf(".");
+      if (idx < 0) continue;
+      String cnm = vnm.substring(0,idx);
+      JcompType jty = pvb.getJcompTyper().findType(cnm);
+      if (jty == null) continue;
+      if (jty.isCompiledType()) {
+         pvb.computeValue(glbls.get(vnm));
+       }
+    }
+ 
+   PicotValueContext initctx = pvb.getInitializationContext();
+   if (initctx == null) return null;
+   
+   if (!js.isStatic()) {
+      RootTraceVariable thisvar = rtc.getTraceVariables().get("this");
+      thisfrag = pvb.buildSimpleValue(thisvar);
       if (thisfrag == null) return null;
     }
    else {
@@ -223,14 +263,14 @@ private PicotCodeFragment buildCall(RootTrace rt,RootTraceCall rtc,PicotValueBui
       SingleVariableDeclaration svd = (SingleVariableDeclaration) o;
       String nm = svd.getName().getIdentifier();
       RootTraceVariable pvar = rtc.getTraceVariables().get(nm);
-      PicotCodeFragment arg = pvb.buildValue(pvar);
+      PicotCodeFragment arg = pvb.buildSimpleValue(pvar);
       if (arg == null) return null;
       args.add(arg);
     }
    
    // look for static fields accessed by code in the trace
    
-   PicotValueContext initctx = pvb.getInitializationContext();
+// initctx = pvb.getInitializationContext();
    
    // should clean up initcode by removing unneeded items
    
@@ -248,11 +288,8 @@ private PicotCodeFragment buildCall(RootTrace rt,RootTraceCall rtc,PicotValueBui
    
    PicotCodeFragment callfrag = new PicotCodeFragment(call);
    PicotValueContext runctx = new PicotValueContext(initctx,callfrag);
-   RootTrace testtrace = runctx.getTrace();
-        
-   if (!validateTest(testtrace)) return null;
    
-   return new PicotCodeFragment(callfrag.getCode());   
+   return runctx;
 }
 
 
@@ -352,9 +389,62 @@ private MethodDeclaration getMethod(RootTraceCall rtc)
 /*                                                                              */
 /********************************************************************************/
 
-private boolean validateTest(RootTrace testrace)
+private PicotTestStatus validateTest(RootValidate rv,RootTrace testtrace)
 {
-   return true;
+   RootTraceCall start0 = rv.getExecutionTrace().getRootContext();
+   RootTraceCall ctx0 = rv.getExecutionTrace().getProblemContext();
+   long t0 = rv.getExecutionTrace().getProblemTime();
+   RootTraceValue exc0 = rv.getExecutionTrace().getException();
+   RootProblem prob = rv.getProblem(); 
+   
+   RootTraceCall rtc = testtrace.getRootContext();
+   RootTraceCall start1 = null;
+   for (RootTraceCall rtc1 : rtc.getInnerTraceCalls()) {
+      if (rtc1.getMethod().equals(start0.getMethod())) {
+         start1 = rtc1;
+         break;
+       }
+    }
+   RootTraceValue exc1 = testtrace.getException();
+   if (start1 == null) return PicotTestStatus.FAIL;
+   
+   if (exc0 != null) {
+      if (exc1 == null) return PicotTestStatus.NO_DUP;
+      else if (!exc0.getDataType().equals(exc1.getDataType())) return PicotTestStatus.NO_DUP;
+    }
+   
+   // create a RootValidateMatch as interface to ValidateMatcher
+   // create a method in RootValidate to return a ValidateMatch for a trace/context to match
+   
+   // match test trace with the execution trace 
+   
+   return PicotTestStatus.SUCCESS;
+}
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Test Case representation                                                */
+/*                                                                              */
+/********************************************************************************/
+
+private static class TestCase implements PicotTestCase {
+   
+   private PicotTestStatus test_status;
+   private PicotCodeFragment test_code;
+   private PicotCodeFragment run_code;
+   
+   TestCase(PicotTestStatus sts,PicotCodeFragment tc,PicotCodeFragment rc) {
+      test_status = sts;
+      test_code = tc;
+      run_code = rc;
+    }
+   
+   @Override public PicotTestStatus getStatus()         { return test_status; }
+   @Override public PicotCodeFragment getCode()         { return test_code; }
+   @Override public PicotCodeFragment getRunCode()      { return run_code; }
+   
 }
 
 }       // end of class PicotTestCreator

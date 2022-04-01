@@ -742,8 +742,6 @@ private void handleRunEvent(BumpRunEvent evt)
 
 private class RoseRunEventHandler implements BumpRunEventHandler {
 
-   @Override public void handleLaunchEvent(BumpRunEvent evt) { }
-
    @Override public void handleProcessEvent(BumpRunEvent evt) {
       handleRunEvent(evt);
     }
@@ -751,9 +749,6 @@ private class RoseRunEventHandler implements BumpRunEventHandler {
    @Override public void handleThreadEvent(BumpRunEvent evt) {
       handleRunEvent(evt);
     }
-
-   @Override public void handleConsoleMessage(BumpProcess p,boolean err,
-	 boolean eof,String m) { }
 
 }	// end of inner class RoseRunEventHandler
 

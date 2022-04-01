@@ -476,6 +476,8 @@ double checkValidResult(ValidateExecution ve)
 }
 
 
+
+
 @Override public synchronized boolean canCheckResult()
 {
    if (base_execution.getSeedeResult().getProblemTime() < 0) 

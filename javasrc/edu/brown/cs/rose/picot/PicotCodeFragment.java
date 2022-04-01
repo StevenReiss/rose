@@ -36,7 +36,7 @@
 package edu.brown.cs.rose.picot;
 
 
-class PicotCodeFragment implements PicotConstants
+class PicotCodeFragment implements PicotConstants, Comparable<PicotCodeFragment>
 {
 
 
@@ -47,6 +47,9 @@ class PicotCodeFragment implements PicotConstants
 /********************************************************************************/
 
 private String          code_string;
+private double          code_priority;
+
+private static final double DEFAULT_PRIORITY = 10;
 
 
 
@@ -59,6 +62,14 @@ private String          code_string;
 PicotCodeFragment(String code)
 {
    code_string = code;
+   code_priority = DEFAULT_PRIORITY;
+}
+
+
+PicotCodeFragment(String code,double p)
+{
+   code_string = code;
+   code_priority = p;
 }
 
 
@@ -131,6 +142,12 @@ PicotCodeFragment append(String code1,String ... code2)
 /*      Comparison methods                                                      */
 /*                                                                              */
 /********************************************************************************/
+
+@Override public int compareTo(PicotCodeFragment pcf)
+{
+   return Double.compare(pcf.code_priority,code_priority);
+}
+
 
 @Override public boolean equals(Object o)
 {

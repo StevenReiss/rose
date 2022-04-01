@@ -26,6 +26,7 @@
 
    <target name='compile' depends='init'>
       <javac srcdir='.' destdir='${ROSE}/java' debug='on' deprecation='on'
+		target='10' source='10'
 		includeantruntime='false' excludes='scan/**' >
 	 <classpath refid='rose.classpath' />
 	 <compilerarg value='-Xlint:all' />

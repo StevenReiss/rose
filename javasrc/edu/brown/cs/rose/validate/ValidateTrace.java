@@ -36,6 +36,7 @@
 package edu.brown.cs.rose.validate;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
@@ -53,6 +54,7 @@ import edu.brown.cs.rose.root.RootTestCase;
 import edu.brown.cs.rose.root.RootValidate;
 import edu.brown.cs.rose.root.RoseException;
 import edu.brown.cs.rose.root.RoseLog;
+import edu.brown.cs.rose.root.RootValidate.RootTraceVariable;
 
 public class ValidateTrace implements ValidateConstants, RootValidate.RootTrace
 {
@@ -245,6 +247,21 @@ private Element getRunner()
    Element runner = IvyXml.getChild(seede_result,"RUNNER");
    return runner;
 }
+
+
+
+@Override public Map<String,RootTraceVariable> getGlobalVariables()
+{
+   Map<String,RootTraceVariable> rslt = new LinkedHashMap<>();
+   Element glbls = IvyXml.getChild(seede_result,"GLOBALS");
+   for (Element e : IvyXml.children(glbls,"VARIABLE")) {
+      String nm = IvyXml.getAttrString(e,"NAME");
+      rslt.put(nm,new ValidateVariable(e));
+    }
+   
+   return rslt;
+}
+
 
 
 

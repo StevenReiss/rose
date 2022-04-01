@@ -47,8 +47,16 @@ public interface PicotConstants
  *	Abstract representation of a generated test case
  **/
 
-interface PicotTestCase {
+enum PicotTestStatus {
+   FAIL,
+   NO_DUP,
+   SUCCESS
+}
 
+interface PicotTestCase {
+   PicotTestStatus getStatus();
+   PicotCodeFragment getCode();
+   PicotCodeFragment getRunCode();
 }
 
 
@@ -88,6 +96,26 @@ class PicotLocalMap extends HashMap<JcompSymbol,PicotEffectItem> {
 class PicotFieldMap extends HashMap<JcompSymbol,PicotCodeFragment> {
    private static final long serialVersionUID = 1;
 }
+
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Search definitions                                                      */
+/*                                                                              */
+/********************************************************************************/
+
+enum PicotAlternativeType { 
+   NONE,                // not computed
+   FAIL,                // no more alternatives
+   CREATE,              // next is a create
+   FIX                  // next is a fix
+}          
+
+
+
+
 
 
 

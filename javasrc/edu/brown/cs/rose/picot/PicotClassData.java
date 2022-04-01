@@ -36,7 +36,7 @@
 package edu.brown.cs.rose.picot;
 
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -73,7 +73,7 @@ private Map<JcompSymbol,PicotMethodData> method_data;
 PicotClassData(JcompType typ,JcompTyper typer)
 {
    for_type = typ;
-   method_data = new HashMap<>();
+   method_data = new LinkedHashMap<>();
    
    JcompSymbol tsym = for_type.getDefinition();
    if (tsym == null) {

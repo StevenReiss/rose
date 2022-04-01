@@ -162,7 +162,9 @@ public boolean registerProcessor(String clsnm)
    catch (InvocationTargetException e) { }
    catch (IllegalAccessException e) { }
    catch (InstantiationException e) { }
-   
+   catch (Throwable e) {
+      RoseLog.logE("BRACT","Problem loading class " + clsnm,e);
+    }
    return false;
 }
 

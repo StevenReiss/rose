@@ -180,6 +180,7 @@ private static class VariableAccessor extends PicotValueAccessor
     }
    
    @Override protected PicotCodeFragment getSetterCode(PicotValueBuilder bldr,PicotCodeFragment val) {
+      if (variable_name.equals(val.getCode())) return null;
       return new PicotCodeFragment(variable_name + " = " + val.getCode() + ";\n");
     }
    

@@ -36,8 +36,10 @@
 package edu.brown.cs.rose.picot;
 
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.FieldAccess;
 import org.eclipse.jdt.core.dom.ReturnStatement;
 import org.eclipse.jdt.core.dom.SimpleName;
+import org.eclipse.jdt.core.dom.ThisExpression;
 
 import edu.brown.cs.ivy.jcomp.JcompAst;
 import edu.brown.cs.ivy.jcomp.JcompSymbol;
@@ -59,6 +61,13 @@ static PicotMethodEffect createAssignment(ASTNode lhs,ASTNode rhs,PicotLocalMap 
    if (rhsitm == null) rhsitm = PicotEffectItem.createExpressionItem();
    
    JcompSymbol lhssym = JcompAst.getReference(lhs);
+   if (lhssym == null && lhs != null && lhs.getNodeType() == ASTNode.FIELD_ACCESS) {
+      FieldAccess facc = (FieldAccess) lhs;
+      if (facc.getExpression() instanceof ThisExpression) {
+         lhssym = JcompAst.getReference(facc.getName());
+       }
+    }
+    
    if (lhssym == null) lhssym = JcompAst.getDefinition(lhs);
    if (lhssym == null) return null;
    
