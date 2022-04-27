@@ -973,10 +973,10 @@ private class RoseFixAnnotation implements BaleAnnotation {
 
 private class AskRoseAction extends AbstractAction implements Runnable {
 
-   private BumpThread for_thread;
-   private BumpStackFrame for_frame;
+   private transient BumpThread for_thread;
+   private transient BumpStackFrame for_frame;
    private Component base_editor;
-   private BaleFileOverview bale_file;
+   private transient BaleFileOverview bale_file;
    
    private static final long serialVersionUID = 1;
 
@@ -1015,8 +1015,8 @@ private class AskRoseAction extends AbstractAction implements Runnable {
 
 private static class RoseSuggestAction extends AbstractAction implements Runnable {
    
-   private BushProblem for_problem;
-   private BushLocation for_location;
+   private transient BushProblem for_problem;
+   private transient BushLocation for_location;
    private Component from_component;
    private String metric_id;
    private boolean create_bubble;
@@ -1085,6 +1085,9 @@ private static class RoseSuggestAction extends AbstractAction implements Runnabl
 
 
 
+
+
+
 /********************************************************************************/
 /*                                                                              */
 /*      Handle messages from ROSE                                               */
@@ -1103,6 +1106,10 @@ private class RoseHandler implements MintHandler {
             break;
          case "ENDSUGGEST" :
             handleEndSuggestion(msg.getXml());
+            msg.replyTo();
+            break;
+         case "TESTCREATE" :
+            BushTestGenerator.handleTestGenerated(msg.getXml());
             msg.replyTo();
             break;
        }

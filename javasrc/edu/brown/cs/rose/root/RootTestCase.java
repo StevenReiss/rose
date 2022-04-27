@@ -112,6 +112,10 @@ public String getFrameId()              { return entry_frame; }
 
 public boolean getThrows()              { return test_type == TestType.THROWS; }
 
+public String getEntryMethod()          { return entry_routine; }
+
+public String getEntryFrame()           { return entry_frame; }
+
 public String getReturnValue()         
 { 
    if (test_type != TestType.RETURNS) return null;

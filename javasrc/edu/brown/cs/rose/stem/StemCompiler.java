@@ -62,6 +62,7 @@ import edu.brown.cs.ivy.jcomp.JcompSemantics;
 import edu.brown.cs.ivy.jcomp.JcompSource;
 import edu.brown.cs.ivy.mint.MintConstants.CommandArgs;
 import edu.brown.cs.ivy.xml.IvyXml;
+import edu.brown.cs.rose.root.RootLocation;
 
 class StemCompiler implements StemConstants
 {
@@ -123,6 +124,23 @@ void compileAll(Collection<File> use)
       SourceFile sf = (SourceFile) js;
       project_map.put(sf,jp);
     }
+}
+
+
+CompilationUnit compileSource(RootLocation loc,String source)
+{
+   SourceFile sf = getSourceFile(loc.getFile());
+   JcompProject jproj = getJcompProject(loc.getProject(),sf);
+   DummySource dsrc = new DummySource("TestFile.java",source);
+   jproj.addSourceFile(dsrc);
+   jproj.resolve();
+   for (JcompSemantics js : jproj.getSources()) {
+      if (js.getFile() == dsrc) {
+         return (CompilationUnit) js.getAstNode();
+       }
+    }
+   
+   return null;
 }
 
 
@@ -428,6 +446,24 @@ private static class SourceFile implements JcompSource {
     }
 
 }	// end of inner class SourceFile
+
+
+
+private static class DummySource implements JcompSource {
+
+   private String source_name;
+   private String source_cnts;
+   
+   DummySource(String nm,String cnts) {
+      source_name = nm;
+      source_cnts = cnts;
+    }
+   
+   @Override public String getFileContents()            { return source_cnts; }
+   @Override public String getFileName()                { return source_name; }
+
+
+}
 
 }	// end of class StemCompiler
 

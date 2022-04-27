@@ -37,16 +37,30 @@ package edu.brown.cs.rose.picot;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.ImportDeclaration;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.Name;
+import org.eclipse.jdt.core.dom.PackageDeclaration;
+import org.eclipse.jdt.core.dom.QualifiedName;
+import org.eclipse.jdt.core.dom.QualifiedType;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.Statement;
+import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
+import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
+import org.eclipse.jface.text.Document;
+import org.eclipse.jface.text.IDocument;
+import org.eclipse.text.edits.TextEdit;
 import org.w3c.dom.Element;
 
 import edu.brown.cs.ivy.jcomp.JcompAst;
@@ -138,10 +152,15 @@ PicotTestCreator(RootControl rc,String rid,Element xml)
       else {
          args.put("STATUS",test.getStatus());
          if (test.getRunCode() != null) {
+            fixImports(test);
             IvyXmlWriter xw = new IvyXmlWriter();
             xw.begin("TESTCASE");
-            xw.cdataElement("RUNCODE",test.getRunCode());
-            xw.cdataElement("TESTCODE",test.getCode());
+            xw.field("PACKAGE",test.getTestPackageName());
+            xw.field("CLASS",test.getTestClassName());
+            xw.field("METHOD",test.getTestMethodName());
+            xw.cdataElement("RUNCODE",test.getRunCode().getCode());
+            xw.cdataElement("TESTCODE",test.getTestCode());
+            // output imports
             xw.end("TESTCASE");
             cnts = xw.toString();
             xw.close();
@@ -189,12 +208,12 @@ PicotTestCase createTestCase()
    
    TestCase rslt = null;
    if (runctx == null) {
-      rslt = new TestCase(PicotTestStatus.FAIL,null,null);
+      rslt = new TestCase(PicotTestStatus.FAIL);
     }
    else {
       RootTrace testtrace = runctx.getTrace();
       PicotTestStatus sts = validateTest(rv,testtrace);
-      rslt = new TestCase(sts,runctx.getInitializationCode(),runctx.getCode());
+      rslt = new TestCase(sts,runctx);
     }
    
    pvb.finished();
@@ -391,35 +410,145 @@ private MethodDeclaration getMethod(RootTraceCall rtc)
 
 private PicotTestStatus validateTest(RootValidate rv,RootTrace testtrace)
 {
-   RootTraceCall start0 = rv.getExecutionTrace().getRootContext();
-   RootTraceCall ctx0 = rv.getExecutionTrace().getProblemContext();
-   long t0 = rv.getExecutionTrace().getProblemTime();
-   RootTraceValue exc0 = rv.getExecutionTrace().getException();
-   RootProblem prob = rv.getProblem(); 
-   
-   RootTraceCall rtc = testtrace.getRootContext();
-   RootTraceCall start1 = null;
-   for (RootTraceCall rtc1 : rtc.getInnerTraceCalls()) {
-      if (rtc1.getMethod().equals(start0.getMethod())) {
-         start1 = rtc1;
-         break;
-       }
-    }
-   RootTraceValue exc1 = testtrace.getException();
-   if (start1 == null) return PicotTestStatus.FAIL;
-   
-   if (exc0 != null) {
-      if (exc1 == null) return PicotTestStatus.NO_DUP;
-      else if (!exc0.getDataType().equals(exc1.getDataType())) return PicotTestStatus.NO_DUP;
-    }
-   
-   // create a RootValidateMatch as interface to ValidateMatcher
-   // create a method in RootValidate to return a ValidateMatch for a trace/context to match
-   
-   // match test trace with the execution trace 
+   boolean fg = rv.checkTestResult(testtrace);
+   if (!fg) return PicotTestStatus.FAIL;
    
    return PicotTestStatus.SUCCESS;
 }
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Find imports and replace names                                          */
+/*                                                                              */
+/********************************************************************************/
+
+private void fixImports(PicotTestCase tc)
+{
+   String src = tc.getRunCode().getCode();
+   CompilationUnit cu = root_control.compileSource(at_location,src);
+   CheckImportVisitor civ = new CheckImportVisitor();
+   cu.accept(civ);
+   String rslt = civ.doRewrite(src,cu);
+   if (rslt != null) tc.updateRunCode(rslt);
+}
+
+
+
+
+
+
+private static class CheckImportVisitor extends ASTVisitor {
+   
+   private Set<String> import_set;
+   private Set<ASTNode> to_fix;
+   private String package_name;
+   private Set<String> used_imports;
+   
+   CheckImportVisitor() {
+      import_set = new HashSet<>();
+      to_fix = new HashSet<>();
+      used_imports = new LinkedHashSet<>();
+      package_name = null;
+    }
+   
+   String doRewrite(String src,CompilationUnit cu) {
+      ASTRewrite rw = ASTRewrite.create(cu.getAST());
+      for (ASTNode n : to_fix) {
+         switch (n.getNodeType()) {
+            case ASTNode.QUALIFIED_NAME :
+               rewriteQualifiedName((QualifiedName) n,rw);
+               break;
+            case ASTNode.QUALIFIED_TYPE :
+               rewriteQualifiedType((QualifiedType) n,rw);
+               break;
+          }
+       }
+      if (used_imports != null) {
+         ListRewrite lrw = rw.getListRewrite(cu,CompilationUnit.IMPORTS_PROPERTY);
+         for (Object o : cu.imports()) {
+            ASTNode n = (ASTNode) o;
+            lrw.remove(n,null);
+          }
+         AST ast = cu.getAST();
+         for (String s : used_imports) {
+            Name nm = JcompAst.getQualifiedName(ast,s);
+            ImportDeclaration id = ast.newImportDeclaration();
+            id.setName(nm);
+            id.setOnDemand(false);
+            id.setStatic(false);
+            lrw.insertLast(id,null);
+          }
+       }
+      try {
+         IDocument doc = new Document(src);
+         TextEdit te = rw.rewriteAST(doc,null);
+         te.apply(doc);
+         return doc.get();
+         // apply te to cu.toString()
+         // return the result
+       }
+      catch (Exception e) { 
+         return null;
+       }
+    }
+   
+   private void rewriteQualifiedName(QualifiedName qn,ASTRewrite rw) {
+      String nm = qn.getFullyQualifiedName();
+      int idx = nm.lastIndexOf(".");
+      String pfx = nm.substring(0,idx);
+      String sfx = nm.substring(idx+1);
+      if (import_set.contains(nm) || pfx.equals(package_name) || pfx.equals("java.lang")) {
+         if (import_set.contains(nm)) used_imports.add(nm);
+         ASTNode an = JcompAst.getSimpleName(qn.getAST(),sfx);
+         rw.replace(qn,an,null);
+       }
+   }
+   
+   private void rewriteQualifiedType(QualifiedType qt,ASTRewrite rw) {
+      
+   }
+   
+   @Override public boolean visit(QualifiedName qn) {
+      // get type name and add to import set
+      String qnm = qn.getFullyQualifiedName();
+      int idx = qnm.lastIndexOf(".");
+      String pfx = qnm.substring(0,idx);
+      JcompType jt = JcompAst.getJavaType(qn);
+      if (jt != null && jt.getName().equals(qnm)) {
+         if (!pfx.equals("java.lang") && !pfx.equals(package_name)) import_set.add(qnm);
+         to_fix.add(qn);
+         return false;
+       }
+      if (package_name != null && pfx.equals(package_name)) {
+         to_fix.add(qn);
+         return false;
+       }
+      return true;
+    }
+   
+   @Override public boolean visit(QualifiedType qt) {
+      String typ = qt.getQualifier().toString();
+      typ += "." + qt.getName().getFullyQualifiedName();
+      to_fix.add(qt);
+      import_set.add(typ);
+      return false;
+    }
+   
+   @Override public boolean visit(PackageDeclaration pd) {
+      package_name = pd.getName().getFullyQualifiedName();
+      return false;
+    }
+   
+   @Override public boolean visit(ImportDeclaration id) {
+      String nm = id.getName().getFullyQualifiedName();
+      if (!id.isOnDemand()) import_set.add(nm);
+      return false;
+    }
+   
+}       // end of inner class CheckImportVisitor
+
 
 
 
@@ -432,18 +561,44 @@ private PicotTestStatus validateTest(RootValidate rv,RootTrace testtrace)
 private static class TestCase implements PicotTestCase {
    
    private PicotTestStatus test_status;
-   private PicotCodeFragment test_code;
    private PicotCodeFragment run_code;
+   private String package_name;
+   private String class_name;
+   private String test_method;
    
-   TestCase(PicotTestStatus sts,PicotCodeFragment tc,PicotCodeFragment rc) {
+   TestCase(PicotTestStatus sts,PicotValueContext ctx) {
       test_status = sts;
-      test_code = tc;
-      run_code = rc;
+      run_code = ctx.getCode();
+      package_name = ctx.getPackageName();
+      class_name = ctx.getTestClassName();
+      test_method = ctx.getTestMethodName();
+    }
+   
+   TestCase(PicotTestStatus sts) {
+      test_status = sts;
+      run_code = null;
+      package_name = null;
+      class_name = null;
     }
    
    @Override public PicotTestStatus getStatus()         { return test_status; }
-   @Override public PicotCodeFragment getCode()         { return test_code; }
    @Override public PicotCodeFragment getRunCode()      { return run_code; }
+   
+   @Override public String getTestCode()
+   {
+      String code = run_code.getCode();
+      int start = code.indexOf(TEST_START);
+      start += TEST_START.length();
+      int end = code.indexOf(TEST_END);
+      return code.substring(start,end);
+   }
+   @Override public String getTestClassName()           { return class_name; }
+   @Override public String getTestPackageName()         { return package_name; }
+   @Override public String getTestMethodName()          { return test_method; }
+   
+   @Override public void updateRunCode(String code) {
+      run_code = new PicotCodeFragment(code);
+    }
    
 }
 

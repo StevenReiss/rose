@@ -83,23 +83,23 @@ double check()
    if (validate_context.getProblem() == null) return 0;
    if (check_execution.getRootContext() == null) return 0;
    
-   ValidateMatcher matcher = new ValidateMatcher(original_execution,check_execution,for_repair);
+   ValidateMatcher matcher = new ValidateMatcher(original_execution,check_execution,for_repair,false);
    matcher.computeMatch();
    
    ValidateProblemChecker vpc = null;
    switch (validate_context.getProblem().getProblemType()) {
       case EXCEPTION :
       case ASSERTION :
-         vpc = new ValidateCheckerException(matcher);
+         vpc = new ValidateCheckerException(matcher,false);
          break;
       case EXPRESSION :
-         vpc = new ValidateCheckerExpression(matcher);
+         vpc = new ValidateCheckerExpression(matcher,false);
          break;
       case LOCATION :
-         vpc = new ValidateCheckerLocation(matcher);
+         vpc = new ValidateCheckerLocation(matcher,false);
          break;
       case VARIABLE :
-         vpc = new ValidateCheckerVariable(matcher);
+         vpc = new ValidateCheckerVariable(matcher,false);
          break;
       default :
       case OTHER :
@@ -119,6 +119,42 @@ double check()
     }
    
    return v0;
+}
+
+
+boolean checkTest()
+{
+   if (check_execution == null) return false;
+   if (original_execution == null) return false;
+   if (validate_context.getProblem() == null) return false;
+   if (check_execution.getRootContext() == null) return false;
+   
+   ValidateMatcher matcher = new ValidateMatcher(original_execution,check_execution,null,true);
+   matcher.computeMatch();
+   
+   ValidateProblemChecker vpc = null;
+   switch (validate_context.getProblem().getProblemType()) {
+      case EXCEPTION :
+      case ASSERTION :
+         vpc = new ValidateCheckerException(matcher,true);
+         break;
+      case EXPRESSION :
+         vpc = new ValidateCheckerExpression(matcher,true);
+         break;
+      case LOCATION :
+         vpc = new ValidateCheckerLocation(matcher,true);
+         break;
+      case VARIABLE :
+         vpc = new ValidateCheckerVariable(matcher,true);
+         break;
+      default :
+      case OTHER :
+         return false;
+    }
+   
+   boolean fg = vpc.validateTest();
+   
+   return fg;
 }
 
 
@@ -153,18 +189,29 @@ private abstract class ValidateProblemChecker {
    
    protected ValidateMatcher execution_matcher;
    
-   protected ValidateProblemChecker(ValidateMatcher m) {
+   
+   protected ValidateProblemChecker(ValidateMatcher m,boolean test) {
       execution_matcher = m;
     }
    
    abstract double validate();
    
+   boolean validateTest() {
+      long t0 = execution_matcher.getControlChangeTime();
+      long t1 = execution_matcher.getDataChangeTime();
+      long t2 = execution_matcher.getProblemTime();
+      if (t0 > 0 && t0 < t2) return false;
+      if (t1 > 0 && t1 < t2) return false;
+      boolean fg = validateTestLocal();
+      return fg;
+    }
+   abstract boolean validateTestLocal();
+   
    protected boolean executionChanged() {
-      if (!execution_matcher.repairExecuted()) 
-         return false;
       long t0 = execution_matcher.getControlChangeTime();
       long t1 = execution_matcher.getDataChangeTime();
       long t2 = execution_matcher.getProblemAfterTime();
+      if (!execution_matcher.repairExecuted()) return false;
       if (Math.min(t0,t1) > t2) return false;
       return true;
     }
@@ -191,8 +238,8 @@ private abstract class ValidateProblemChecker {
 
 private class ValidateCheckerException extends ValidateProblemChecker {
    
-   ValidateCheckerException(ValidateMatcher m) {
-      super(m);
+   ValidateCheckerException(ValidateMatcher m,boolean test) {
+      super(m,test);
     }
    
    @Override double validate() {
@@ -221,6 +268,17 @@ private class ValidateCheckerException extends ValidateProblemChecker {
       return 0.2;
     }
    
+   @Override boolean validateTestLocal() {
+      ValidateValue origexc = original_execution.getException();
+      if (origexc != null && execution_matcher.getMatchProblemContext() != null) {
+         ValidateValue checkexc = check_execution.getException();
+         if (checkexc == null) return false;
+         else if (origexc.getDataType().equals(checkexc.getDataType())) return true;
+         else return false;
+       }
+      return false;
+    }
+   
 }       // end of inner class ValidateCheckerException
 
 
@@ -234,8 +292,8 @@ private class ValidateCheckerException extends ValidateProblemChecker {
 
 private class ValidateCheckerVariable extends ValidateProblemChecker {
 
-   ValidateCheckerVariable(ValidateMatcher m) {
-      super(m);
+   ValidateCheckerVariable(ValidateMatcher m,boolean test) {
+      super(m,test);
     }
    
    @Override double validate() {
@@ -296,7 +354,11 @@ private class ValidateCheckerVariable extends ValidateProblemChecker {
       return 0.0;
     }
    
-   
+   @Override boolean validateTestLocal() {
+      long t1 = execution_matcher.getDataChangeTime();
+      if (t1 <= 0 || t1 > execution_matcher.getProblemAfterTime()) return true;
+      return false;
+    }
    
    private double matchValue(ValidateValue vval,String vvalstr,String nval)
    {
@@ -341,15 +403,20 @@ private class ValidateCheckerVariable extends ValidateProblemChecker {
 
 private class ValidateCheckerExpression extends ValidateProblemChecker {
    
-   ValidateCheckerExpression(ValidateMatcher m) {
-      super(m);
+   ValidateCheckerExpression(ValidateMatcher m,boolean test) {
+      super(m,test);
     }
    
    @Override double validate() {
+      if (!executionChanged()) return 0;
       if (exceptionThrown()) return 0;
       long t0 = execution_matcher.getMatchProblemTime();
       if (t0 < 0) return 0.2;
       return 0.5;
+    }
+   
+   @Override boolean validateTestLocal() {
+      return true;
     }
    
 }       // end of inner class ValidateCheckerException
@@ -365,8 +432,8 @@ private class ValidateCheckerExpression extends ValidateProblemChecker {
 
 private class ValidateCheckerLocation extends ValidateProblemChecker {
 
-   ValidateCheckerLocation(ValidateMatcher m) {
-      super(m);
+   ValidateCheckerLocation(ValidateMatcher m,boolean test) {
+      super(m,test);
     }
    
    @Override double validate() {
@@ -389,6 +456,14 @@ private class ValidateCheckerLocation extends ValidateProblemChecker {
       return 0.0;
     }
 
+   @Override boolean validateTestLocal() {
+      long t0 = execution_matcher.getMatchProblemTime();
+      ValidateCall vc = execution_matcher.getMatchChangeContext();
+      ValidateVariable vv = vc.getLineNumbers();
+      int lmatch = vv.getLineAtTime(t0);
+      if (lmatch <= 0) return false;
+      return true;
+    }
 
 }       // end of inner class ValidateCheckerException
 

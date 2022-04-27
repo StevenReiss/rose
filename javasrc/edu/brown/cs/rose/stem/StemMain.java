@@ -2051,6 +2051,16 @@ private static class EvalData {
 }
 
 
+@Override public CompilationUnit compileSource(RootLocation loc,String code)
+{
+   synchronized (this) {
+      if (stem_compiler == null) stem_compiler = new StemCompiler(this);
+    }
+   
+   return stem_compiler.compileSource(loc,code);
+}
+
+
 
 
 /********************************************************************************/

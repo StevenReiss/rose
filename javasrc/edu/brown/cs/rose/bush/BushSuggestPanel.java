@@ -399,7 +399,8 @@ private class PanelBubble extends BudaBubble {
 
 private class SuggestList extends JList<BushRepair> {
    
-   private SuggestRenderer suggest_renderer;
+   private transient SuggestRenderer suggest_renderer; 
+   
    private static final long serialVersionUID = 1;
    
    SuggestList(ListModel<BushRepair> mdl) {
@@ -532,7 +533,8 @@ private class SuggestListModel extends DefaultListModel<BushRepair> {
 
 private class PreviewAction extends AbstractAction {
    
-   private BushRepair for_repair;
+   private transient BushRepair for_repair;
+   
    private static final long serialVersionUID = 1;
    
    PreviewAction(BushRepair r) {
@@ -553,7 +555,8 @@ private class PreviewAction extends AbstractAction {
 
 private class RepairAction extends AbstractAction {
 
-   private RootRepair for_repair;
+   private transient RootRepair for_repair;
+   
    private static final long serialVersionUID = 1; 
    
    RepairAction(RootRepair r) {
@@ -580,7 +583,7 @@ private class RepairAction extends AbstractAction {
 
 private class SourceAction extends AbstractAction implements Runnable {
    
-   private RootRepair for_repair;
+   private transient RootRepair for_repair;
    private BudaBubble source_bubble;
    private static final long serialVersionUID = 1;
    
@@ -640,7 +643,7 @@ private class SourceAction extends AbstractAction implements Runnable {
 
 private class PreviewPanel extends SwingGridPanel {
    
-   private RootRepair   for_repair;
+   private transient RootRepair for_repair;
    private JTextPane before_editor;
    private JTextPane after_editor;
    
@@ -686,7 +689,7 @@ private class PreviewEditor extends JTextPane {
 
 private class PreviewBubble extends BudaBubble {
    
-   private RootRepair   for_repair;
+   private transient RootRepair for_repair;
    
    private static final long serialVersionUID = 1;
    

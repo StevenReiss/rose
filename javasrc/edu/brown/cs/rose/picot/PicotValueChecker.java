@@ -63,12 +63,9 @@ private String  setup_contents;
 private File    local_file;
 private String  package_name;
 private String  test_class;
+private String  test_id;
 
 private static AtomicInteger method_ctr = new AtomicInteger(0);
-
-private static final String START_STRING = "/*START*/\n";
-private static final String END_STRING = "/*END*/\n";
-
 
 
 /********************************************************************************/
@@ -84,6 +81,7 @@ PicotValueChecker(RootControl ctrl,RootValidate base)
    local_file = null;
    package_name = null;
    test_class = null;
+   test_id = null;
    
    setupSession();              
 }
@@ -112,6 +110,11 @@ String getCode()                                { return setup_contents; }
 
 
 
+String getTestMethodName()                      { return "test" + test_id; }
+
+
+
+
 /********************************************************************************/
 /*                                                                              */
 /*      Run a code sequence to get trace result                                 */
@@ -125,11 +128,11 @@ RootTrace generateTrace(PicotCodeFragment pcf)
    int start = setup_contents.indexOf(START_STRING);
    start += START_STRING.length();
    int end = setup_contents.indexOf(END_STRING);
+   
    String code = pcf.getCode();
    
    String newcnts = setup_contents.substring(0,start) + code + 
       setup_contents.substring(end);
-   
    base_execution.editLocalFile(local_file,start,end,code);
    setup_contents = newcnts;
    
@@ -154,23 +157,20 @@ private void setupSession()
    int idx1 = mthd.lastIndexOf(".");            // get end of class name
    int idx2 = mthd.lastIndexOf(".",idx1-1);     // get end of package name
    package_name = mthd.substring(0,idx2);
-   int id = method_ctr.incrementAndGet();
-   test_class = "PicotTestClass_" + id;
+   test_id = String.valueOf(method_ctr.incrementAndGet());
+   test_class = "PicotTestClass_" + test_id;
    
    local_file = new File("/SEEDE_LOCAL_FILE/SEEDE_" + test_class + ".java");
+   
+   String cnts = setupTestContents();
    
    StringBuffer buf = new StringBuffer();
    buf.append("package " + package_name + ";\n");
    buf.append("public class " + test_class + " {\n");
    buf.append("public " + test_class + "() { }\n");
-   buf.append("@org.junit.Test public void test" + id + "()\n");
-   buf.append("{ tester" + id + "(); }\n");      
-   buf.append("public static boolean tester" + id + "() {\n");
-   buf.append(START_STRING);
-   buf.append("   // dummy code\n");
-   buf.append(END_STRING);
-   buf.append("   return true;\n");
-   buf.append("}\n");
+   buf.append(TEST_START);
+   buf.append(cnts);
+   buf.append(TEST_END);
    buf.append("}\n");
    setup_contents = buf.toString();
    base_execution.addLocalFile(local_file,setup_contents);
@@ -183,12 +183,27 @@ private void setupSession()
    String proj = null;
    
    BractFactory bf = BractFactory.getFactory();
-   String mnm = package_name + "." + test_class + ".tester" + id;
+   String mnm = package_name + "." + test_class + ".tester" +test_id;
    RootLocation baseloc = bf.createLocation(local_file,loc,eloc,lin,proj,mnm);
    base_execution.createTestSession(local_file,baseloc);
 }
 
 
+
+private String setupTestContents()
+{
+   StringBuffer buf = new StringBuffer();
+   buf.append("@org.junit.Test public void " + getTestMethodName() + "()\n");
+   buf.append("{ tester" + test_id + "(); }\n");      
+   buf.append("public static boolean tester" + test_id + "() {\n");
+   buf.append(START_STRING);
+   buf.append("   // dummy code\n");
+   buf.append(END_STRING);
+   buf.append("   return true;\n");
+   buf.append("}\n");
+   
+   return buf.toString();
+}
 
 
 

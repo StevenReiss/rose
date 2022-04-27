@@ -55,8 +55,12 @@ enum PicotTestStatus {
 
 interface PicotTestCase {
    PicotTestStatus getStatus();
-   PicotCodeFragment getCode();
    PicotCodeFragment getRunCode();
+   String getTestCode();
+   String getTestClassName();
+   String getTestPackageName();
+   String getTestMethodName();
+   void updateRunCode(String code);
 }
 
 
@@ -115,7 +119,16 @@ enum PicotAlternativeType {
 
 
 
+/********************************************************************************/
+/*                                                                              */
+/*      Code Strings                                                            */
+/*                                                                              */
+/********************************************************************************/
 
+String START_STRING = "/*START*/\n";
+String END_STRING = "/*END*/\n";
+String TEST_START = "/*TESTSTART*/\n";
+String TEST_END = "/*TESTEND*/\n";
 
 
 

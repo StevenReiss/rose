@@ -57,6 +57,8 @@ class ValidateMatcher implements ValidateConstants
 private ValidateTrace original_trace;
 private ValidateTrace match_trace;
 private RootRepair for_repair;
+private boolean test_match;                     // match a generated test
+private long delta_time;
 
 private ValidateCall problem_context;        // context of problem
 private long problem_time;                   // time of problem in original context
@@ -85,11 +87,13 @@ private boolean repair_executed;                // detect if repair was executed
 /*                                                                              */
 /********************************************************************************/
 
-ValidateMatcher(ValidateTrace orig,ValidateTrace match,RootRepair repair)
+ValidateMatcher(ValidateTrace orig,ValidateTrace match,RootRepair repair,boolean istest)
 {
    original_trace = orig;
    match_trace = match;
    for_repair = repair;
+   test_match = istest;
+   delta_time = 0;
    
    problem_context = orig.getProblemContext();
    problem_time = orig.getProblemTime();
@@ -151,7 +155,11 @@ ValidateCall getOriginalDataContext()        { return original_data_context; }
 ValidateCall getMatchDataContext()           { return match_data_context; }
 long getDataChangeTime()                { return data_change; }
 
-boolean repairExecuted()                { return repair_executed; }
+boolean repairExecuted()                
+{ 
+   if (for_repair == null) return true;
+   return repair_executed;
+}
 
 
 
@@ -167,6 +175,18 @@ void computeMatch()
    ValidateCall origctx = original_trace.getRootContext();
    ValidateCall matchctx = match_trace.getRootContext();
    if (matchctx == null) return;
+   if (test_match) {
+      ValidateCall match1 = null;
+      for (ValidateCall vc1 : matchctx.getInnerCalls()) {
+         if (vc1.getMethod().equals(origctx.getMethod())) {
+            match1 = vc1;
+            break;
+          }
+       }
+      if (match1 == null) return;
+      delta_time = match1.getStartTime() - origctx.getStartTime();
+      matchctx = match1;
+    }
    
    try {
       matchContexts(origctx,matchctx);
@@ -211,7 +231,7 @@ private void matchLines(ValidateCall origctx,ValidateCall matchctx)
    long lasttime = origctx.getStartTime();
    long matchtime = matchctx.getStartTime();
    long lastmatch = matchtime;
-   if (lasttime == matchtime) {
+   if (matchTime(lasttime,matchtime)) {
       Iterator<ValidateValue> it1 = origline.getValues(origctx.getTrace()).iterator();
       Iterator<ValidateValue> it2 = matchline.getValues(matchctx.getTrace()).iterator();
       boolean fnd = false;
@@ -221,7 +241,8 @@ private void matchLines(ValidateCall origctx,ValidateCall matchctx)
          long thistime = origval.getStartTime();
          long trytime = matchval.getStartTime();
          long execline = origval.getNumericValue();
-         long mappedline = for_repair.getMappedLine(file,execline);
+         long mappedline = execline;
+         if (for_repair != null) mappedline = for_repair.getMappedLine(file,execline);
          if (checkrepair > 0 && execline == checkrepair) repair_executed = true;
          
          if (match_problem_context == matchctx) {
@@ -231,7 +252,7 @@ private void matchLines(ValidateCall origctx,ValidateCall matchctx)
              }
           }
          if (!fnd && 
-               (origval.getStartTime() != matchval.getStartTime() ||
+               (!matchTime(thistime,trytime) ||
                      mappedline != matchval.getNumericValue())) {
             if (control_change < 0 || control_change > thistime) {
                noteChange(origctx,matchctx,lasttime);
@@ -294,8 +315,8 @@ private void matchInnerContext(ValidateCall origctx,ValidateCall matchctx,
    if (octx != null && mctx != null) {
       long ostart = octx.getStartTime();
       long mstart = mctx.getStartTime();
-      if (!octx.getMethod().equals(mctx.getMethod()) || ostart != mstart) {
-         noteChange(origctx,matchctx,Math.min(ostart,mstart));
+      if (!octx.getMethod().equals(mctx.getMethod()) || !matchTime(ostart,mstart)) {
+         noteChange(origctx,matchctx,Math.min(ostart,mstart-delta_time));
        }
       matchContexts(octx,mctx);
     }
@@ -386,6 +407,15 @@ private List<ValidateValue> getVariableValues(ValidateCall ctx,ValidateVariable 
 }
 
 
+
+private boolean matchTime(long orig,long match)
+{
+   if (test_match) return true;
+   return orig == match;
+}
+
+
+
 private void noteChange(ValidateCall origctx,ValidateCall matchctx,long when)
 {
    if (control_change > 0 && when > control_change) return;
@@ -393,11 +423,6 @@ private void noteChange(ValidateCall origctx,ValidateCall matchctx,long when)
    original_change_context = origctx;
    match_change_context = matchctx;
 }
-
-
-
-
-
 
 
 
@@ -488,7 +513,7 @@ private static class DiffStruct {
    
    public int getNumDelete()		{ return delete_count; }
    
-   public ValidateCall getData()		{ return replace_data; }
+   public ValidateCall getData()	{ return replace_data; }
    
    public int getIndex()		{ return line_index; }
    

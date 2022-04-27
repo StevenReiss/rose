@@ -327,7 +327,7 @@ private static class Compiler extends Thread {
       file_result = null;
     }
    
-   @SuppressWarnings("deprecation")
+   @SuppressWarnings("removal")
    synchronized CompilationUnit getResult() {
       long start = System.currentTimeMillis();
       while (!is_done) {

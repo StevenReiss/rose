@@ -60,6 +60,8 @@ RootProblem getProblem();
 
 void validateAndSend(RootProcessor rp,RootRepair rr);
 
+boolean checkTestResult(RootTrace rt);
+
 
 boolean canCheckResult();
 

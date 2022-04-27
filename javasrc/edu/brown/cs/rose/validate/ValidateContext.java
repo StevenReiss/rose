@@ -400,9 +400,6 @@ private boolean checkBaseExecution(ValidateAction va)
     }
 }
 
-   
-
-
 
 
 void runBaseExecution(String sid)
@@ -475,6 +472,16 @@ double checkValidResult(ValidateExecution ve)
    return checker.check();
 }
 
+
+@Override public boolean checkTestResult(RootTrace testtrace)
+{
+   ValidateTrace testtr = (ValidateTrace) testtrace;
+   ValidateTrace origtrace = base_execution.getSeedeResult();
+   if (testtr.isCompilerError()) return false;
+   ValidateChecker checker = new ValidateChecker(this,origtrace,testtr,null);
+   boolean fg = checker.checkTest();
+   return fg;
+}
 
 
 

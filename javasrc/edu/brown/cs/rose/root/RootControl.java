@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jface.text.IDocument;
 import org.w3c.dom.Element;
 
@@ -132,6 +133,11 @@ String getSourceContents(File file);
  **/
 
 void compileAll(Collection<File> f);
+
+/**
+ *      Compile source from string
+ **/
+CompilationUnit compileSource(RootLocation loc,String code);
 
 
 /**

@@ -260,6 +260,22 @@ PicotCodeFragment getCode()
 
 
 
+String getPackageName()
+{
+   return value_checker.getPackageName();
+}
+
+String getTestClassName()
+{
+   return value_checker.getTestClassName();
+}
+
+String getTestMethodName()
+{
+   return value_checker.getTestMethodName();
+}
+
+
 /********************************************************************************/
 /*                                                                              */
 /*      Setup methods                                                           */

@@ -119,6 +119,7 @@ private DataPanel       other_panel;
 private JPanel		content_panel;
 private JButton         show_button;
 private JButton         suggest_button;
+private JButton         testcase_button;
 private JComboBox<?>    problem_panel;
 private DataPanel       active_panel;    
 private AdvancedPanel   advanced_panel;
@@ -252,6 +253,10 @@ private JPanel createDisplay()
    show_button = pnl.addBottomButton("Show Locations","HISTORY",new ShowLocationsHandler());
    show_button.setEnabled(false);
    suggest_button = pnl.addBottomButton("Suggest Repairs","SUGGEST",new SuggestHandler());
+   testcase_button = null;
+   if (needTestCase()) {
+      testcase_button = pnl.addBottomButton("Generate Test Case","TESTCASE",new TestCaseHandler());
+    }
    EnableWhenReady ewr = new EnableWhenReady();
    ewr.start();
 
@@ -304,10 +309,13 @@ private void updateShow()
       active_panel.setVisible(true);
       show_button.setEnabled(active_panel.isReady());
       suggest_button.setEnabled(active_panel.isReady());
+      if (testcase_button != null) 
+         testcase_button.setEnabled(active_panel.isReady());
     }
    else {
       show_button.setEnabled(false);
       suggest_button.setEnabled(false);
+      if (testcase_button != null) testcase_button.setEnabled(false);
     }
 }
 
@@ -370,6 +378,33 @@ private BushProblem getActiveProblem()
 }
 
 
+private boolean needTestCase()
+{
+   BumpThreadStack stk = for_thread.getStack();
+   BushProblem bp = getActiveProblem();
+   RootTestCase rtc = null;
+   if (bp != null) rtc = bp.getCurrentTest();
+   String fid = null;
+   if (rtc != null) fid = rtc.getEntryFrame();
+         
+   for (int i = 0; i < stk.getNumFrames(); ++i) {
+      BumpStackFrame frm = stk.getFrame(i);
+      String cls = frm.getFrameClass();
+      if (cls.contains("org.junit.")) return false;
+      if (frm.getMethod().equals("main") || frm.getMethod().endsWith(".main")) {
+         if (i+1 == stk.getNumFrames() && i < 5) return false;
+       }
+      if (fid != null && frm.getId().equals(fid)) {
+         if (i+1 < stk.getNumFrames()) {
+             BumpStackFrame nextfrm = stk.getFrame(i+1);
+             String nxtcls = nextfrm.getFrameClass();
+             if (nxtcls.contains("org.junit.")) return false;
+          }
+         return true;
+       }
+    }
+   return true;
+}
 
  
 /********************************************************************************/
@@ -488,6 +523,22 @@ private class SuggestHandler implements ActionListener {
     }
    
 }       // end of inner class SuggestHandler
+
+
+
+private class TestCaseHandler implements ActionListener {
+
+   TestCaseHandler() { }
+   
+   @Override public void actionPerformed(ActionEvent evt) {
+      BushProblem problem = getActiveProblem();
+      if (problem != null) {
+         BushFactory.metrics("GENERATE_TEST",getMetricId(),problem.getDescription());
+         BushTestGenerator tgen = new BushTestGenerator(problem,content_panel,getMetricId());
+         tgen.generateTestCase();
+       }
+    }
+}
 
 
 
@@ -1184,7 +1235,7 @@ private class AdvancedPanel extends SwingGridPanel implements ActionListener {
    private SwingNumericField max_tests_field;
    private SwingNumericField max_seede_field;
    private VariableValuePanel check_panel;
-   private RootTestCase default_test;
+   private transient RootTestCase default_test;
    
    private static final long serialVersionUID = 1;
    
