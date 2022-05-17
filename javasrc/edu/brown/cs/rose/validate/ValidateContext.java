@@ -332,6 +332,7 @@ void setupBaseExecution(boolean showall,boolean tostring,boolean toarray)
 
    // Add all the loaded files
    IvyXmlWriter xw = new IvyXmlWriter();
+   root_control.useFaitFilesForSeede();
    for (File f : root_control.getSeedeFiles(for_launch.getThread())) {
       xw.begin("FILE");
       xw.field("NAME",f.getPath());

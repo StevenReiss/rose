@@ -75,4 +75,10 @@
    </TEST>
 </SUITE>
 
+<SUITE NAME='jdraw' WORKSPACE='jdraw' PROJECT='jdraw' TIME='1000000'>
+   <TEST NAME='jdraw' SKIP='1' TYPE='PICOT' FRAMES='0'>
+      <PROBLEM TYPE='NOPROBLEM' />
+   </TEST>
+</SUITE>
+
 </ROSEEVAL>

@@ -147,20 +147,31 @@ PicotTestCreator(RootControl rc,String rid,Element xml)
       args.put("STATUS","NOTEST");
     }
    else {
-      PicotTestCase test = createTestCase();
+      PicotTestCase test = null;
+      try {
+         test = createTestCase();
+       }
+      catch (Throwable t) {
+         RoseLog.logE("Problem creating test case",t);
+       }
+      RoseLog.logD("PICOT","TEST CREATION RESULT: " + test);
       if (test == null) args.put("STATUS","FAIL");
       else {
          args.put("STATUS",test.getStatus());
          if (test.getRunCode() != null) {
-            fixImports(test);
+            Set<String> imps = fixImports(test);
             IvyXmlWriter xw = new IvyXmlWriter();
             xw.begin("TESTCASE");
+            xw.field("PROJECT",test.getTestProject());
             xw.field("PACKAGE",test.getTestPackageName());
             xw.field("CLASS",test.getTestClassName());
             xw.field("METHOD",test.getTestMethodName());
             xw.cdataElement("RUNCODE",test.getRunCode().getCode());
             xw.cdataElement("TESTCODE",test.getTestCode());
-            // output imports
+            xw.textElement("DESCRIPTION",for_problem.getDescription());
+            for (String s : imps) {
+               xw.textElement("IMPORT",s);
+             }
             xw.end("TESTCASE");
             cnts = xw.toString();
             xw.close();
@@ -188,16 +199,20 @@ PicotTestCase createTestCase()
    PicotStartFinder fndr = new PicotStartFinder(this);
    BudStackFrame bsf = fndr.findStartingPoint();
    if (bsf == null) return null;
+   RoseLog.logD("PICOT","Found starting frame " + bsf.getMethodName());
    
    ValidateFactory vf = ValidateFactory.getFactory(root_control);
+   
    RootValidate rv = vf.createValidate(for_problem,bsf.getFrameId(),
          at_location,false,false,true);
    if (rv == null) return null;
+   RoseLog.logD("PICOT","PROBLEM TIME: " + rv.getExecutionTrace().getProblemTime()); 
    
    long start = getStartTime(rv);
    
    RootTrace rt = rv.getExecutionTrace();
    RootTraceCall rtc = rt.getRootContext();
+   RoseLog.logD("PICOT","START BUILDING " + rt.getProblemTime() + " " + rtc.getMethod());
    
    MethodDeclaration md = getMethod(rtc);
    if (md == null) return null;
@@ -217,6 +232,8 @@ PicotTestCase createTestCase()
     }
    
    pvb.finished();
+   
+   RoseLog.logD("PICOT","FINISH BUILDING " + rslt);
    
    return rslt;
 }
@@ -286,12 +303,12 @@ private PicotValueContext buildCall(RootTrace rt,RootTraceCall rtc,PicotValueBui
       if (arg == null) return null;
       args.add(arg);
     }
-   
-   // look for static fields accessed by code in the trace
+
+// look for static fields accessed by code in the trace
    
 // initctx = pvb.getInitializationContext();
    
-   // should clean up initcode by removing unneeded items
+// should clean up initcode by removing unneeded items
    
    String call = "";
    if (!js.getType().getBaseType().isVoidType()) {
@@ -338,7 +355,7 @@ void loadFilesIntoFait()
    String tid = IvyXml.getAttrString(test_description,"THREAD");
    Element fileelt = IvyXml.getChild(test_description,"FILES");
    try {
-      root_control.loadFilesIntoFait(tid,fileelt);
+      root_control.loadFilesIntoFait(tid,fileelt,true);
     }
    catch (RoseException e) {
       RoseLog.logE("PICOT","Problem finding fait files",e);
@@ -424,7 +441,7 @@ private PicotTestStatus validateTest(RootValidate rv,RootTrace testtrace)
 /*                                                                              */
 /********************************************************************************/
 
-private void fixImports(PicotTestCase tc)
+private Set<String> fixImports(PicotTestCase tc)
 {
    String src = tc.getRunCode().getCode();
    CompilationUnit cu = root_control.compileSource(at_location,src);
@@ -432,6 +449,8 @@ private void fixImports(PicotTestCase tc)
    cu.accept(civ);
    String rslt = civ.doRewrite(src,cu);
    if (rslt != null) tc.updateRunCode(rslt);
+   
+   return civ.getImports();
 }
 
 
@@ -493,6 +512,8 @@ private static class CheckImportVisitor extends ASTVisitor {
          return null;
        }
     }
+   
+   Set<String> getImports()             { return used_imports; }
    
    private void rewriteQualifiedName(QualifiedName qn,ASTRewrite rw) {
       String nm = qn.getFullyQualifiedName();
@@ -565,6 +586,7 @@ private static class TestCase implements PicotTestCase {
    private String package_name;
    private String class_name;
    private String test_method;
+   private String test_project;
    
    TestCase(PicotTestStatus sts,PicotValueContext ctx) {
       test_status = sts;
@@ -572,6 +594,7 @@ private static class TestCase implements PicotTestCase {
       package_name = ctx.getPackageName();
       class_name = ctx.getTestClassName();
       test_method = ctx.getTestMethodName();
+      test_project = ctx.getTestProject();
     }
    
    TestCase(PicotTestStatus sts) {
@@ -579,6 +602,8 @@ private static class TestCase implements PicotTestCase {
       run_code = null;
       package_name = null;
       class_name = null;
+      test_project = null;
+      test_method = null;
     }
    
    @Override public PicotTestStatus getStatus()         { return test_status; }
@@ -595,6 +620,7 @@ private static class TestCase implements PicotTestCase {
    @Override public String getTestClassName()           { return class_name; }
    @Override public String getTestPackageName()         { return package_name; }
    @Override public String getTestMethodName()          { return test_method; }
+   @Override public String getTestProject()             { return test_project; }
    
    @Override public void updateRunCode(String code) {
       run_code = new PicotCodeFragment(code);

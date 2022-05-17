@@ -245,6 +245,8 @@ public String getDescription()
          return "Variable " + problem_item + " has the wrong value";
       case LOCATION :
          return "Execution shouldn't be here";
+      case NONE :
+         return "No problem, test variables: " + problem_item;
       case OTHER :
          return problem_item;
       default :

@@ -106,6 +106,8 @@ static RoseEvalProblem createProblem(Element xml)
          return createAssertion();
       case "JUNIT" :
          return createJunitAssertion();
+      case "NOPROBLEM" :
+         return createNoProblem(IvyXml.getAttrString(xml,"VARIABLES"));
       default : 
          RoseLog.logT("ROSEEVAL","Unknown problem type " + type);
          return null;
@@ -117,6 +119,12 @@ static RoseEvalProblem createProblem(Element xml)
 static RoseEvalProblem createException(String typ)
 {
    return new RoseEvalProblem("EXCEPTION",typ,null,null);
+}
+
+
+static RoseEvalProblem createNoProblem(String vars)
+{
+   return new RoseEvalProblem("NONE",vars,null,null);
 }
 
 

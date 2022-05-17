@@ -101,7 +101,7 @@ private Map<String,BushRepairAdder> current_repairs;
 private static BushFactory the_factory = null;
 private static AtomicInteger id_counter = new AtomicInteger();
 
-private static boolean project_setup_required = false;
+private static boolean project_setup_required = true;
 
 
 
@@ -597,6 +597,7 @@ private void fixupProjects()
 	       xwp.close();
 	       bc.editProject(pnm,cnts);
 	     }
+            BoardLog.logD("BUSH","Fixup project " + pnm + " " + havepoppy);
 	    if (!havepoppy) {
 	       File poppyjar = new File(findPoppyJar());
 	       if (poppyjar.exists()) {
@@ -626,6 +627,7 @@ private String findPoppyJar()
 {
    String path = BoardSetup.getSetup().getLibraryPath("poppy.jar");
    
+   BoardLog.logD("BUSH","POPPY = " + path);
    return path;
 }
 

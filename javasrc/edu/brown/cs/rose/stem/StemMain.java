@@ -137,6 +137,7 @@ private Set<File>       loaded_files;
 private Set<File>       seede_files;
 private boolean         run_debug;
 private boolean         no_debug;
+private PicotFactory    picot_factory;
 
 
 private static boolean	use_all_files = false;
@@ -179,6 +180,7 @@ private StemMain(String [] args)
    run_debug = true;
    no_debug = false;
    scanArgs(args);
+   picot_factory = new PicotFactory(this);
 }
 
 
@@ -287,7 +289,7 @@ private void handleStartCommand(MintMessage msg) throws RoseException
    Element xml = msg.getXml();
    String tid = IvyXml.getAttrString(xml,"THREAD");
    Element fileelt = IvyXml.getChild(xml,"FILES");
-   loadFilesIntoFait(tid,fileelt);
+   loadFilesIntoFait(tid,fileelt,false);
 
    if (sts) {
       analysis_state = AnalysisState.PENDING;
@@ -679,7 +681,7 @@ private void handleHistoryCommand(MintMessage msg) throws RoseException
    Element msgxml = msg.getXml();
    String tid = IvyXml.getAttrString(msgxml,"THREAD");
    Element fileelt = IvyXml.getChild(msgxml,"FILES");
-   if (tid != null) loadFilesIntoFait(tid,fileelt);
+   if (tid != null) loadFilesIntoFait(tid,fileelt,false);
    waitForAnalysis();
    long start = System.currentTimeMillis();
    Element probxml = IvyXml.getChild(msgxml,"PROBLEM");
@@ -703,7 +705,7 @@ private void handleLocationCommand(MintMessage msg) throws RoseException
    Element msgxml = msg.getXml();
    String tid = IvyXml.getAttrString(msgxml,"THREAD");
    Element fileelt = IvyXml.getChild(msgxml,"FILES");
-   if (tid != null) loadFilesIntoFait(tid,fileelt);
+   if (tid != null) loadFilesIntoFait(tid,fileelt,false);
    waitForAnalysis();
    long start = System.currentTimeMillis();
    Element probxml = IvyXml.getChild(msgxml,"PROBLEM");
@@ -834,7 +836,6 @@ private void handleMetricsCommand(MintMessage msg)
 
 private void handleCreateTest(MintMessage msg)
 {
-   PicotFactory pf = new PicotFactory(this);
    Element xml = msg.getXml();
    String rid = IvyXml.getAttrString(xml,"REPLYID");
    if (rid == null) {
@@ -848,7 +849,18 @@ private void handleCreateTest(MintMessage msg)
    msg.replyTo(xw.toString());
    xw.close();
    
-   pf.createTestCase(rid,xml);
+   picot_factory.createTestCase(rid,xml);
+}
+
+
+
+private void handleInsertTest(MintMessage msg)
+{
+   Element xml = msg.getXml();
+   String rid = IvyXml.getAttrString(xml,"NAME");
+   String cls = IvyXml.getAttrString(xml,"CLASS");
+   Element testcase = IvyXml.getChild(xml,"TESTCASE");
+   picot_factory.insertTestCase(rid,cls,testcase);
 }
 
 
@@ -1292,6 +1304,9 @@ private class CommandHandler implements MintHandler {
             case "CREATETEST" :
                handleCreateTest(msg);
                break;
+            case "INSERTTEST" :
+               handleInsertTest(msg);
+               break;
           }
        }
       catch (Throwable t) {
@@ -1485,7 +1500,14 @@ private class WaitForExit extends Thread {
 
 
 
-@Override public void loadFilesIntoFait(String tid,Element fileelt) throws RoseException
+@Override public void useFaitFilesForSeede()
+{
+   seede_files = new HashSet<>(loaded_files);
+}
+
+
+
+@Override public void loadFilesIntoFait(String tid,Element fileelt,boolean all) throws RoseException
 {
    Set<File> files = new HashSet<>();
    if (fileelt != null) {
@@ -1505,7 +1527,7 @@ private class WaitForExit extends Thread {
           }
        }
     }
-   else if (use_all_files) files = findAllSourceFiles();
+   else if (all || use_all_files) files = findAllSourceFiles();
    else if (use_computed_files) files = findComputedFiles(tid);
    else if (use_fait_files) files = findFaitFiles(tid);
    else files = findStackFiles(tid);
@@ -1534,6 +1556,24 @@ private class WaitForExit extends Thread {
     }
    
    seede_files = null;
+}
+
+
+
+@Override public File getFileForClass(String cls)
+{
+   Set<String> files = new HashSet<>();
+   files.add(cls);
+   Set<File> rslt = new HashSet<>();
+   File dir = findFilesForClasses(files,rslt);
+   for (File f : rslt) {
+      return f;
+    }
+   if (dir == null) return null;
+   int idx = cls.lastIndexOf(".");
+   String fnm = cls.substring(idx+1) + ".java";
+   File frslt = new File(dir,fnm);
+   return frslt;
 }
 
 
@@ -1674,11 +1714,25 @@ private Set<File> findFaitFiles(String threadid) throws RoseException
 }
 
 
-private void findFilesForClasses(Set<String> clsset,Set<File> rslt)
+private File findFilesForClasses(Set<String> clsset,Set<File> rslt)
 {
    Element r = sendBubblesXmlReply("PROJECTS",null,null,null);
    if (!IvyXml.isElement(r,"RESULT")) {
       RoseLog.logE("STEM","Problem getting project information: " + IvyXml.convertXmlToString(r));
+    }
+   
+   File dir = null;
+   String pkg = null;
+   for (String s : clsset) {
+      int idx = s.lastIndexOf(".");
+      if (idx > 0) {
+         String p = s.substring(0,idx);
+         if (pkg == null) pkg = p;
+         else if (!pkg.equals(p)) {
+            pkg = null;
+            break;
+          }
+       }
     }
    
    Map<String,String> classmap = new HashMap<>();
@@ -1693,6 +1747,14 @@ private void findFilesForClasses(Set<String> clsset,Set<File> rslt)
          tnm = tnm.replace("$",".");
          String fnm  = IvyXml.getAttrString(c,"SOURCE");
          if (tnm != null && fnm != null) classmap.put(tnm,fnm);
+         int idx = tnm.lastIndexOf(".");
+         if (idx > 0 && dir == null) {
+            String p = tnm.substring(0,idx);
+            if (pkg != null && pkg.equals(p)) {
+               File f = new File(fnm);
+               dir = f.getParentFile();
+             }
+          }
        }
     }
    
@@ -1705,6 +1767,8 @@ private void findFilesForClasses(Set<String> clsset,Set<File> rslt)
             RoseLog.logE("STEM","Class " + s + " not found for FILEADD");
        }
     }
+   
+   return dir;
 }
 
 
@@ -2032,7 +2096,7 @@ private static class EvalData {
 
 
 
-@Override public void compileAll(Collection<File> f) 
+@Override public void compileAll(String proj,Collection<File> f) 
 {
    Collection<File> use = new ArrayList<>();
    if (f != null) use.addAll(f);
@@ -2047,7 +2111,7 @@ private static class EvalData {
       if (stem_compiler == null) stem_compiler = new StemCompiler(this);
     }
    
-   stem_compiler.compileAll(use);
+   stem_compiler.compileAll(proj,use);
 }
 
 

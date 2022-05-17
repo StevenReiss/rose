@@ -161,6 +161,7 @@ PicotValueContext getInitializationContext()
 void computeValue(RootTraceVariable rtv)
 {
    if (rtv == null) return;
+   RoseLog.logD("PICOT","Work on variable " + rtv.getName());
    RootTraceValue rval = rtv.getValueAtTime(for_trace,start_time);
    computeValue(rval);
 }
@@ -171,6 +172,7 @@ void computeValue(RootTraceValue rtv)
 {
    if (rtv == null || done_values.contains(rtv)) return;
    done_values.add(rtv);
+   RoseLog.logD("PICOT","Compute value " + rtv);
    
    PicotCodeFragment pcf = buildSimpleValue(rtv);
    if (pcf == null) {
@@ -226,10 +228,12 @@ private void queueValues(RootTraceValue rtv)
           }
          
          RootTraceValue ftv = rtv.getFieldValue(for_trace,fld,start_time);
+         RoseLog.logD("PICOT","Work on field " + fld + " " + ftv);
          computeValue(ftv);
        }
     }
    
+   RoseLog.logD("PICOT","Queue value " + rtv);
    work_queue.add(rtv);
 }
 
@@ -297,6 +301,7 @@ private boolean setupCreationInitializations(Stack<PicotValueContext> done)
                   for ( ; ; ) {
                      List<PicotCodeFragment> fixes = new ArrayList<>();
                      FixupState state = getFixupAlternatives(npvc,rtv,fixes);
+                     RoseLog.logD("PICOT","Final Fixups: " + state  + " " + fixes.size());
                      if (state == FixupState.NO_PROBLEM) {
                         npvc.setKnown(rtv);
                         break;
@@ -308,6 +313,7 @@ private boolean setupCreationInitializations(Stack<PicotValueContext> done)
                      if (fixes == null || fixes.isEmpty()) break;
                      boolean chng = false;
                      for (PicotCodeFragment pcf : fixes) {
+                        RoseLog.logD("PICOT","Use fixup: " + pcf);
                         PicotValueContext nnpvc = new PicotValueContext(npvc,pcf,null,null);
                         if (nnpvc.isValidSetup()) {
                            chng = true;
@@ -346,7 +352,7 @@ private boolean setupFixupInitializations()
             List<PicotCodeFragment> fixes = new ArrayList<>();
             FixupState state = getFixupAlternatives(npvc,rtv,fixes);
             if (state == FixupState.NO_PROBLEM) {
-               npvc.setKnown(rtv);
+               if (npvc.getComputedValue(rtv) != null) npvc.setKnown(rtv);
                break;
              }
             retry = true;
@@ -472,8 +478,10 @@ private FixupState getFixupAlternatives(PicotValueContext ctx,RootTraceValue rtv
    rslt.clear();
    
    for (PicotValueProblem prob : probs) {
+      RoseLog.logD("PICOT","Work on problem " + prob);
       List<PicotCodeFragment> fixes = new ArrayList<>();
       FixupState state = computeFixes(ctx,prob,fixes);
+      RoseLog.logD("PICOT","Problem fixups: " + state + " " + fixes.size());
       if (state == FixupState.NO_FIXES) return FixupState.NO_FIXES;
       if (state == FixupState.FOUND_FIXES) rslt.addAll(fixes);
     } 
@@ -500,6 +508,8 @@ PicotCodeFragment buildSimpleValue(RootTraceVariable rtv)
 
 private PicotCodeFragment buildSimpleValue(RootTraceValue rtv)
 {
+   RoseLog.logD("PICOT","Build simple value: " + rtv);
+   
    if (rtv.isNull()) return new PicotCodeFragment("null");
    
    PicotCodeFragment rslt = null;
@@ -1014,7 +1024,8 @@ private FixupState computeFixes(PicotValueContext ctx,PicotValueProblem p,
       PicotCodeFragment rslt = buildSimpleValue(tgt);
       if (rslt == null) return FixupState.POTENTIAL_FIXES;
       
-      rslts = pva.getSetterCodes(this,rslt,base);
+      List<PicotCodeFragment> nrslts = pva.getSetterCodes(this,rslt,base);
+      rslts.addAll(nrslts);
       
       if (!tgt.isNull() && tgttyp.isCompatibleWith(collection_type)) {
          PicotCodeFragment pcf = pva.getGetterCode(this,tgttyp);

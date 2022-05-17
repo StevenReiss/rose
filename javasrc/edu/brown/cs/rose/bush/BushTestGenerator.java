@@ -35,7 +35,6 @@
 
 package edu.brown.cs.rose.bush;
 
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
@@ -43,8 +42,10 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -57,6 +58,7 @@ import javax.swing.JTextPane;
 
 import org.w3c.dom.Element;
 
+import edu.brown.cs.bubbles.board.BoardColors;
 import edu.brown.cs.bubbles.buda.BudaBubble;
 import edu.brown.cs.bubbles.buda.BudaBubbleArea;
 import edu.brown.cs.bubbles.buda.BudaConstants;
@@ -87,7 +89,7 @@ private String          test_id;
 private String          metric_id;
 private TestOutputPanel output_panel;
 
-
+private static final String NEW_FILE_LABEL = "New Test Class ...";
 private static AtomicInteger id_counter = new AtomicInteger(1);
 private static Map<String,BushTestGenerator> action_map = new ConcurrentHashMap<>();
 
@@ -177,6 +179,23 @@ private void finished()
 
 /********************************************************************************/
 /*                                                                              */
+/*      Insert test into test class                                             */
+/*                                                                              */
+/********************************************************************************/
+
+private void insertTest(String testclass,Element testcase)
+{ 
+   BushFactory.metrics("GENERATE_TEST",metric_id,for_problem.getDescription());
+   CommandArgs args = new CommandArgs("CLASS",testclass,"NAME",test_id);
+   String cnts = IvyXml.convertXmlToString(testcase);
+   BushFactory bf = BushFactory.getFactory();
+   bf.sendRoseMessage("INSERTTEST",args,cnts);
+}
+
+
+
+/********************************************************************************/
+/*                                                                              */
 /*      Test Output Panel                                                       */
 /*                                                                              */
 /********************************************************************************/
@@ -204,6 +223,7 @@ private class TestOutputPanel extends SwingGridPanel implements ActionListener {
     }
    
    private void layoutPanel() {
+      setBackground(BoardColors.getColor("Rose.background.color"));
       beginLayout();
       addBannerLabel("Generate Test for " + for_problem.getDescription());
       addSeparator();
@@ -211,7 +231,7 @@ private class TestOutputPanel extends SwingGridPanel implements ActionListener {
       addLabellessRawComponent("WORKING",working_label);
       test_result = new TestResultEditor();
       result_area = addLabellessRawComponent("RESULT",new JScrollPane(test_result));
-      List<String> files = findTestFiles(null);
+      List<String> files = findTestFiles();
       file_field = addChoice("Insert into",files,files.get(0),this);
       new_file_field = addTextField("New Test Class",null,32,this,null);
       accept_button = addBottomButton("ACCEPT","ACCEPT",this);
@@ -219,8 +239,50 @@ private class TestOutputPanel extends SwingGridPanel implements ActionListener {
       updatePanel();
     }
    
-   private List<String> findTestFiles(String pkg) {
+   private List<String> findTestFiles() {
+      List<String> clss = getTestClasses();
       List<String> rslt = new ArrayList<>();
+      String pkg = getPackage();
+      if (pkg != null) {
+         for (String s : clss) {
+            if (s.startsWith(pkg + ".")) {
+               s = s.substring(pkg.length()+1);
+             }
+            rslt.add(s);
+          }
+       }
+      rslt.add(NEW_FILE_LABEL);
+      return rslt;
+    }
+   
+   
+   private String getDefaultTestFile() {
+      Set<String> clsset = new HashSet<>(getTestClasses());
+      String pkg = getPackage();
+      Element testcase = IvyXml.getChild(test_data,"TESTCASE");
+      String cls = IvyXml.getAttrString(testcase,"CLASS");
+      String cnm = null;
+      if (pkg != null) {
+         cnm = pkg;
+         int idx = cnm.lastIndexOf(".");
+         if (idx > 0) cnm = cnm.substring(idx+1);
+         cnm = cnm.substring(0,1).toUpperCase() + cnm.substring(1);
+         cnm += "Test";
+         if (clsset.contains(cnm)) cnm = null;
+       } 
+      if (cls != null && cnm == null) {
+         cnm = cls;
+         int idx = cnm.lastIndexOf(".");
+         if (idx > 0) cnm = cnm.substring(idx+1);
+         cnm += "Test";
+         if (clsset.contains(cnm)) cnm = null;
+       }
+      return cnm;
+    }
+ 
+   private List<String> getTestClasses() {
+      List<String> rslt = new ArrayList<>();
+      String pkg = getPackage();
       if (pkg != null) {
          List<BumpLocation> clocs = BumpClient.getBump().findAllClasses(pkg + ".*");
          for (BumpLocation clsloc : clocs) {
@@ -239,57 +301,76 @@ private class TestOutputPanel extends SwingGridPanel implements ActionListener {
              }
           }
        }
-      rslt.add("New File ...");
       return rslt;
     }
    
    private void updatePanel() {
       if (test_data == null) {
-         hideAll("Working on Test Case Generation",Color.YELLOW);
+         hideAll("Working on Test Case Generation","working");
        }
       else switch (IvyXml.getAttrString(test_data,"STATUS","FAIL")) {
          case "NOTEST" :
-            hideAll("Nothing to Generate",Color.RED);
+            hideAll("Nothing to Generate","fail");
             break;
          case "FAIL" :
          case "NO_DUP" :
-            hideAll("Test Case Generation Failed",Color.RED);
+            hideAll("Test Case Generation Failed","fail");
             break;
          case "SUCCESS" :
-            if (!result_area.isVisible()) setupTest();
+            if (!result_area.isVisible()) setupTest("done");
             else updateTest();
             break;
        }
     }
    
-   private void hideAll(String lbl,Color c) {
+   private void hideAll(String lbl,String c) {
       working_label.setText(lbl);
-      if (c != null) working_label.setForeground(c);
-      result_area.setVisible(false);
-      file_field.setVisible(false);
-      new_file_field.setVisible(false);
+      setLabelColor(c);
+      hideField(result_area);
+      hideField(file_field);
+      hideField(new_file_field);
       accept_button.setVisible(false);
     }
    
-   void setupTest() {
+   private void hideField(Component c) {
+      JLabel lbl = getJLabelForComponent(c);
+      if (lbl != null) lbl.setVisible(false);
+      c.setVisible(false);
+    }
+   
+   private void showField(Component c) {
+      JLabel lbl = getJLabelForComponent(c);
+      if (lbl != null) lbl.setVisible(true);
+      c.setVisible(true);
+    }
+   
+   void setupTest(String c) {
+      setLabelColor(c);
       working_label.setText("Generated Test Case");
       Element testcase = IvyXml.getChild(test_data,"TESTCASE");
       String testcode = IvyXml.getTextElement(testcase,"TESTCODE");
       test_result.setText(testcode);
-      result_area.setVisible(true);
-      List<String> files = findTestFiles(IvyXml.getAttrString(testcase,"PACKAGE"));
+      showField(result_area);
+      List<String> files = findTestFiles();
       file_field.setContents(files);
-      file_field.setVisible(true);
-      new_file_field.setVisible(false);
+      showField(file_field);
+      new_file_field.setText(getDefaultTestFile());
+      hideField(new_file_field);
       accept_button.setVisible(true);
       accept_button.setEnabled(false);
+    }
+   
+   void setLabelColor(String c) {
+      if (c == null) return;
+      String cnm = "Rose.test." + c + ".color";
+      working_label.setForeground(BoardColors.getColor(cnm));
     }
    
    void updateTest() {
       String fil = (String) file_field.getSelectedItem();
       boolean enable = false;
-      if (fil.equals("New File ...")) {
-         new_file_field.setVisible(true);
+      if (fil.equals(NEW_FILE_LABEL)) {
+         showField(new_file_field);
          if (new_file_field.getText().trim().length() == 0) enable = true;
        }
       else enable = true;
@@ -298,10 +379,23 @@ private class TestOutputPanel extends SwingGridPanel implements ActionListener {
    
    @Override public void actionPerformed(ActionEvent evt) {
       if (evt.getSource() == accept_button) {
-         System.err.println("Create or insert test");
-         BushFactory.metrics("GENERATE_TEST",metric_id,for_problem.getDescription());
+         String cls = (String) file_field.getSelectedItem();
+         if (cls.equals(NEW_FILE_LABEL)) cls = new_file_field.getText().trim();
+         if (cls == null || cls.length() == 0) return;
+         if (!cls.contains(".")) {
+            String pkg = getPackage();
+            if (pkg != null) cls = pkg + "." + cls;
+          }
+         Element testcase = IvyXml.getChild(test_data,"TESTCASE");
+         insertTest(cls,testcase);
        }
       else updatePanel();
+    }
+   
+   private String getPackage() {
+      Element testcase = IvyXml.getChild(test_data,"TESTCASE");
+      String pkg = IvyXml.getAttrString(testcase,"PACKAGE");
+      return pkg;
     }
 
 }       // end of inner class TestOutputPanel

@@ -106,10 +106,9 @@ StemCompiler(StemMain sm)
 /*										*/
 /********************************************************************************/
 
-void compileAll(Collection<File> use)
+void compileAll(String proj,Collection<File> use)
 {
    List<JcompSource> files = new ArrayList<>();
-   String proj = null;
    for (File f : use) {
       SourceFile sf = getSourceFile(f);
       if (proj == null) {

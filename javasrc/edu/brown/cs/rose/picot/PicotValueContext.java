@@ -156,20 +156,6 @@ PicotValueContext(PicotValueContext vc,PicotCodeFragment addedcode,
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 void noteComputed(RootTraceValue rtv,PicotCodeFragment pcf)
 {
    if (pcf == null) computed_code.remove(rtv);
@@ -216,6 +202,7 @@ void setVariableKnown(String var)
 void setKnown(RootTraceValue rtv)
 {
    PicotCodeFragment pcf = computed_code.get(rtv);
+   if (pcf == null) return;
    known_variables.add(pcf.getCode());
 }
 
@@ -273,6 +260,11 @@ String getTestClassName()
 String getTestMethodName()
 {
    return value_checker.getTestMethodName();
+}
+
+String getTestProject()
+{
+   return value_checker.getTestProject();
 }
 
 
@@ -348,6 +340,7 @@ private boolean fixupValues(String var0)
       RootTraceVariable rtvar = rtc.getTraceVariables().get(var);
       if (rtvar == null) continue;
       RootTraceValue sourceval = rtvar.getValueAtTime(value_result,srctime);
+      RoseLog.logD("PICOT","Work on variable " + var + ": " + targetval + " " + sourceval);
       boolean fg = checkValue(acc,sourceval,targetval,null,srctime,target_time,force,0);
       if (force && !fg) return false;
     }
@@ -439,7 +432,10 @@ boolean checkValue(PicotValueAccessor acc,RootTraceValue sourceval,
       PicotValueProblem prob = new PicotValueProblem(acc,sourceval,targetval,baseval);
       if (found_problems == null) found_problems = new LinkedHashSet<>();
       found_problems.add(prob);
+      RoseLog.logD("PICOT","Found problem " + prob);
     }
+   
+   RoseLog.logD("PICOT","Value compute " + fg + " " + sourceval + " " + targetval);
    
    return fg;
 }
@@ -576,7 +572,11 @@ private boolean compare(PicotValueAccessor acc,JcompType typ,
    
    RoseLog.logD("PICOT","COMPAREA " + src + " AND " + tgt);
    
-   return checkValue(acc,src,tgt,base,stime,ttime,force,lvl+1);
+   boolean fg = checkValue(acc,src,tgt,base,stime,ttime,force,lvl+1);
+   
+   RoseLog.logD("PICOT","COMPARE RESULT " + fg);
+   
+   return fg;
 }
 
 

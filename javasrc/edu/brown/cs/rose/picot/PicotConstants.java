@@ -60,6 +60,7 @@ interface PicotTestCase {
    String getTestClassName();
    String getTestPackageName();
    String getTestMethodName();
+   String getTestProject();
    void updateRunCode(String code);
 }
 

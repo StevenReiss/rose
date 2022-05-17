@@ -41,6 +41,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
+import java.util.StringTokenizer;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
@@ -254,6 +255,20 @@ ThornChangeMap findProblemVariables(ASTNode base,RootProblem rp)
       case LOCATION :
       case OTHER :
          return null;
+      case NONE :
+         if (rp.getProblemDetail() == null) return null;
+         ThornChangeMap cm = new ThornChangeMap();
+         StringTokenizer tok = new StringTokenizer(rp.getProblemDetail()," \t,;-&\n");
+         while (tok.hasMoreTokens()) {
+            String var = tok.nextToken();
+            JcompSymbol js1 = findVariableSymbol(base,var);
+            if (js1 != null) {
+               ThornChangedItem cd = new ThornChangedItem(js1);
+               cd = cd.setRelevant();
+               cm.put(js1,cd);
+             }
+          }
+         return cm;
     }
    
    if (n == null) return null;

@@ -264,7 +264,7 @@ private Element getRunner()
 
 
 
-
+ 
 /********************************************************************************/
 /*                                                                              */
 /*      Find the point in the execution corresponding to the launch             */
@@ -286,7 +286,7 @@ void setupForLaunch(BudLaunch launch)
 
 
 
-private void findProblemTime(Element ctx,BudLaunch launch,Stack<String> stack)
+void findProblemTime(Element ctx,BudLaunch launch,Stack<String> stack)
 {
    String mthd = IvyXml.getAttrString(ctx,"METHOD");
    stack.push(normalizeName(mthd));

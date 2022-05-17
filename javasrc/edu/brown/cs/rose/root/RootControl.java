@@ -132,7 +132,12 @@ String getSourceContents(File file);
  *      Compile a set of files together for later access
  **/
 
-void compileAll(Collection<File> f);
+default void compileAll(Collection<File> f) 
+{
+   compileAll(null,f);
+}
+
+void compileAll(String proj,Collection<File> f);
 
 /**
  *      Compile source from string
@@ -201,7 +206,9 @@ LeashIndex getGlobalIndex();
 
 Set<File> getLoadedFiles();
 Set<File> getSeedeFiles(String threadid); 
-void loadFilesIntoFait(String threadid,Element files) throws RoseException;
+void loadFilesIntoFait(String threadid,Element files,boolean all) throws RoseException;
+void useFaitFilesForSeede();
+File getFileForClass(String cls);
 
 
 }       // end of interface RoseControl

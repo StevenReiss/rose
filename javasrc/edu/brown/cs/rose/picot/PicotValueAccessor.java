@@ -224,7 +224,7 @@ private static class FieldAccessor extends PicotValueAccessor {
       JcompType btyp = base_value.getDataType(bldr);
       JcompSymbol fldsym = btyp.lookupField(bldr.getJcompTyper(),field_name);
       PicotCodeFragment pcf = bldr.buildFieldGetter(lhs,fldsym,base_value.getDataType(bldr));
-      if (targettype != null && fldsym.getType() != targettype) {
+      if (targettype != null && fldsym.getType() != targettype && pcf != null) {
          pcf = new PicotCodeFragment("((" + targettype.getName() + ") " + pcf.getCode() + ")");
        }
       return pcf;

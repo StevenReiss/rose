@@ -78,6 +78,19 @@ public void createTestCase(String rid,Element xml)
 }
 
 
+/********************************************************************************/
+/*                                                                              */
+/*      Insert created test case into class                                     */
+/*                                                                              */
+/********************************************************************************/
+
+public void insertTestCase(String rid,String cls,Element testcase)
+{
+   PicotTestInserter pic = new PicotTestInserter(root_control,rid,cls,testcase);
+   pic.start();
+}
+
+
 
 }       // end of class PicotFactory
 

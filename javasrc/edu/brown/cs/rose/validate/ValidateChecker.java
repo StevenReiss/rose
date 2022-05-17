@@ -101,6 +101,8 @@ double check()
       case VARIABLE :
          vpc = new ValidateCheckerVariable(matcher,false);
          break;
+      case NONE :
+         return 0;
       default :
       case OTHER :
          break;
@@ -146,6 +148,9 @@ boolean checkTest()
          break;
       case VARIABLE :
          vpc = new ValidateCheckerVariable(matcher,true);
+         break;
+      case NONE :
+         vpc = new ValidateCheckerNone(matcher,true);
          break;
       default :
       case OTHER :
@@ -390,8 +395,33 @@ private class ValidateCheckerVariable extends ValidateProblemChecker {
       return 0.0;
    }
    
-}       // end of inner class ValidateCheckerException
+}       // end of inner class ValidateCheckerVariable
 
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Check for NO Problems                                                   */
+/*                                                                              */
+/********************************************************************************/
+
+private class ValidateCheckerNone extends ValidateProblemChecker {
+   
+   ValidateCheckerNone(ValidateMatcher m,boolean test) {
+      super(m,test);
+    }
+   
+   @Override double validate()                  { return 0.0; }
+   
+   @Override boolean validateTestLocal() {
+      long t1 = execution_matcher.getDataChangeTime();
+      if (t1 <= 0 || t1 > execution_matcher.getProblemAfterTime()) return true;
+      // should check problem variables at the problem time rather than all variables
+      return false;
+    }
+   
+}       // end of inner class ValidateCheckerNone
+      
 
 
 

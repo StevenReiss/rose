@@ -45,6 +45,7 @@ import edu.brown.cs.rose.bract.BractFactory;
 import edu.brown.cs.rose.root.RootControl;
 import edu.brown.cs.rose.root.RootLocation;
 import edu.brown.cs.rose.root.RootValidate;
+import edu.brown.cs.rose.root.RoseLog;
 import edu.brown.cs.rose.root.RootValidate.RootTraceCall;
 import edu.brown.cs.rose.root.RootValidate.RootTrace;
 
@@ -58,14 +59,21 @@ class PicotValueChecker implements PicotConstants
 /*                                                                              */
 /********************************************************************************/
 
+private RootControl root_control;
 private RootValidate base_execution;
 private String  setup_contents;
 private File    local_file;
+private String  test_project;
 private String  package_name;
 private String  test_class;
 private String  test_id;
 
-private static AtomicInteger method_ctr = new AtomicInteger(0);
+private static AtomicInteger method_ctr; 
+static {
+   int rno = (int)(Math.random()*1000000);
+   method_ctr = new AtomicInteger(rno);
+}
+
 
 
 /********************************************************************************/
@@ -76,13 +84,14 @@ private static AtomicInteger method_ctr = new AtomicInteger(0);
 
 PicotValueChecker(RootControl ctrl,RootValidate base)
 {
+   root_control = ctrl;
    base_execution = base;
    setup_contents = null;
    local_file = null;
    package_name = null;
    test_class = null;
    test_id = null;
-   
+   test_project = null;
    setupSession();              
 }
 
@@ -106,6 +115,8 @@ String getPackageName()                         { return package_name; }
 
 String getTestClassName()                       { return test_class; }
 
+String getTestProject()                         { return test_project; }
+
 String getCode()                                { return setup_contents; }
 
 
@@ -124,6 +135,8 @@ String getTestMethodName()                      { return "test" + test_id; }
 RootTrace generateTrace(PicotCodeFragment pcf)
 {
    if (local_file == null) setupSession();
+   
+   RoseLog.logD("PICOT","Generate trace for " + pcf.getCode());
    
    int start = setup_contents.indexOf(START_STRING);
    start += START_STRING.length();
@@ -159,6 +172,7 @@ private void setupSession()
    package_name = mthd.substring(0,idx2);
    test_id = String.valueOf(method_ctr.incrementAndGet());
    test_class = "PicotTestClass_" + test_id;
+   test_project = root_control.getProjectForFile(tc.getFile());
    
    local_file = new File("/SEEDE_LOCAL_FILE/SEEDE_" + test_class + ".java");
    

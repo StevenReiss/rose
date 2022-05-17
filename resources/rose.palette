@@ -1,6 +1,40 @@
 Rose.background.color	:	MistyRose
 Rose.value.error.color	:	Red
 Rose.value.color	:	Black
+Rose.test.fail.color	:	Red
+Rose.test.working.color :	#808000
+Rose.test.done.color	:	Green
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

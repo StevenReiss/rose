@@ -75,6 +75,7 @@ static StemQueryHistory createHistoryQuery(StemMain ctrl,RootProblem prob)
       case ASSERTION :
          return new StemQueryAssertionHistory(ctrl,prob);
       case OTHER :
+      case NONE :
       case LOCATION :
          return new StemQueryLocationHistory(ctrl,prob);
     }

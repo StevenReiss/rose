@@ -116,6 +116,7 @@ private DataPanel       exception_panel;
 private DataPanel       assertion_panel;
 private DataPanel       location_panel;
 private DataPanel       other_panel;
+private DataPanel       none_panel;
 private JPanel		content_panel;
 private JButton         show_button;
 private JButton         suggest_button;
@@ -213,6 +214,10 @@ private JPanel createDisplay()
    other_panel = new OtherPanel();
    other_panel.setVisible(false);
    active_panel = location_panel;
+   none_panel = new NonePanel();
+   none_panel.setVisible(false);
+   
+   boolean needtest = needTestCase();
    
    SwingGridPanel pnl = new SimplePanel();
    pnl.beginLayout();
@@ -246,7 +251,8 @@ private JPanel createDisplay()
    choices.add("Should not be here");
    choices.add("Variable value incorrect");
    choices.add("Expression value incorrect");
-   choices.add("Other ...");
+   choices.add("Other Problem ...");
+   if (needtest) choices.add("No Problem -- generate test");
    problem_panel = pnl.addChoice("Problem",choices,0,false,new PanelSelector());
    problem_panel.setEnabled(false);
    
@@ -254,7 +260,7 @@ private JPanel createDisplay()
    show_button.setEnabled(false);
    suggest_button = pnl.addBottomButton("Suggest Repairs","SUGGEST",new SuggestHandler());
    testcase_button = null;
-   if (needTestCase()) {
+   if (needtest) {
       testcase_button = pnl.addBottomButton("Generate Test Case","TESTCASE",new TestCaseHandler());
     }
    EnableWhenReady ewr = new EnableWhenReady();
@@ -263,6 +269,7 @@ private JPanel createDisplay()
    pnl.addLabellessRawComponent("VARIABLES",variable_panel);
    pnl.addLabellessRawComponent("EXPRSSIONS",expression_panel);
    pnl.addLabellessRawComponent("OTHER",other_panel);
+   pnl.addLabellessRawComponent("NOPROBLEM",none_panel);
    
    BorderLayout blay = new BorderLayout();
    JPanel advpnl = new JPanel(blay);
@@ -306,11 +313,15 @@ private void updateShow()
    if (rose_ready) problem_panel.setEnabled(true);
    
    if (active_panel != null && rose_ready) {
+      BoardLog.logD("BUSH","Set visible panel " + active_panel);
       active_panel.setVisible(true);
       show_button.setEnabled(active_panel.isReady());
       suggest_button.setEnabled(active_panel.isReady());
-      if (testcase_button != null) 
-         testcase_button.setEnabled(active_panel.isReady());
+      if (testcase_button != null) {
+         boolean fg = active_panel.isTestReady();
+         fg &= needTestCase();
+         testcase_button.setEnabled(fg);
+       }
     }
    else {
       show_button.setEnabled(false);
@@ -347,8 +358,11 @@ private class PanelSelector implements ActionListener {
          case "Expression value incorrect" :
             active_panel = expression_panel;
             break;
-         case "Other ..." :
+         case "Other Problem ..." :
             active_panel = other_panel;
+            break;
+         case "No Problem -- generate test" :
+            active_panel = none_panel;
             break;
          default :
             BoardLog.logE("BUSH","Unknown panel action " + v);
@@ -371,9 +385,10 @@ private class PanelSelector implements ActionListener {
 
 private BushProblem getActiveProblem()
 {
+   if (active_panel == null) return null;
    BushProblem bp = active_panel.getProblem();
    if (bp == null) return null;
-   bp.setCurrentTest(advanced_panel.getDefaultTest());
+   if (advanced_panel != null) bp.setCurrentTest(advanced_panel.getDefaultTest());
    return bp;
 }
 
@@ -575,6 +590,8 @@ private abstract static class DataPanel extends SwingGridPanel {
    
    abstract boolean isReady();
    
+   boolean isTestReady()                { return isReady(); }
+   
    abstract BushProblem getProblem();
    
 }
@@ -604,7 +621,7 @@ private class LocationPanel extends DataPanel {
 
    private static final long serialVersionUID = 1;
    
-   @Override public boolean isReady()                           { return true; }
+   @Override boolean isReady()                           { return true; }
    
    
    @Override public BushProblem getProblem() {
@@ -619,7 +636,7 @@ private class ExceptionPanel extends DataPanel {
 
    private static final long serialVersionUID = 1;
    
-   @Override public boolean isReady()                           { return true; }
+   @Override boolean isReady()                           { return true; }
    
    @Override public BushProblem getProblem() {
       return new BushProblem(for_frame,RoseProblemType.EXCEPTION,exception_type,null,null,null);
@@ -632,7 +649,7 @@ private class AssertionPanel extends DataPanel {
 
    private static final long serialVersionUID = 1;
    
-   @Override public boolean isReady()                           { return true; }
+   @Override boolean isReady()                           { return true; }
    
    @Override public BushProblem getProblem() {
       return new BushProblem(for_frame,RoseProblemType.ASSERTION,for_thread.getExceptionType(),null,null,null);
@@ -692,7 +709,7 @@ private abstract class VarExprPanel extends DataPanel implements ActionListener,
       for (String elt : elts) variable_selector.addItem(elt);
     }
    
-   @Override public boolean isReady()                           { return is_ready; }
+   @Override boolean isReady()                           { return is_ready; }
    
    @Override public void actionPerformed(ActionEvent evt) {
       String what = getHeading();
@@ -768,7 +785,11 @@ private abstract class VarExprPanel extends DataPanel implements ActionListener,
     }
    
    protected String getShouldBeValue() {
+      if (should_be == null) return null;
+      
       String shd = (String) should_be.getSelectedItem();
+      if (shd == null) return null;
+      
       if (shd.startsWith("Other") || shd.startsWith("A different value")) {
          shd = other_value.getText();
          if (shd.equals("")) shd = null;
@@ -1137,18 +1158,45 @@ private class OtherPanel extends DataPanel {
       other_description = addTextArea("Describe Problem",null,4,32,null);
     }
    
-   @Override public boolean isReady() {
-      String cnts = other_description.getText();
-      if (cnts == null || cnts.length() == 0) return false;
-      return true;
+   @Override boolean isReady() {
+      return false;
     }
    
-   
+   @Override boolean isTestReady()                      { return true; }
    
    @Override public BushProblem getProblem() {
       return new BushProblem(for_frame,RoseProblemType.OTHER,other_description.getText(),
             null,null,null);
     }
+}
+
+
+private class NonePanel extends DataPanel {
+ 
+   private JTextField variable_names;
+   
+   private static final long serialVersionUID = 1;
+   
+   NonePanel() {
+      setBackground(BoardColors.getColor("Rose.background.color"));
+      setOpaque(false);
+      beginLayout();
+      variable_names = addTextField("Key Variables",null,32,null,null);
+    }
+   
+   @Override public boolean isReady() {
+      return false;
+    }
+   
+   @Override public boolean isTestReady() {
+      return true;
+    }
+   
+   @Override public BushProblem getProblem() {
+      return new BushProblem(for_frame,RoseProblemType.NONE,variable_names.getText(),
+            null,null,null);
+    }
+   
 }
 
 

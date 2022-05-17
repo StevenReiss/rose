@@ -46,11 +46,12 @@ enum RoseValueKind {
 
 enum RoseProblemType {
    EXCEPTION,
-      ASSERTION,
-      VARIABLE,
-      EXPRESSION,
-      LOCATION,
-      OTHER
+   ASSERTION,
+   VARIABLE,
+   EXPRESSION,
+   LOCATION,
+   NONE,
+   OTHER
 }
 
 

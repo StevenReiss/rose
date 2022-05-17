@@ -78,7 +78,8 @@ RoseEvalTest(RoseEvalSuite suite,Element xml)
    test_problem = RoseEvalProblem.createProblem(IvyXml.getChild(xml,"PROBLEM"));
    test_time = IvyXml.getAttrLong(xml,"TIME",suite.getDefaultTime());
    test_skip = IvyXml.getAttrInt(xml,"SKIP",0);
-   test_solution = new RoseEvalSolution(IvyXml.getChild(xml,"SOLUTION"));
+   if (IvyXml.getChild(xml,"SOLUTION") == null) test_solution = null;
+   else test_solution = new RoseEvalSolution(IvyXml.getChild(xml,"SOLUTION"));
    local_test = IvyXml.getAttrBool(xml,"LOCAL");
    up_frames = IvyXml.getAttrInt(xml,"FRAMES");
    if (local_test && up_frames < 0) up_frames = 0;
