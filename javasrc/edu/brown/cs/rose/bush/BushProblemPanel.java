@@ -221,7 +221,7 @@ private JPanel createDisplay()
    
    SwingGridPanel pnl = new SimplePanel();
    pnl.beginLayout();
-   JLabel lbl = pnl.addBannerLabel("ROSE debugging assistant");
+   JLabel lbl = pnl.addBannerLabel("ROSE Debugging Assistant");
    lbl.setIcon(BoardImage.getIcon("rose",getClass()));
    pnl.addSeparator();
    pnl.addDescription("Thread",for_thread.getName());
