@@ -47,6 +47,7 @@ import org.eclipse.jdt.core.dom.NumberLiteral;
 import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.jdt.core.dom.StringLiteral;
 import org.eclipse.jdt.core.dom.SuperFieldAccess;
+import org.eclipse.jdt.core.dom.TextBlock;
 import org.eclipse.jdt.core.dom.TypeLiteral;
 
 import edu.brown.cs.ivy.jcomp.JcompAst;
@@ -77,6 +78,9 @@ static PicotEffectItem createEffectItem(ASTNode n,Map<JcompSymbol,PicotEffectIte
    switch (n.getNodeType()) {
       case ASTNode.STRING_LITERAL :
          rslt = new ConstantItem((StringLiteral) n);
+         break;
+      case ASTNode.TEXT_BLOCK :
+         rslt = new ConstantItem((TextBlock) n);
          break;
       case ASTNode.NULL_LITERAL :
          rslt = new ConstantItem((NullLiteral) n);
@@ -250,6 +254,11 @@ private static class ConstantItem extends PicotEffectItem {
    private Object constant_value;
    
    ConstantItem(StringLiteral n) {
+      initialize(n);
+      constant_value = n.getEscapedValue();
+    }
+   
+   ConstantItem(TextBlock n) {
       initialize(n);
       constant_value = n.getEscapedValue();
     }

@@ -147,7 +147,7 @@ private static class ExprFinder extends ASTVisitor {
             case ASTNode.STRING_LITERAL :
             case ASTNode.SWITCH_EXPRESSION :
             case ASTNode.THIS_EXPRESSION :
-//          case ASTNode.TEXT_BLOCK :
+            case ASTNode.TEXT_BLOCK :
             case ASTNode.TYPE_LITERAL :
             case ASTNode.VARIABLE_DECLARATION_EXPRESSION :
                return;

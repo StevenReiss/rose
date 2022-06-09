@@ -910,6 +910,7 @@ private class ExprRewriter extends ASTVisitor {
             case ASTNode.NUMBER_LITERAL :
             case ASTNode.STRING_LITERAL :
             case ASTNode.TYPE_LITERAL :
+            case ASTNode.TEXT_BLOCK :
                return output(n);
             case ASTNode.NORMAL_ANNOTATION :
             case ASTNode.MARKER_ANNOTATION :

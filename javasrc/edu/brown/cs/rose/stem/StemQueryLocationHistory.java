@@ -166,6 +166,7 @@ AssertionData getAssertionData()
             case ASTNode.NUMBER_LITERAL :
             case ASTNode.STRING_LITERAL :
             case ASTNode.NULL_LITERAL :
+            case ASTNode.TEXT_BLOCK :
                Expression exx = ex1;
                ex1 = ex2;
                ex2 = exx;

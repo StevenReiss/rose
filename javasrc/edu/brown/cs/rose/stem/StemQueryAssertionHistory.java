@@ -244,6 +244,7 @@ private class AssertionChecker extends ASTVisitor implements AssertionData {
             case ASTNode.NUMBER_LITERAL :
             case ASTNode.STRING_LITERAL :
             case ASTNode.NULL_LITERAL :
+            case ASTNode.TEXT_BLOCK :
                int idx = givenidx;
                givenidx = targetidx;
                targetidx = idx;

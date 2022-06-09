@@ -50,6 +50,7 @@ import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.Statement;
 import org.eclipse.jdt.core.dom.StringLiteral;
 import org.eclipse.jdt.core.dom.StructuralPropertyDescriptor;
+import org.eclipse.jdt.core.dom.TextBlock;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.AST;
 
@@ -457,6 +458,18 @@ private boolean matchVariable(ASTNode pat,ASTNode orig,PatternMap values)
          if (orig instanceof StringLiteral) {
             if (nam == null) return true;
             String nv = ((StringLiteral) orig).getLiteralValue();
+            Object val = values.get(nam);
+            if (val == null) {
+               values.put(nam,nv);
+               return true;
+             }
+            else if (val instanceof String) {
+               return val.equals(nv);
+             }
+          }
+         else if (orig instanceof TextBlock) {
+            if (nam == null) return true;
+            String nv = ((TextBlock) orig).getLiteralValue();
             Object val = values.get(nam);
             if (val == null) {
                values.put(nam,nv);
