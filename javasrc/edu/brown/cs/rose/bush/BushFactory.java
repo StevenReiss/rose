@@ -255,9 +255,10 @@ void startRepairSuggestor(BushProblem prob,BushLocation loc,BushRepairAdder adde
 }
 
 
-AbstractAction getSuggestAction(BushProblem p,BushLocation l,Component c,String mid) 
+AbstractAction getSuggestAction(BushProblem p,BushLocation l,Component c,
+      BushProblemPanel pnl,String mid) 
 {
-   return new RoseSuggestAction(p,l,c,mid);
+   return new RoseSuggestAction(p,l,c,pnl,mid);
 }
 
 
@@ -346,7 +347,7 @@ private boolean startRoseServer()
    File logf = new File(wd,"rose.log");
 
    BoardProperties bp = BoardProperties.getProperties("Rose");
-   String dbgargs = bp.getProperty("Rose.fait.jvm.args");
+   String dbgargs = bp.getProperty("Rose.rose.jvm.args");
    List<String> args = new ArrayList<>();
    args.add(IvyExecQuery.getJavaPath());
 
@@ -950,7 +951,7 @@ private class RoseFixAnnotation implements BaleAnnotation {
     }
    
    @Override public String getToolTip() {
-      return "<html>Ask Rose to Suggest Possible Repairs for " + for_problem.getDescription();
+      return "<html>Potential repair location for " + for_problem.getDescription();
     }
    
    @Override public Color getLineColor(BudaBubble bb)		{ return null; }
@@ -960,7 +961,7 @@ private class RoseFixAnnotation implements BaleAnnotation {
    @Override public int getPriority()	                        { return 10; }
    
    @Override public void addPopupButtons(Component base,JPopupMenu menu) {
-      menu.add(new RoseSuggestAction(for_problem,for_location,base,metric_id));
+      menu.add(new RoseSuggestAction(for_problem,for_location,base,null,metric_id));
     }
    
 }       // end of inner class RoseFixAnnotation
@@ -1022,10 +1023,11 @@ private static class RoseSuggestAction extends AbstractAction implements Runnabl
    private Component from_component;
    private String metric_id;
    private boolean create_bubble;
+   private transient BushProblemPanel problem_panel;
    
    private static final long serialVersionUID = 1;
    
-   RoseSuggestAction(BushProblem p,BushLocation l,Component c,String mid) {
+   RoseSuggestAction(BushProblem p,BushLocation l,Component c,BushProblemPanel pnl,String mid) {
       super("Suggest Repairs for " + p.getDescription() +
             (l != null ? " here" : ""));
       for_problem = p;
@@ -1033,6 +1035,7 @@ private static class RoseSuggestAction extends AbstractAction implements Runnabl
       from_component = c;
       metric_id = mid;
       create_bubble = false;
+      problem_panel = pnl;
     }
    
    @Override public void actionPerformed(ActionEvent e) {
@@ -1053,6 +1056,7 @@ private static class RoseSuggestAction extends AbstractAction implements Runnabl
          BushSuggestPanel pnl = new BushSuggestPanel(from_component,for_problem,for_location,metric_id);
          pnl.createBubble();
          BushFactory.getFactory().startRepairSuggestor(for_problem,for_location,pnl);
+         if (problem_panel != null) problem_panel.noteWorking(false);
        }
       else {
          setupDefaultTest();

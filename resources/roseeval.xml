@@ -618,4 +618,10 @@
    </TEST>
 </SUITE>
 
+<SUITE NAME='userstudy' WORKSPACE='roseuserstudy' PROJECT='roseuserstudy'>
+   <TEST NAME='userstudy' SKIP='1'>
+      <PROBLEM TYPE='VARIABLE' NAME='rslt' CURRENT='int 131072' TARGET='65536' />
+   </TEST>
+</SUITE>
+
 </ROSEEVAL>

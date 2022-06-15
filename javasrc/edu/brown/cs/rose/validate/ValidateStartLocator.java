@@ -40,6 +40,7 @@ import java.util.List;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 
+import edu.brown.cs.bubbles.board.BoardProperties;
 import edu.brown.cs.rose.bud.BudLaunch;
 import edu.brown.cs.rose.bud.BudStack;
 import edu.brown.cs.rose.bud.BudStackFrame;
@@ -77,7 +78,10 @@ ValidateStartLocator(RootProblem rp,BudLaunch bl,RootLocation at)
    base_problem = rp;
    at_location = at;
    max_up = rp.getMaxUp();
-   if (max_up < 0) max_up = 5;
+   if (max_up < 0) {
+      BoardProperties bp = BoardProperties.getProperties("Rose");
+      max_up = bp.getInt("Rose.max.up",5);
+    }
 }
 
 

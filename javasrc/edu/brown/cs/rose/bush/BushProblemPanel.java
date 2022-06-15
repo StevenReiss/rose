@@ -36,6 +36,7 @@
 package edu.brown.cs.rose.bush;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Point;
@@ -69,6 +70,7 @@ import edu.brown.cs.bubbles.bale.BaleConstants.BaleFileOverview;
 import edu.brown.cs.bubbles.board.BoardColors;
 import edu.brown.cs.bubbles.board.BoardImage;
 import edu.brown.cs.bubbles.board.BoardLog;
+import edu.brown.cs.bubbles.board.BoardProperties;
 import edu.brown.cs.bubbles.board.BoardThreadPool;
 import edu.brown.cs.bubbles.buda.BudaBubble;
 import edu.brown.cs.bubbles.buda.BudaBubbleArea;
@@ -124,6 +126,7 @@ private JButton         testcase_button;
 private JComboBox<?>    problem_panel;
 private DataPanel       active_panel;    
 private AdvancedPanel   advanced_panel;
+private JLabel          working_label;
 private BushUsageMonitor usage_monitor;
 private Map<String,Element> expression_data;
 private boolean         rose_ready;
@@ -282,7 +285,11 @@ private JPanel createDisplay()
    btn.setBorderPainted(false);
    btn.setContentAreaFilled(false);
    advpnl.add(btn,BorderLayout.EAST);
-   pnl.addRawComponent(null,advpnl);
+   working_label = new JLabel("Setting up ROSE ...");
+   working_label.setForeground(Color.RED);
+   working_label.setVisible(false);
+   advpnl.add(working_label,BorderLayout.WEST);
+   pnl.addLabellessRawComponent("ADVBTN",advpnl);
    
    pnl.addSeparator();
    advanced_panel = new AdvancedPanel();
@@ -377,6 +384,13 @@ private class PanelSelector implements ActionListener {
 
 
 
+void noteWorking(boolean fg)
+{
+   if (fg) working_label.setVisible(true);
+   else working_label.setVisible(false);
+}
+
+
 /********************************************************************************/
 /*                                                                              */
 /*      Helper methods                                                          */
@@ -395,6 +409,9 @@ private BushProblem getActiveProblem()
 
 private boolean needTestCase()
 {
+   BoardProperties props = BoardProperties.getProperties("Rose");
+   if (!props.getBoolean("Rose.generate.tests")) return false;
+   
    BumpThreadStack stk = for_thread.getStack();
    BushProblem bp = getActiveProblem();
    RootTestCase rtc = null;
@@ -444,6 +461,7 @@ private class ShowLocationsHandler implements ActionListener, Runnable {
       show_result = null;
       BoardLog.logD("BUSH","Handle show");
       BoardThreadPool.start(this);
+      noteWorking(true);
     }
    
    @Override public void run() {
@@ -479,10 +497,12 @@ private class ShowLocationsHandler implements ActionListener, Runnable {
          else {
             BoardLog.logD("ROSE","Bad ROSE result: " + rslt);
             is_active = false;
+            noteWorking(false);
           }
        }
       else { 
          setupBubbleStack();
+         noteWorking(false);
          is_active = false;
        }
     }
@@ -531,8 +551,9 @@ private class SuggestHandler implements ActionListener {
    @Override public void actionPerformed(ActionEvent evt) {
       BushProblem problem = getActiveProblem();
       if (problem != null) {
+         noteWorking(true);
          BushFactory bf = BushFactory.getFactory();
-         AbstractAction rsa =  bf.getSuggestAction(problem,null,content_panel,getMetricId());
+         AbstractAction rsa =  bf.getSuggestAction(problem,null,content_panel,BushProblemPanel.this,getMetricId()); 
          rsa.actionPerformed(evt);
        }
     }

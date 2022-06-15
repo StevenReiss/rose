@@ -181,6 +181,8 @@ private StemMain(String [] args)
    no_debug = false;
    scanArgs(args);
    picot_factory = new PicotFactory(this);
+   
+   RoseLog.logD("STEM","CLASSPATH = " + System.getProperty("java.class.path"));
 }
 
 

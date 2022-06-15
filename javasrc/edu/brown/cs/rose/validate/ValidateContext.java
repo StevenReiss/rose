@@ -344,6 +344,7 @@ void setupBaseExecution(boolean showall,boolean tostring,boolean toarray)
    
    ValidateChangedItems valuechanges = new ValidateChangedItems(for_launch,frame_id,for_problem);
    runBaseExecution(null);
+   RoseLog.logD("VALIDATE","Problem time " + base_execution.getSeedeResult().getProblemTime());
    if (base_execution.getSeedeResult().getProblemTime() >= 0) return;
    
    List<ValidateAction> pchanges = valuechanges.getParameterActions();

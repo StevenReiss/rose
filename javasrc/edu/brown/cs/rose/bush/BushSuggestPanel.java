@@ -129,7 +129,6 @@ BushSuggestPanel(Component src,BushProblem prob,BushLocation loc,String mid)
 
 
 
-
 /********************************************************************************/
 /*                                                                              */
 /*      Create the actual bubble                                                */
@@ -186,7 +185,7 @@ private JPanel createDisplay()
 /*                                                                              */
 /********************************************************************************/
 
-@Override public void addRepair(BushRepair repair)
+@Override public synchronized void addRepair(BushRepair repair)
 { 
    if (repair == null) return;
    
@@ -206,7 +205,7 @@ private JPanel createDisplay()
 }
 
 
-@Override public void doneRepairs()
+@Override public synchronized void doneRepairs()
 { 
    int sz = list_model.getSize();
    if (sz == 0) {
@@ -441,6 +440,8 @@ private class SuggestRenderer implements ListCellRenderer<BushRepair> {
       String cnts = "<html>" + IvyXml.htmlSanitize(desc) + "<p>";
       cnts += "&nbsp;&nbsp;&nbsp;At " + loc.getLineNumber() + " of " + mthd;
       cnts += " (" + IvyFormat.formatNumber(r.getValidatedPriority()) + ")";
+      
+      BoardLog.logD("BUSH","Display repair: " + cnts);
       Component c = base_renderer.getListCellRendererComponent(l,cnts,idx,sel,foc);
       
       return c;

@@ -37,6 +37,7 @@ package edu.brown.cs.rose.validate;
 
 import edu.brown.cs.rose.root.RootProblem;
 import edu.brown.cs.rose.root.RootRepair;
+import edu.brown.cs.rose.root.RoseLog;
 
 class ValidateChecker implements ValidateConstants
 {
@@ -320,15 +321,24 @@ private class ValidateCheckerVariable extends ValidateProblemChecker {
       // might need to change nval to null to indicate any other value
       oval = fixValue(oval,otyp);
       nval = fixValue(nval,otyp);
+      RoseLog.logD("VALIDATE","Check variable values " + oval + " " + nval);
       
-      ValidateCall vc = execution_matcher.getMatchChangeContext();
-      if (vc == null) return 0.0;
+      ValidateCall vc = execution_matcher.getMatchProblemContext();
+      if (vc == null) {
+         RoseLog.logD("VALIDATE","No change context for variable");
+         return 0.0;
+       }   
       ValidateVariable vv = vc.getVariables().get(var);
-      if (vv == null) return 0.5;
+      if (vv == null) {
+         RoseLog.logD("VALIDATE","Variable not found in change context");
+         return 0.5;
+       }
       
       long t0 = execution_matcher.getMatchProblemTime();
+      RoseLog.logD("VALIDATE","Match problem time " + t0);
       if (t0 > 0) {
          ValidateValue vval = vv.getValueAtTime(check_execution,t0);
+         RoseLog.logD("VALIDATE","Value at time : " + vval);
          if (vval != null) {
             String vvalstr = vval.getValue();
             if (oval == null && vvalstr == null) return 0;
@@ -368,6 +378,8 @@ private class ValidateCheckerVariable extends ValidateProblemChecker {
    private double matchValue(ValidateValue vval,String vvalstr,String nval)
    {
       if (nval == null) return 0.9;
+      
+      RoseLog.logD("VALIDATE","Match values " + vvalstr + " " + nval + " " + vval.getDataType());
          
       RootProblem prob = validate_context.getProblem();
       
@@ -385,14 +397,35 @@ private class ValidateCheckerVariable extends ValidateProblemChecker {
           }
        }
       else if (vval.getDataType().equals("int") || vval.getDataType().equals("long")) {
+         try {
+            long v1 = Long.valueOf(vvalstr);
+            long v2 = Long.valueOf(nval);
+            if (v1 == v2) return 1.0;
+          }
+         catch (NumberFormatException e) {
+            // should handle > x, < x, ...
+            return 0.6;
+          }
          // handle > x , < x , ...
+       }
+      else if (vval.getDataType().equals("boolean")) {
+         Boolean v1 = getBoolean(vvalstr);
+         Boolean v2 = getBoolean(nval);
+         if (v1 != null && v2 != null) {
+            if (v1.equals(v2)) return 1.0;
+          }
        }
       else {
          // handle non-null, etc.
        }
-   
          
       return 0.0;
+   }
+   
+   private Boolean getBoolean(String s)
+   {
+      if (s == null || s.length() == 0) return null;
+      return s.startsWith("tT1Yy");
    }
    
 }       // end of inner class ValidateCheckerVariable

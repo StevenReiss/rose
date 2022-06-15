@@ -46,6 +46,7 @@ import java.util.Set;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.AssertStatement;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
@@ -98,6 +99,7 @@ public SepalWrongVariable()
 {
    ASTNode stmt = getResolvedStatementForLocation(null);
    if (stmt == null) return;
+   if (stmt instanceof AssertStatement) return;
    
    Collection<UserVariable> vars = findVariables(stmt);
    if (vars == null || vars.isEmpty()) return;

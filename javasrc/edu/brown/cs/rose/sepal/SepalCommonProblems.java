@@ -40,6 +40,7 @@ import java.util.Map;
 
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.AssertStatement;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.ExpressionStatement;
 import org.eclipse.jdt.core.dom.InfixExpression;
@@ -161,6 +162,7 @@ public SepalCommonProblems()
 {
    ASTNode stmt = getResolvedStatementForLocation(null);
    if (stmt == null) return;
+   if (stmt instanceof AssertStatement) return;
    
    checkAssignInConditional(stmt);
    checkStringEquality(stmt);
