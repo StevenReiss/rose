@@ -1529,10 +1529,12 @@ private class WaitForExit extends Thread {
           }
        }
     }
-   else if (all || use_all_files) files = findAllSourceFiles();
-   else if (use_computed_files) files = findComputedFiles(tid);
-   else if (use_fait_files) files = findFaitFiles(tid);
-   else files = findStackFiles(tid);
+   if (files.isEmpty()) {
+      if (all || use_all_files) files = findAllSourceFiles();
+      else if (use_computed_files) files = findComputedFiles(tid);
+      else if (use_fait_files) files = findFaitFiles(tid);
+      else files = findStackFiles(tid);
+    }
 
    StringBuffer buf = new StringBuffer();
    int ct = 0;
@@ -1646,10 +1648,12 @@ private Set<File> findComputedFiles(String threadid)
 
 private Set<File> findFaitFiles(String threadid) throws RoseException
 {
-   if (threadid == null) return findAllSourceFiles();
+   Set<File> base = findAllSourceFiles();
+   if (base.size() < 40) return base;
    
+   if (threadid == null) return base;
    startFaitProcess();
-   if (!fait_running) return findAllSourceFiles();
+   if (!fait_running) return base;
    
    CommandArgs bargs = null;
    if (local_fait) bargs = new CommandArgs("NOEXIT",true);  Element frslt = sendFaitMessage("BEGIN",bargs,null);

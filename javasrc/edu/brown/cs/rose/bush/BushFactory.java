@@ -516,6 +516,7 @@ private void startRoseAnalysis(BumpThread bt)
    CommandArgs args = null;
    if (bt != null) args = new CommandArgs("THREAD",bt.getId());
    
+   
    sendRoseMessage("START",args,null);
    
    synchronized (this) {

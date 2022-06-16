@@ -1074,6 +1074,7 @@ private List<String> findVariables()
 {
    List<String> rslt = new ArrayList<>();
    for (String s : for_frame.getVariables()) {
+      if (s.contains(" returned")) continue;
       rslt.add(s);
     }
    for (String s : for_frame.getVariables()) {
