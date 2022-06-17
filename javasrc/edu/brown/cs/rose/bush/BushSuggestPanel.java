@@ -189,7 +189,7 @@ private JPanel createDisplay()
 { 
    RepairAdder ra = new RepairAdder(repair);
    try {
-      SwingUtilities.invokeAndWait(ra);
+      SwingUtilities.invokeLater(ra);
     }
    catch (Throwable e) {
       BoardLog.logE("BUSH","Problem adding repair",e);
@@ -230,20 +230,35 @@ private class RepairAdder implements Runnable {
 
 @Override public synchronized void doneRepairs()
 { 
-   int sz = list_model.getSize();
-   if (sz == 0) {
-      suggestions_pending.setText("No suggestions found");
+   RepairFinisher ra = new RepairFinisher();
+   try {
+      SwingUtilities.invokeLater(ra);
     }
-   if (done_label != null) {
-      String txt = done_label.getText();
-      if (txt.startsWith("Finding")) {
-         txt = "Showing" + txt.substring(7);
-         done_label.setText(txt);
-       }
+   catch (Throwable e) {
+      BoardLog.logE("BUSH","Problem finishing repairs",e);
     }
 }
 
 
+private class RepairFinisher implements Runnable {
+   
+   RepairFinisher() { }
+   
+   @Override public void run() {
+      int sz = list_model.getSize();
+      if (sz == 0) {
+         suggestions_pending.setText("No suggestions found");
+       }
+      if (done_label != null) {
+         String txt = done_label.getText();
+         if (txt.startsWith("Finding")) {
+            txt = "Showing" + txt.substring(7);
+            done_label.setText(txt);
+          }
+       }
+    }
+   
+}       // end of inner class RepairFinisher
 
 
 /********************************************************************************/
