@@ -254,7 +254,7 @@ private List<RootLocation> getLocations()
    RootMetrics.noteCommand("BRACT","SENDREPAIR",
          br.getPriority(),br.getValidatedPriority(),t1-start_time,br.getId(),br.getLogData(),br.getDescription());
    
-   rose_control.sendRoseMessage("SUGGEST",args,body,-1);
+   rose_control.sendRoseMessage("SUGGEST",args,body,0);
 }
 
 

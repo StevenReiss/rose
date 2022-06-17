@@ -187,22 +187,45 @@ private JPanel createDisplay()
 
 @Override public synchronized void addRepair(BushRepair repair)
 { 
-   if (repair == null) return;
+   RepairAdder ra = new RepairAdder(repair);
+   try {
+      SwingUtilities.invokeAndWait(ra);
+    }
+   catch (Throwable e) {
+      BoardLog.logE("BUSH","Problem adding repair",e);
+    }
+}
+
+
+
+private class RepairAdder implements Runnable {
    
-   int sz = list_model.getSize();
-   if (sz == 0) {
-      suggestions_pending.setVisible(false);
-      suggestion_list.setVisible(true);
+   private BushRepair for_repair;
+   
+   RepairAdder(BushRepair br) {
+      for_repair = br;
     }
    
-   list_model.addElement(repair);
-   BudaBubble bbl = BudaRoot.findBudaBubble(suggestion_list);
-   Dimension d1 = bbl.getPreferredSize();
-   bbl.setSize(d1);
+   @Override public void run() {
+      BoardLog.logD("BUSH","Add repair " + for_repair);
+      if (for_repair == null) return;
+      
+      int sz = list_model.getSize();
+      if (sz == 0) {
+         suggestions_pending.setVisible(false);
+         suggestion_list.setVisible(true);
+       }
+      
+      list_model.addElement(for_repair);
+      BudaBubble bbl = BudaRoot.findBudaBubble(suggestion_list);
+      Dimension d1 = bbl.getPreferredSize();
+      bbl.setSize(d1);
+      
+      BoardLog.logD("BUSH","Suggest size " + list_model.getSize() + " " +
+            suggestion_list.getVisibleRowCount() + " " + d1);
+    }
    
-   BoardLog.logD("BUSH","Suggest size " + list_model.getSize() + " " +
-         suggestion_list.getVisibleRowCount() + " " + d1);
-}
+}       // end of inner class RepairAdder
 
 
 @Override public synchronized void doneRepairs()

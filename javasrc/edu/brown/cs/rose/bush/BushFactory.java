@@ -249,6 +249,7 @@ void startRepairSuggestor(BushProblem prob,BushLocation loc,BushRepairAdder adde
       if (!name.equals(id)) current_repairs.remove(id);
     }
    else {
+      BoardLog.logE("BUSH","suggest command failed: " + IvyXml.convertXmlToString(rply));
       adder.doneRepairs();
       current_repairs.remove(id);
     }
@@ -266,8 +267,12 @@ AbstractAction getSuggestAction(BushProblem p,BushLocation l,Component c,
 private void handleSuggestion(Element xml)
 {
    String who = IvyXml.getAttrString(xml,"NAME");
+   BoardLog.logD("BUSH","Handle suggestion for " + who);
    BushRepairAdder ra = current_repairs.get(who);
-   if (ra == null) return;
+   if (ra == null) {
+      BoardLog.logE("BUSH","No repair bubble to add to");
+      return;
+    }
    Element repairxml = IvyXml.getChild(xml,"REPAIR");
    Element locxml = IvyXml.getChild(repairxml,"LOCATION");
    BumpLocation bumploc = BumpLocation.getLocationFromXml(locxml);
@@ -1105,19 +1110,19 @@ private class RoseHandler implements MintHandler {
    
    @Override public void receive(MintMessage msg,MintArguments args) {
       String cmd = args.getArgument(0);
-      BoardLog.logD("BUSH","ROSE message : " + msg.getText());
+      BoardLog.logD("BUSH","ROSE message : " +  cmd + " " + msg.getText());
       switch (cmd) {
          case "SUGGEST" :
             handleSuggestion(msg.getXml());
-            msg.replyTo();
+            msg.replyTo("<OK/>");
             break;
          case "ENDSUGGEST" :
             handleEndSuggestion(msg.getXml());
-            msg.replyTo();
+            msg.replyTo("<OK/>");
             break;
          case "TESTCREATE" :
             BushTestGenerator.handleTestGenerated(msg.getXml());
-            msg.replyTo();
+            msg.replyTo("<OK/>");
             break;
        }
     }

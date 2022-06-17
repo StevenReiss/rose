@@ -1989,7 +1989,10 @@ public Element sendRoseMessage(String cmd,CommandArgs args,String cnts,long wait
    
    mint_control.send(msg,rply,MINT_MSG_FIRST_NON_NULL);
    
-   if (rply == null) return null;
+   if (rply == null) {
+      RoseLog.logD("STEM","No reply for message");
+      return null;
+    }
    
    Element rslt = rply.waitForXml(wait);
    
