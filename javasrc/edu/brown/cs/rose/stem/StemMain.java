@@ -377,6 +377,7 @@ private boolean startFaitProcess()
     }
 
    BoardSetup setup = BoardSetup.getSetup();
+   setup.checkInstall();
 
    File f1 = setup.getRootDirectory();
    File f2 = new File(f1,"dropins");
@@ -913,6 +914,8 @@ private boolean startSeede()
     }
    
    BoardSetup setup = BoardSetup.getSetup();
+   setup.checkInstall();
+   
    File f1 = setup.getRootDirectory();
    File f2 = new File(f1,"dropins");
    File seedejar = new File(f2,"seede.jar");
