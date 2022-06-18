@@ -53,6 +53,7 @@ import java.util.Set;
 
 import javax.swing.AbstractAction;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -85,6 +86,7 @@ import edu.brown.cs.bubbles.bump.BumpLocation;
 import edu.brown.cs.bubbles.buss.BussBubble;
 import edu.brown.cs.bubbles.bump.BumpConstants.BumpEvaluationHandler;
 import edu.brown.cs.ivy.mint.MintConstants.CommandArgs;
+import edu.brown.cs.ivy.swing.SwingCheckBox;
 import edu.brown.cs.ivy.swing.SwingColors;
 import edu.brown.cs.ivy.swing.SwingComboBox;
 import edu.brown.cs.ivy.swing.SwingGridPanel;
@@ -123,6 +125,7 @@ private JPanel		content_panel;
 private JButton         show_button;
 private JButton         suggest_button;
 private JButton         testcase_button;
+private JCheckBox       driver_button;
 private JComboBox<?>    problem_panel;
 private DataPanel       active_panel;    
 private AdvancedPanel   advanced_panel;
@@ -274,6 +277,18 @@ private JPanel createDisplay()
    pnl.addLabellessRawComponent("OTHER",other_panel);
    pnl.addLabellessRawComponent("NOPROBLEM",none_panel);
    
+   String mthd = for_frame.getMethod();
+   driver_button = null;
+   BoardProperties props = BoardProperties.getProperties("Rose");
+   if (mthd != null && props.getBoolean("Rose.ask.driver")) {
+      int idx = mthd.lastIndexOf(".");
+      if (idx > 0) mthd = mthd.substring(idx+1);
+      driver_button = new SwingCheckBox("'" + mthd + "' is a driver -- don't patch");
+      driver_button.setOpaque(true);
+      driver_button.setBackground(BoardColors.getColor("Rose.background.color"));
+      pnl.addLabellessRawComponent("DRIVER",driver_button);
+    }
+   
    BorderLayout blay = new BorderLayout();
    JPanel advpnl = new JPanel(blay);
    advpnl.setOpaque(false);
@@ -403,6 +418,7 @@ private BushProblem getActiveProblem()
    BushProblem bp = active_panel.getProblem();
    if (bp == null) return null;
    if (advanced_panel != null) bp.setCurrentTest(advanced_panel.getDefaultTest());
+   if (driver_button != null) bp.setIgnoreDriver(driver_button.isSelected());
    return bp;
 }
 
@@ -478,7 +494,7 @@ private class ShowLocationsHandler implements ActionListener, Runnable {
                "PROJECT",for_thread.getLaunch().getConfiguration().getProject(),
                "LINE",for_frame.getLineNumber());
          
-         BushProblem bp = active_panel.getProblem();
+         BushProblem bp = getActiveProblem();
          IvyXmlWriter xw = new IvyXmlWriter();
          bp.outputXml(xw);
          String body = xw.toString();

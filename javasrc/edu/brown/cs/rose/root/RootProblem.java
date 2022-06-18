@@ -67,6 +67,7 @@ private RootTestCase    current_test;
 private List<RootTestCase> other_tests; 
 private boolean         ignore_main;
 private boolean         ignore_tests;
+private boolean         ignore_driver;
 private List<String>    ignore_patterns;
 private int             max_up;
 
@@ -96,6 +97,7 @@ protected RootProblem(RoseProblemType typ,String item,String orig,String tgt,
    other_tests = null;
    ignore_main = false;
    ignore_tests = false;
+   ignore_driver = false;
    ignore_patterns = new ArrayList<>();
    target_precision = DEFAULT_PRECISION;
    max_up = 5;
@@ -134,6 +136,7 @@ protected RootProblem(RootControl ctrl,Element xml)
    
    ignore_main = IvyXml.getAttrBool(xml,"IGNOREMAIN");
    ignore_tests = IvyXml.getAttrBool(xml,"IGNORETESTS");
+   ignore_driver = IvyXml.getAttrBool(xml,"IGNOREDRIVER");
    ignore_patterns = new ArrayList<>();
    for (Element telt : IvyXml.children(xml,"IGNORE")) {
       ignore_patterns.add(IvyXml.getText(telt));
@@ -214,9 +217,11 @@ public List<RootTestCase> getOtherTests()       { return other_tests; }
 
 public boolean ignoreMain()                     { return ignore_main; }
 public boolean ignoreTests()                    { return ignore_tests; }
+public boolean ignoreDriver()                   { return ignore_driver; }
 public List<String> ignorePatterns()            { return ignore_patterns; }
 public void setIgnoreMain(boolean fg)           { ignore_main = fg; }
 public void setIgnoreTests(boolean fg)          { ignore_tests = fg; }
+public void setIgnoreDriver(boolean fg)         { ignore_driver = fg; }
 public void addIgnorePattern(String pat)        { ignore_patterns.add(pat); }
 
 public int getMaxUp()                           { return max_up; }
@@ -271,6 +276,7 @@ public void outputXml(IvyXmlWriter xw)
    if (thread_id != null) xw.field("THREAD",thread_id);
    if (ignore_main) xw.field("IGNOREMAIN",ignore_main);
    if (ignore_tests) xw.field("IGNORETESTS",ignore_tests);
+   if (ignore_driver) xw.field("IGNOREDRIVER",ignore_driver);
    if (target_precision != DEFAULT_PRECISION) xw.field("PRECISION",target_precision);
    if (max_up >= 0) xw.field("MAX_UP",max_up);
    

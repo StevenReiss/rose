@@ -613,7 +613,7 @@ private boolean isLocationRelevant(RootLocation loc,RootProblem prob)
       if (nm.matches(s)) return false;
     }
    
-   if (prob.ignoreMain() || prob.ignoreTests()) {
+   if (prob.ignoreMain() || prob.ignoreTests() || prob.ignoreDriver()) {
       ASTNode n = getSourceNode(loc.getProject(),loc.getFile(),loc.getStartOffset(),
             loc.getLineNumber(),true,false);
       while (n != null) {
@@ -623,6 +623,7 @@ private boolean isLocationRelevant(RootLocation loc,RootProblem prob)
       if (n != null) {
          JcompSymbol js = JcompAst.getDefinition(n);
          if (js != null) {
+            RoseLog.logD("STEM","CHECK IGNORE " + js.getFullName());
             if (prob.ignoreMain()) {
                if (js.getName().equals("main") && js.isStatic() &&
                      js.getType().getBaseType().isVoidType()) 
@@ -638,6 +639,11 @@ private boolean isLocationRelevant(RootLocation loc,RootProblem prob)
              }
             if (prob.ignoreTests() && js.getName().startsWith("test")) {
                return false;
+             }
+            if (prob.ignoreDriver()) {
+               RootLocation loc0 = prob.getBugLocation();
+               RoseLog.logD("STEM","CHECK IGNORE " + loc.getMethod() + " " + loc0.getMethod());
+               if (loc.getMethod().equals(loc0.getMethod())) return false;
              }
           }
        }
