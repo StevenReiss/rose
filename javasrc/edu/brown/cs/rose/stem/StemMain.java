@@ -377,7 +377,6 @@ private boolean startFaitProcess()
     }
 
    BoardSetup setup = BoardSetup.getSetup();
-   setup.checkInstall();
 
    File f1 = setup.getRootDirectory();
    File f2 = new File(f1,"dropins");
