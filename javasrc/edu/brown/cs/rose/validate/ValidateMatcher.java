@@ -195,9 +195,9 @@ void computeMatch()
       RoseLog.logE("Problem matching contexts",e);
     }
    
-   RoseLog.logD("VALIDATE ","Match result " + control_change + " " +
+   RoseLog.logD("VALIDATE","Match result " + control_change + " " +
          data_change + " " + match_time + " " + match_after_time + " " +
-         repair_executed);
+         repair_executed + " " + match_trace.getSessionId());
 }
 
 

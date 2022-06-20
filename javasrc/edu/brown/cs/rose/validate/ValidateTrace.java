@@ -72,6 +72,7 @@ private ValidateCall    problem_context;
 private Map<Integer,Element> id_map;
 private String          thread_id;
 private Map<Element,ValidateCall> call_map;
+private String          session_id;
 
 
 
@@ -85,6 +86,7 @@ private Map<Element,ValidateCall> call_map;
 ValidateTrace(Element rslt,String tid)
 {
    seede_result = IvyXml.getChild(rslt,"CONTENTS");
+   session_id = IvyXml.getAttrString(rslt,"ID");
    problem_time = -1;
    problem_context = null;
    thread_id = tid;
@@ -263,6 +265,10 @@ private Element getRunner()
 }
 
 
+@Override public String getSessionId()
+{
+   return session_id; 
+}
 
  
 /********************************************************************************/

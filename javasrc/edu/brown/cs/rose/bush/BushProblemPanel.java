@@ -244,7 +244,9 @@ private JPanel createDisplay()
          break;
        }
     }
-   if (for_thread.getExceptionType() != null && fm0 == for_frame) {
+  
+   if (for_thread.getExceptionType() != null && fm0 != null && for_frame != null &&
+         fm0.getId().equals(for_frame.getId())) {
       if (assertion_exceptions.contains(for_thread.getExceptionType())) {
          choices.add("Assertion should not have failed");
          active_panel = assertion_panel;

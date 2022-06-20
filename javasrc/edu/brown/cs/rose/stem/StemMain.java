@@ -1605,6 +1605,15 @@ private Set<File> findStackFiles(String threadid)
 	    String fnm = IvyXml.getAttrString(frm,"FILE");
 	    if (fnm != null) {
 	       File f = new File(fnm);
+               try {
+                  f = f.getCanonicalFile();
+                }
+               catch (IOException e) {
+                  RoseLog.logE("Problem getting canonical file " + f,e);
+                }
+               if (f.getPath().startsWith("/pro")) {
+                  RoseLog.logD("STEM","Canonical path added: " + f);
+                }
 	       if (f.exists()) {
 		  rslt.add(f);
 		}
@@ -1612,6 +1621,8 @@ private Set<File> findStackFiles(String threadid)
 	  }
        }
     }
+   
+   RoseLog.logD("STEM","Done adding stack files");
 
    return rslt;
 }
