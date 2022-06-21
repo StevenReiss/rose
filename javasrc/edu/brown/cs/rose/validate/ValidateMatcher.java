@@ -36,6 +36,7 @@
 package edu.brown.cs.rose.validate;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -222,7 +223,7 @@ private void matchLines(ValidateCall origctx,ValidateCall matchctx)
    File file = matchctx.getFile();
    
    int checkrepair = -1;
-   if (for_repair != null && for_repair.getLocation().getFile().equals(file)) {
+   if (for_repair != null && matchFiles(for_repair.getLocation().getFile(),file)) {
       checkrepair = for_repair.getLocation().getLineNumber();
     }
    
@@ -254,7 +255,7 @@ private void matchLines(ValidateCall origctx,ValidateCall matchctx)
          if (!fnd && 
                (!matchTime(thistime,trytime) ||
                      mappedline != matchval.getNumericValue())) {
-            if (control_change < 0 || control_change > thistime) {
+            if (control_change <= 0 || control_change > thistime) {
                noteChange(origctx,matchctx,lasttime);
              }
             fnd = true;
@@ -273,6 +274,20 @@ private void matchLines(ValidateCall origctx,ValidateCall matchctx)
          noteChange(origctx,matchctx,lasttime);
        }
     }
+}
+
+
+
+private boolean matchFiles(File f1,File f2)
+{
+   if (f1.equals(f2)) return true;
+   try {
+      f1 = f1.getCanonicalFile();
+      f2 = f2.getCanonicalFile();
+    }
+   catch (IOException e) { }
+   if (f1.equals(f2)) return true;
+   return false;
 }
 
 
@@ -389,7 +404,7 @@ private void matchVariable(ValidateCall origctx,ValidateCall matchctx,
     }
    
    if (difftime > 0) {
-      if (data_change < 0 || data_change > difftime) {
+      if (data_change <= 0 || data_change > difftime) {
          data_change = difftime;
          original_data_context = origctx;
          match_data_context = matchctx;
