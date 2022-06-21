@@ -40,6 +40,7 @@ import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -58,6 +59,7 @@ import org.w3c.dom.Element;
 
 import edu.brown.cs.bubbles.bale.BaleConstants;
 import edu.brown.cs.bubbles.bale.BaleFactory;
+import edu.brown.cs.bubbles.bema.BemaMain;
 import edu.brown.cs.bubbles.board.BoardImage;
 import edu.brown.cs.bubbles.board.BoardLog;
 import edu.brown.cs.bubbles.board.BoardProperties;
@@ -79,6 +81,7 @@ import edu.brown.cs.ivy.mint.MintMessage;
 import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
 import edu.brown.cs.rose.root.RootTestCase;
+import edu.brown.cs.rose.root.RoseLog;
 
 
 public class BushFactory implements BushConstants, BumpConstants, BaleConstants
@@ -147,9 +150,29 @@ public static void setup()
 
 public static void initialize(BudaRoot root)
 {
+   // start cocker
    CockerStarter cs = new CockerStarter();
    BoardThreadPool.start(cs);
 }
+
+
+
+public static void postLoad()
+{
+   try {
+      Class<?> bsean = BemaMain.findClass("edu.brown.cs.faitbb.bsean.BseanFactory");
+      if (bsean == null) {
+         RoseLog.logE("BUSH","Can't find BseanFactory");
+         return;
+       }
+      Method m = bsean.getMethod("beginAnalysis");
+      m.invoke(null);
+    }
+   catch (Throwable t) {
+      RoseLog.logE("BUSH","Problem starting fait",t);
+    }
+}
+
 
 
 private void setupHandlers()
