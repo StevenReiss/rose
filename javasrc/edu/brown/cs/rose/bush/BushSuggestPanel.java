@@ -1,34 +1,34 @@
 /********************************************************************************/
-/*                                                                              */
-/*              BushSuggestPanel.java                                           */
-/*                                                                              */
-/*     Panel and bubble to show repair suggestions                              */
-/*                                                                              */
+/*										*/
+/*		BushSuggestPanel.java						*/
+/*										*/
+/*     Panel and bubble to show repair suggestions				*/
+/*										*/
 /********************************************************************************/
-/*      Copyright 2011 Brown University -- Steven P. Reiss                    */
+/*	Copyright 2011 Brown University -- Steven P. Reiss		      */
 /*********************************************************************************
- *  Copyright 2011, Brown University, Providence, RI.                            *
- *                                                                               *
- *                        All Rights Reserved                                    *
- *                                                                               *
- *  Permission to use, copy, modify, and distribute this software and its        *
- *  documentation for any purpose other than its incorporation into a            *
- *  commercial product is hereby granted without fee, provided that the          *
- *  above copyright notice appear in all copies and that both that               *
- *  copyright notice and this permission notice appear in supporting             *
- *  documentation, and that the name of Brown University not be used in          *
- *  advertising or publicity pertaining to distribution of the software          *
- *  without specific, written prior permission.                                  *
- *                                                                               *
- *  BROWN UNIVERSITY DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS                *
- *  SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND            *
- *  FITNESS FOR ANY PARTICULAR PURPOSE.  IN NO EVENT SHALL BROWN UNIVERSITY      *
- *  BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY          *
- *  DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,              *
- *  WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS               *
- *  ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE          *
- *  OF THIS SOFTWARE.                                                            *
- *                                                                               *
+ *  Copyright 2011, Brown University, Providence, RI.				 *
+ *										 *
+ *			  All Rights Reserved					 *
+ *										 *
+ *  Permission to use, copy, modify, and distribute this software and its	 *
+ *  documentation for any purpose other than its incorporation into a		 *
+ *  commercial product is hereby granted without fee, provided that the 	 *
+ *  above copyright notice appear in all copies and that both that		 *
+ *  copyright notice and this permission notice appear in supporting		 *
+ *  documentation, and that the name of Brown University not be used in 	 *
+ *  advertising or publicity pertaining to distribution of the software 	 *
+ *  without specific, written prior permission. 				 *
+ *										 *
+ *  BROWN UNIVERSITY DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS		 *
+ *  SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND		 *
+ *  FITNESS FOR ANY PARTICULAR PURPOSE.  IN NO EVENT SHALL BROWN UNIVERSITY	 *
+ *  BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY 	 *
+ *  DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,		 *
+ *  WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS		 *
+ *  ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE 	 *
+ *  OF THIS SOFTWARE.								 *
+ *										 *
  ********************************************************************************/
 
 
@@ -89,20 +89,20 @@ class BushSuggestPanel implements BushConstants, BushRepairAdder
 
 
 /********************************************************************************/
-/*                                                                              */
-/*      Private Storage                                                         */
-/*                                                                              */
+/*										*/
+/*	Private Storage 							*/
+/*										*/
 /********************************************************************************/
 
-private BushProblem     for_problem;
-private BushLocation    for_location;
-private Component       from_panel;
-private JPanel          content_pane;
-private SuggestList     suggestion_list;
+private BushProblem	for_problem;
+private BushLocation	for_location;
+private Component	from_panel;
+private JPanel		content_pane;
+private SuggestList	suggestion_list;
 private SuggestListModel list_model;
-private JLabel          suggestions_pending;
-private String          metric_id;
-private JLabel          done_label;
+private JLabel		suggestions_pending;
+private String		metric_id;
+private JLabel		done_label;
 
 private static boolean do_preview = true;
 
@@ -113,9 +113,9 @@ private static final String PENDING = "Finding suggestions ...";
 
 
 /********************************************************************************/
-/*                                                                              */
-/*      Constructors                                                            */
-/*                                                                              */
+/*										*/
+/*	Constructors								*/
+/*										*/
 /********************************************************************************/
 
 BushSuggestPanel(Component src,BushProblem prob,BushLocation loc,String mid)
@@ -130,21 +130,21 @@ BushSuggestPanel(Component src,BushProblem prob,BushLocation loc,String mid)
 
 
 /********************************************************************************/
-/*                                                                              */
-/*      Create the actual bubble                                                */
-/*                                                                              */
+/*										*/
+/*	Create the actual bubble						*/
+/*										*/
 /********************************************************************************/
 
 BudaBubble createBubble()
 {
    content_pane = createDisplay();
-   
+
    BudaBubbleArea bba = BudaRoot.findBudaBubbleArea(from_panel);
    BudaBubble bbl = new PanelBubble(content_pane);
    bba.addBubble(bbl,from_panel,null,
-         BudaConstants.PLACEMENT_LOGICAL|BudaConstants.PLACEMENT_BELOW|BudaConstants.PLACEMENT_GROUPED);
+	 BudaConstants.PLACEMENT_LOGICAL|BudaConstants.PLACEMENT_BELOW|BudaConstants.PLACEMENT_GROUPED);
    bbl.setVisible(true);
-   
+
    return bbl;
 }
 
@@ -155,38 +155,38 @@ private JPanel createDisplay()
    pnl.beginLayout();
    done_label = pnl.addBannerLabel("Finding Repairs for " + for_problem.getDescription());
    done_label.setFont(SwingText.deriveLarger(done_label.getFont()));
-   
+
    RootLocation loc = for_problem.getBugLocation();
    if (loc != null) {
       pnl.addBannerLabel("   At " + loc.getLineNumber() + " in " +
-            loc.getMethod());
+	    loc.getMethod());
     }
    if (for_location != null) {
       pnl.addBannerLabel("Fix " + for_location.getLineNumber() + " in " +
-            for_location.getMethod());
+	    for_location.getMethod());
     }
    pnl.addSeparator();
-   
+
    suggestions_pending = new JLabel(PENDING);
    pnl.addLabellessRawComponent("PENDING",suggestions_pending);
    list_model = new SuggestListModel();
    suggestion_list = new SuggestList(list_model);
    pnl.addLabellessRawComponent("REPAIRS",new JScrollPane(suggestion_list));
    suggestion_list.setVisible(false);
-   
+
    return pnl;
 }
 
 
 
 /********************************************************************************/
-/*                                                                              */
-/*      Handle repairs                                                          */
-/*                                                                              */
+/*										*/
+/*	Handle repairs								*/
+/*										*/
 /********************************************************************************/
 
 @Override public synchronized void addRepair(BushRepair repair)
-{ 
+{
    RepairAdder ra = new RepairAdder(repair);
    try {
       SwingUtilities.invokeLater(ra);
@@ -199,37 +199,38 @@ private JPanel createDisplay()
 
 
 private class RepairAdder implements Runnable {
-   
+
    private BushRepair for_repair;
-   
+
    RepairAdder(BushRepair br) {
       for_repair = br;
     }
-   
+
    @Override public void run() {
       BoardLog.logD("BUSH","Add repair " + for_repair);
       if (for_repair == null) return;
-      
+   
       int sz = list_model.getSize();
       if (sz == 0) {
          suggestions_pending.setVisible(false);
          suggestion_list.setVisible(true);
        }
-      
+   
       list_model.addElement(for_repair);
       BudaBubble bbl = BudaRoot.findBudaBubble(suggestion_list);
-      Dimension d1 = bbl.getPreferredSize();
-      bbl.setSize(d1);
-      
-      BoardLog.logD("BUSH","Suggest size " + list_model.getSize() + " " +
-            suggestion_list.getVisibleRowCount() + " " + d1);
+      if (bbl != null) {
+         Dimension d1 = bbl.getPreferredSize();
+         bbl.setSize(d1);
+         BoardLog.logD("BUSH","Suggest size " + list_model.getSize() + " " +
+               suggestion_list.getVisibleRowCount() + " " + d1);
+       }
     }
-   
-}       // end of inner class RepairAdder
+
+}	// end of inner class RepairAdder
 
 
 @Override public synchronized void doneRepairs()
-{ 
+{
    RepairFinisher ra = new RepairFinisher();
    try {
       SwingUtilities.invokeLater(ra);
@@ -241,30 +242,30 @@ private class RepairAdder implements Runnable {
 
 
 private class RepairFinisher implements Runnable {
-   
+
    RepairFinisher() { }
-   
+
    @Override public void run() {
       int sz = list_model.getSize();
       if (sz == 0) {
-         suggestions_pending.setText("No suggestions found");
+	 suggestions_pending.setText("No suggestions found");
        }
       if (done_label != null) {
-         String txt = done_label.getText();
-         if (txt.startsWith("Finding")) {
-            txt = "Showing" + txt.substring(7);
-            done_label.setText(txt);
-          }
+	 String txt = done_label.getText();
+	 if (txt.startsWith("Finding")) {
+	    txt = "Showing" + txt.substring(7);
+	    done_label.setText(txt);
+	  }
        }
     }
-   
-}       // end of inner class RepairFinisher
+
+}	// end of inner class RepairFinisher
 
 
 /********************************************************************************/
-/*                                                                              */
-/*      Create a preview bubble                                                 */
-/*                                                                              */
+/*										*/
+/*	Create a preview bubble 						*/
+/*										*/
 /********************************************************************************/
 
 private void showPreviewBubble(RootRepair repair)
@@ -279,14 +280,14 @@ private void showPreviewBubble(RootRepair repair)
    if (e0 == 0 || e1 == 0) return;
    BaleFileOverview bfo = BaleFactory.getFactory().getFileOverview(loc.getProject(),loc.getFile());
    if (bfo == null) return;
-   
+
    BoardAttributes atts = new BoardAttributes("Rose");
    AttributeSet oldedit = atts.getAttributes("Original");
    AttributeSet newedit = atts.getAttributes("Edited");
-   
+
    int e2 = e0;
    int e3 = e1;
-   
+
    DefaultStyledDocument d1,d2;
    try {
       String text = bfo.getText(m0,m1-m0);
@@ -301,28 +302,28 @@ private void showPreviewBubble(RootRepair repair)
       int e3a = (e1-m0) - (delta-m0);
       e2 = (p0 == null ? 0 : p0.getOffset()+1);
       e3 = (p1 == null ? d2.getLength() : p1.getOffset()-1);
-      if (e2 != e2a || e3 != e3a) 
-         BoardLog.logE("BUSH","Edit change " + e2a + " " + e2 + " " + e3a + " " + e3);
+      if (e2 != e2a || e3 != e3a)
+	 BoardLog.logE("BUSH","Edit change " + e2a + " " + e2 + " " + e3a + " " + e3);
     }
    catch (BadLocationException e) {
       BoardLog.logE("BUSH","Problem getting text for preview",e);
       return;
     }
-  
+
    PreviewPanel pnl = new PreviewPanel(repair,d1,d2);
-   
+
    JTextPane tp = pnl.getOriginalEditor();
    tp.select(e0-m0,e1-m0);
    tp.setCharacterAttributes(oldedit,true);
-   
+
    JTextPane etp = pnl.getEditedEditor();
    etp.select(e2,e3);
    etp.setCharacterAttributes(newedit,true);
-   
+
    PreviewBubble bbl = new PreviewBubble(pnl);
    BudaBubbleArea bba = BudaRoot.findBudaBubbleArea(from_panel);
    bba.addBubble(bbl,content_pane,null,
-         BudaConstants.PLACEMENT_LOGICAL|BudaConstants.PLACEMENT_RIGHT);
+	 BudaConstants.PLACEMENT_LOGICAL|BudaConstants.PLACEMENT_RIGHT);
    bbl.setVisible(true);
 }
 
@@ -332,7 +333,7 @@ private int applyEdit(DefaultStyledDocument doc,int delta,RootEdit edit) throws 
 {
    Element editxml = IvyXml.getChild(edit.getTextEditXml(),"EDIT");
    delta = applyEdit(doc,delta,editxml);
-   
+
    return delta;
 }
 
@@ -342,85 +343,85 @@ private int applyEdit(DefaultStyledDocument doc,int delta,Element edit) throws B
    int off = IvyXml.getAttrInt(edit,"OFFSET");
    int len = IvyXml.getAttrInt(edit,"LENGTH");
    String text = IvyXml.getTextElement(edit,"TEXT");
-   
+
    switch (IvyXml.getAttrString(edit,"TYPE")) {
       case "MULTI" :
-         for (Element cedit : IvyXml.children(edit,"EDIT")) {
-            delta = applyEdit(doc,delta,cedit);
-          }
-         break;
+	 for (Element cedit : IvyXml.children(edit,"EDIT")) {
+	    delta = applyEdit(doc,delta,cedit);
+	  }
+	 break;
       case "INSERT" :
-         doc.insertString(off-delta,text,null);
-         delta -= text.length();
-         break;
+	 doc.insertString(off-delta,text,null);
+	 delta -= text.length();
+	 break;
       case "DELETE" :
-         doc.remove(off-delta,len);
-         delta += len;
-         break;
+	 doc.remove(off-delta,len);
+	 delta += len;
+	 break;
       case "REPLACE" :
-         doc.replace(off-delta,len,text,null);
-         delta -= text.length()-len;
-         break;
+	 doc.replace(off-delta,len,text,null);
+	 delta -= text.length()-len;
+	 break;
       default :
-         BoardLog.logE("BUSH","Unknown edit type: " + IvyXml.convertXmlToString(edit));
-         break;
+	 BoardLog.logE("BUSH","Unknown edit type: " + IvyXml.convertXmlToString(edit));
+	 break;
     }
-   
+
    return delta;
 }
 
 
 
 /********************************************************************************/
-/*                                                                              */
-/*      Main panel                                                              */
-/*                                                                              */
+/*										*/
+/*	Main panel								*/
+/*										*/
 /********************************************************************************/
 
 private class SuggestPanel extends SwingGridPanel {
 
    private static final long serialVersionUID = 1;
-   
+
    SuggestPanel() {
       setBackground(BoardColors.getColor("Rose.background.color"));
       setOpaque(true);
     }
-   
+
 }	// end of inner class SimplePanel
 
 
 /********************************************************************************/
-/*                                                                              */
-/*      Bubble for the panel                                                    */
-/*                                                                              */
+/*										*/
+/*	Bubble for the panel							*/
+/*										*/
 /********************************************************************************/
 
 private class PanelBubble extends BudaBubble {
 
    private static final long serialVersionUID = 1;
-   
+
    PanelBubble(Component cnts) {
       setContentPane(cnts);
     }
-   
+
    @Override public void handlePopupMenu(MouseEvent e) {
       JPopupMenu menu = new JPopupMenu();
-      
+
       Point p0 = SwingUtilities.convertPoint(this,e.getPoint(),suggestion_list);
       int row = suggestion_list.locationToIndex(p0);
       Rectangle r0 = suggestion_list.getCellBounds(row,row);
-     
+
       if (r0.contains(p0)) {
-         BushRepair br = list_model.getElementAt(row);
-         if (br != null) {
-            if (do_preview) menu.add(new PreviewAction(br));
-            menu.add(new RepairAction(br));
-            menu.add(new SourceAction(br));
-          }
+	 BushRepair br = list_model.getElementAt(row);
+	 if (br != null) {
+	    if (do_preview) menu.add(new PreviewAction(br));
+	    menu.add(new RepairAction(br));
+	    menu.add(new SourceAction(br));
+	  }
        }
-      
+
       menu.add(getFloatBubbleAction());
-      
+
       menu.show(this,p0.x,p0.y-5);
     }
 
@@ -429,215 +430,215 @@ private class PanelBubble extends BudaBubble {
 
 
 /********************************************************************************/
-/*                                                                              */
-/*      Our list widget                                                         */
-/*                                                                              */
+/*										*/
+/*	Our list widget 							*/
+/*										*/
 /********************************************************************************/
 
 private class SuggestList extends JList<BushRepair> {
-   
-   private transient SuggestRenderer suggest_renderer; 
-   
+
+   private transient SuggestRenderer suggest_renderer;
+
    private static final long serialVersionUID = 1;
-   
+
    SuggestList(ListModel<BushRepair> mdl) {
       super(mdl);
       suggest_renderer = null;
       setVisibleRowCount(1);
       addMouseListener(new SuggestMouser());
     }
-   
+
    @Override public SuggestRenderer getCellRenderer() {
       if (suggest_renderer == null) {
-         suggest_renderer = new SuggestRenderer();
+	 suggest_renderer = new SuggestRenderer();
        }
       return suggest_renderer;
     }
-   
-}       // end of inner class SuggestList
-   
-   
+
+}	// end of inner class SuggestList
+
+
 private class SuggestRenderer implements ListCellRenderer<BushRepair> {
-   
+
    private DefaultListCellRenderer base_renderer;
-   
+
    SuggestRenderer() {
       base_renderer = new DefaultListCellRenderer();
     }
-   
+
    @Override public Component getListCellRendererComponent(JList<? extends BushRepair> l,
-         BushRepair r,int idx,boolean sel,boolean foc) {
+	 BushRepair r,int idx,boolean sel,boolean foc) {
       RootLocation loc = r.getLocation();
       String desc = r.getDescription();
-      
+
       String mthd = loc.getMethod();
       int midx = mthd.lastIndexOf(".");
       if (midx > 0) idx = mthd.lastIndexOf(".",midx-1);
       if (midx > 0) mthd = mthd.substring(midx+1);
-      
+
       String cnts = "<html>" + IvyXml.htmlSanitize(desc) + "<p>";
       cnts += "&nbsp;&nbsp;&nbsp;At " + loc.getLineNumber() + " of " + mthd;
       cnts += " (" + IvyFormat.formatNumber(r.getValidatedPriority()) + ")";
-      
+
       BoardLog.logD("BUSH","Display repair: " + cnts);
       Component c = base_renderer.getListCellRendererComponent(l,cnts,idx,sel,foc);
-      
+
       return c;
     }
-   
-}       // end of inner class SuggestRenderer
+
+}	// end of inner class SuggestRenderer
 
 
 
 
 private class SuggestMouser extends MouseAdapter {
-   
+
    @Override public void mouseClicked(MouseEvent e) {
       if (e.getClickCount() == 2) {
-         int index = suggestion_list.locationToIndex(e.getPoint());
-         BushRepair br = list_model.getElementAt(index);
-         if (br != null) {
-            SourceAction act = new SourceAction(br);
-            act.actionPerformed(null);
-          }
+	 int index = suggestion_list.locationToIndex(e.getPoint());
+	 BushRepair br = list_model.getElementAt(index);
+	 if (br != null) {
+	    SourceAction act = new SourceAction(br);
+	    act.actionPerformed(null);
+	  }
        }
     }
-   
-}       // end of inner class SuggestMouser
+
+}	// end of inner class SuggestMouser
 
 
 
 /********************************************************************************/
-/*                                                                              */
-/*      Sorted list model                                                       */
-/*                                                                              */
+/*										*/
+/*	Sorted list model							*/
+/*										*/
 /********************************************************************************/
 
 private class SuggestListModel extends DefaultListModel<BushRepair> {
-   
+
    private static final long serialVersionUID = 1;
-   
+
    @Override public synchronized void addElement(BushRepair r) {
       double th = 0;
       if (getSize() > 0) th = elementAt(0).getValidatedPriority() * THRESHOLD;
       if (r.getValidatedPriority() < th) return;
-      
+
       int min = 0;
       int max = getSize()-1;
       while (min <= max) {
-         int mid = (min+max)/2;
-         BushRepair r1 = elementAt(mid);
-         if (r1.getValidatedPriority() >= r.getValidatedPriority()) {
-            min = mid+1;
-          }
-         else {
-            max = mid-1;
-          }
+	 int mid = (min+max)/2;
+	 BushRepair r1 = elementAt(mid);
+	 if (r1.getValidatedPriority() >= r.getValidatedPriority()) {
+	    min = mid+1;
+	  }
+	 else {
+	    max = mid-1;
+	  }
        }
-      
+
       BoardLog.logD("BUSH","Add repair " + min + " " + getSize() + " " + r.getDescription());
-      
+
       add(min,r);
       if (min == 0) {
-         th = r.getValidatedPriority() * THRESHOLD;
-         int cut = -1;
-         for (int i = 1; i < getSize(); ++i) {
-            BushRepair r1 = elementAt(i);
-            if (r1.getValidatedPriority() < th) {
-               cut = i;
-               break;
-             }
-          }
-         if (cut > 0) {
-            removeRange(cut,getSize()-1);
-          }
+	 th = r.getValidatedPriority() * THRESHOLD;
+	 int cut = -1;
+	 for (int i = 1; i < getSize(); ++i) {
+	    BushRepair r1 = elementAt(i);
+	    if (r1.getValidatedPriority() < th) {
+	       cut = i;
+	       break;
+	     }
+	  }
+	 if (cut > 0) {
+	    removeRange(cut,getSize()-1);
+	  }
        }
-      
+
       int sz = Math.min(getSize(),10);
-      
+
       BoardLog.logD("BUSH","Set row count to " + sz);
-      
+
       suggestion_list.setVisibleRowCount(sz+1);
     }
-   
-}       // end of inner class SuggestListModel
+
+}	// end of inner class SuggestListModel
 
 
 
 /********************************************************************************/
-/*                                                                              */
-/*      Suggestion actions                                                      */
-/*                                                                              */
+/*										*/
+/*	Suggestion actions							*/
+/*										*/
 /********************************************************************************/
 
 private class PreviewAction extends AbstractAction {
-   
+
    private transient BushRepair for_repair;
-   
+
    private static final long serialVersionUID = 1;
-   
+
    PreviewAction(BushRepair r) {
       super("Preview repair " + r.getDescription());
       for_repair = r;
     }
-   
+
    @Override public void actionPerformed(ActionEvent e) {
       BushFactory.metrics("SUGGEST_PREVIEW",metric_id,for_repair.getId(),
-            for_repair.getLogData(),for_repair.getDescription(),
-            for_repair.getPriority(),for_repair.getValidatedPriority());
+	    for_repair.getLogData(),for_repair.getDescription(),
+	    for_repair.getPriority(),for_repair.getValidatedPriority());
       BoardLog.logD("BUSH","PREVIEW REPAIR " + for_repair.getDescription());
       showPreviewBubble(for_repair);
     }
-   
-}       // end of inner class PreviewAction
+
+}	// end of inner class PreviewAction
 
 
 private class RepairAction extends AbstractAction {
 
    private transient RootRepair for_repair;
-   
-   private static final long serialVersionUID = 1; 
-   
+
+   private static final long serialVersionUID = 1;
+
    RepairAction(RootRepair r) {
       super("Make repair " + r.getDescription());
       for_repair = r;
     }
-   
+
    @Override public void actionPerformed(ActionEvent e) {
       BushFactory.metrics("MAKE_REPAIR",metric_id,for_repair.getId(),
-            for_repair.getLogData(),for_repair.getDescription(),
-            for_repair.getPriority(),for_repair.getValidatedPriority());
+	    for_repair.getLogData(),for_repair.getDescription(),
+	    for_repair.getPriority(),for_repair.getValidatedPriority());
       RootEdit redit = for_repair.getEdit();
       Element tedit = redit.getTextEditXml();
-      
+
       BoardLog.logD("BUSH","MAKE REPAIR " + for_repair.getDescription() + " " + redit.getFile() + " " + IvyXml.convertXmlToString(redit.getTextEditXml()));
-      
+
       if (IvyXml.isElement(tedit,"REPAIREDIT")) tedit = IvyXml.getChild(tedit,"EDIT");
       BaleFactory.getFactory().applyEdits(redit.getFile(),tedit);
    }
-   
-}       // end of inner class RepairAction
+
+}	// end of inner class RepairAction
 
 
 
 private class SourceAction extends AbstractAction implements Runnable {
-   
+
    private transient RootRepair for_repair;
    private BudaBubble source_bubble;
    private static final long serialVersionUID = 1;
-   
+
    SourceAction(RootRepair r) {
       super ("Show source for " + r.getDescription());
       for_repair = r;
       source_bubble = null;
     }
-   
+
    @Override public void actionPerformed(ActionEvent e) {
       if (for_repair == null) return;
       BoardMetrics.noteCommand("BUSH","GotoSuggestSource");
       BushFactory.metrics("SUGGEST_SOURCE",metric_id,for_repair.getId(),
-            for_repair.getLogData(),for_repair.getDescription(),
-            for_repair.getPriority(),for_repair.getValidatedPriority());
+	    for_repair.getLogData(),for_repair.getDescription(),
+	    for_repair.getPriority(),for_repair.getValidatedPriority());
       BushFactory.metrics("GOTO_SOURCE",for_repair.getDescription());
       BushLocation loc = (BushLocation) for_repair.getLocation();
       if (loc == null) loc = for_location;
@@ -649,45 +650,45 @@ private class SourceAction extends AbstractAction implements Runnable {
       if (bloc != null) fct = bloc.getKey();
       int idx = fct.indexOf("(");
       if (idx > 0) {
-         String f1 = fct.substring(0,idx);
-         String args = fct.substring(idx+1);
-         int idx1 = args.lastIndexOf(")");
-         if (idx1 > 0) args = args.substring(0,idx1);
-         String a1 = IvyFormat.formatTypeNames(args,",");
-         fct = f1 + "(" + a1 + ")";
+	 String f1 = fct.substring(0,idx);
+	 String args = fct.substring(idx+1);
+	 int idx1 = args.lastIndexOf(")");
+	 if (idx1 > 0) args = args.substring(0,idx1);
+	 String a1 = IvyFormat.formatTypeNames(args,",");
+	 fct = f1 + "(" + a1 + ")";
        }
       BoardLog.logD("BUSH","Source request " + fct);
       source_bubble = BaleFactory.getFactory().createMethodBubble(proj,fct);
       if (source_bubble != null) {
-         SwingUtilities.invokeLater(this);
+	 SwingUtilities.invokeLater(this);
        }
     }
-   
+
    @Override public void run() {
       BudaBubbleArea bba = BudaRoot.findBudaBubbleArea(content_pane);
       BudaBubble bbl = BudaRoot.findBudaBubble(content_pane);
       bba.addBubble(source_bubble,bbl,null,
-            BudaConstants.PLACEMENT_PREFER|BudaConstants.PLACEMENT_GROUPED|BudaConstants.PLACEMENT_MOVETO);
+	    BudaConstants.PLACEMENT_PREFER|BudaConstants.PLACEMENT_GROUPED|BudaConstants.PLACEMENT_MOVETO);
    }
-   
-}       // end of inner class SourceAction
+
+}	// end of inner class SourceAction
 
 
 
 /********************************************************************************/
-/*                                                                              */
-/*      Preview Panel and Bubble                                                */
-/*                                                                              */
+/*										*/
+/*	Preview Panel and Bubble						*/
+/*										*/
 /********************************************************************************/
 
 private class PreviewPanel extends SwingGridPanel {
-   
+
    private transient RootRepair for_repair;
    private JTextPane before_editor;
    private JTextPane after_editor;
-   
+
    private static final long serialVersionUID = 1;
-   
+
    PreviewPanel(RootRepair rep,StyledDocument d1,StyledDocument d2) {
       for_repair = rep;
       String txt = "Preview of " + rep.getDescription();
@@ -704,50 +705,50 @@ private class PreviewPanel extends SwingGridPanel {
       setBackground(BoardColors.getColor("Rose.background.color"));
       setOpaque(true);
     }
-   
-   RootRepair getRepair()                               { return for_repair; }
-   
-   JTextPane getOriginalEditor()                        { return before_editor; }
-   JTextPane getEditedEditor()                          { return after_editor; }
-   
-}       // end of inner class PreviewPanel
+
+   RootRepair getRepair()				{ return for_repair; }
+
+   JTextPane getOriginalEditor()			{ return before_editor; }
+   JTextPane getEditedEditor()				{ return after_editor; }
+
+}	// end of inner class PreviewPanel
 
 
 private class PreviewEditor extends JTextPane {
-   
+
    private static final long serialVersionUID = 1;
-   
+
    PreviewEditor(StyledDocument d) {
       super(d);
       setEditable(false);
     }
-   
-}       // end of inner class PreviewEditor
+
+}	// end of inner class PreviewEditor
 
 
 
 private class PreviewBubble extends BudaBubble {
-   
+
    private transient RootRepair for_repair;
-   
+
    private static final long serialVersionUID = 1;
-   
+
    PreviewBubble(PreviewPanel pnl) {
       for_repair = pnl.getRepair();
       setContentPane(pnl);
     }
-   
+
    @Override public void handlePopupMenu(MouseEvent e) {
       JPopupMenu menu = new JPopupMenu();
       menu.add(new RepairAction(for_repair));
       menu.add(new SourceAction(for_repair));
       menu.add(getFloatBubbleAction());
     }
-   
-}       // end of inner class PreviewBubble
+
+}	// end of inner class PreviewBubble
 
 
-}       // end of class BushSuggestPanel
+}	// end of class BushSuggestPanel
 
 
 
