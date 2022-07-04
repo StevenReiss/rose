@@ -144,12 +144,30 @@ private BushFactory()
 
 public static void setup()
 {
+   switch (BoardSetup.getSetup().getLanguage()) {
+      case JS :
+      case PYTHON :
+      case REBUS :
+	 return;
+      case JAVA :
+	 break;
+    }
+   
    getFactory().setupHandlers();
 }
 
 
 public static void initialize(BudaRoot root)
 {
+   switch (BoardSetup.getSetup().getLanguage()) {
+      case JS :
+      case PYTHON :
+      case REBUS :
+	 return;
+      case JAVA :
+	 break;
+    }
+   
    // start cocker
    CockerStarter cs = new CockerStarter();
    BoardThreadPool.start(cs);

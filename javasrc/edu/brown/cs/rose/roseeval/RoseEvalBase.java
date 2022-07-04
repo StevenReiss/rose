@@ -376,9 +376,6 @@ private SuggestionSet getSuggestionsFor(MintControl ctrl,RoseEvalFrameData fd,St
 
 
 
-
-
-
 private void processSuggestions(String name,SuggestionSet ss,RoseEvalSolution sol,long time)
 {
    if (sol == null) return;
@@ -426,10 +423,6 @@ private void processTestCase(String name,RoseEvalTestResult tc,long time)
     }
    System.err.println("PROCESS TEST CASE: " + name + ": " + tc + " " + time);
 }
-
-
-
-
 
 
 
@@ -1110,7 +1103,6 @@ private static class SuggestionSet {
    int getNumChecked()          { return num_checked; }
    
 }       // end of inner class SuggestionSet
-
 
 
 
