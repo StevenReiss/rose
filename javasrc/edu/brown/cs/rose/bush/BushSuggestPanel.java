@@ -97,6 +97,7 @@ class BushSuggestPanel implements BushConstants, BushRepairAdder
 private BushProblem	for_problem;
 private BushLocation	for_location;
 private Component	from_panel;
+private BudaBubbleArea  bubble_area;
 private JPanel		content_pane;
 private SuggestList	suggestion_list;
 private SuggestListModel list_model;
@@ -125,6 +126,7 @@ BushSuggestPanel(Component src,BushProblem prob,BushLocation loc,String mid)
    for_location = loc;
    content_pane = null;
    metric_id = mid;
+   bubble_area = BudaRoot.findBudaBubbleArea(from_panel);
 }
 
 
@@ -139,9 +141,8 @@ BudaBubble createBubble()
 {
    content_pane = createDisplay();
 
-   BudaBubbleArea bba = BudaRoot.findBudaBubbleArea(from_panel);
    BudaBubble bbl = new PanelBubble(content_pane);
-   bba.addBubble(bbl,from_panel,null,
+   bubble_area.addBubble(bbl,from_panel,null,
 	 BudaConstants.PLACEMENT_LOGICAL|BudaConstants.PLACEMENT_BELOW|BudaConstants.PLACEMENT_GROUPED);
    bbl.setVisible(true);
 
@@ -321,8 +322,7 @@ private void showPreviewBubble(RootRepair repair)
    etp.setCharacterAttributes(newedit,true);
 
    PreviewBubble bbl = new PreviewBubble(pnl);
-   BudaBubbleArea bba = BudaRoot.findBudaBubbleArea(from_panel);
-   bba.addBubble(bbl,content_pane,null,
+   bubble_area.addBubble(bbl,content_pane,null,
 	 BudaConstants.PLACEMENT_LOGICAL|BudaConstants.PLACEMENT_RIGHT);
    bbl.setVisible(true);
 }
@@ -665,10 +665,9 @@ private class SourceAction extends AbstractAction implements Runnable {
     }
 
    @Override public void run() {
-      BudaBubbleArea bba = BudaRoot.findBudaBubbleArea(content_pane);
       BudaBubble bbl = BudaRoot.findBudaBubble(content_pane);
-      bba.addBubble(source_bubble,bbl,null,
-	    BudaConstants.PLACEMENT_PREFER|BudaConstants.PLACEMENT_GROUPED|BudaConstants.PLACEMENT_MOVETO);
+      bubble_area.addBubble(source_bubble,bbl,null,
+            BudaConstants.PLACEMENT_PREFER|BudaConstants.PLACEMENT_GROUPED|BudaConstants.PLACEMENT_MOVETO);
    }
 
 }	// end of inner class SourceAction

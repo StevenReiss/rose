@@ -327,8 +327,10 @@ private void updateSize()
 {
    if (content_panel == null) return;
    BudaBubble bbl = BudaRoot.findBudaBubble(content_panel);
-   Dimension d = bbl.getPreferredSize();
-   bbl.setSize(d);
+   if (bbl != null) {
+      Dimension d = bbl.getPreferredSize();
+      bbl.setSize(d);
+    }
 }
 
 
