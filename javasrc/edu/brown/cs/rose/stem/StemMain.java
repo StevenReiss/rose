@@ -174,7 +174,7 @@ private StemMain(String [] args)
    added_files = new HashSet<>();
    analysis_state = AnalysisState.NONE;
    eval_handlers = new HashMap<>();
-   stem_compiler = null;
+   stem_compiler = new StemCompiler(this);
    loaded_files = new HashSet<>();
    seede_files = null;
    run_debug = true;
@@ -183,7 +183,7 @@ private StemMain(String [] args)
    picot_factory = new PicotFactory(this);
    
    RoseLog.logD("STEM","CLASSPATH = " + System.getProperty("java.class.path"));
-   ASTNode n = JcompAst.parseSourceFile("package test; public class Test { }");
+   ASTNode n = JcompAst.parseSourceFile("package test; public class Test { protected Test() { } }");
    RoseLog.logD("STEM","Test parse yields " + n);
 }
 
@@ -2076,9 +2076,6 @@ private static class EvalData {
 @Override public ASTNode getSourceNode(String proj,File f,int offset,int line,
       boolean resolve,boolean stmt)
 {
-   synchronized (this) {
-      if (stem_compiler == null) stem_compiler = new StemCompiler(this);
-    }
    if (proj == null && f != null) proj = getProjectForFile(f);
    
    ASTNode n = stem_compiler.getSourceNode(proj,f,offset,line,resolve);
@@ -2091,10 +2088,6 @@ private static class EvalData {
 
 @Override public ASTNode getNewSourceStatement(File f,int line,int col)
 {
-   synchronized (this) {
-      if (stem_compiler == null) stem_compiler = new StemCompiler(this);
-    }
-   
    String proj = getProjectForFile(f);
    ASTNode n = stem_compiler.getNewSourceNode(proj,f,line,col);
    
@@ -2106,10 +2099,6 @@ private static class EvalData {
 
 @Override public IDocument getSourceDocument(File f)
 {
-   synchronized (this) {
-      if (stem_compiler == null) stem_compiler = new StemCompiler(this);
-    }
-   
    return stem_compiler.getSourceDocument(f);
 }
 
@@ -2117,10 +2106,6 @@ private static class EvalData {
 
 @Override public String getSourceContents(File f)
 {
-   synchronized (this) {
-      if (stem_compiler == null) stem_compiler = new StemCompiler(this);
-    }
-   
    return stem_compiler.getSourceContents(f);
 }
 
@@ -2137,20 +2122,12 @@ private static class EvalData {
       use.addAll(loaded_files);
     }
    
-   synchronized (this) {
-      if (stem_compiler == null) stem_compiler = new StemCompiler(this);
-    }
-   
    stem_compiler.compileAll(proj,use);
 }
 
 
 @Override public CompilationUnit compileSource(RootLocation loc,String code)
 {
-   synchronized (this) {
-      if (stem_compiler == null) stem_compiler = new StemCompiler(this);
-    }
-   
    return stem_compiler.compileSource(loc,code);
 }
 
