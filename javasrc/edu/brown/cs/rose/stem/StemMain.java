@@ -1743,6 +1743,8 @@ private Set<File> findFaitFiles(String threadid) throws RoseException
 
 private File findFilesForClasses(Set<String> clsset,Set<File> rslt)
 {
+   RoseLog.logD("STEM","FIND FILES FOR CLASSES " + clsset);
+   
    Element r = sendBubblesXmlReply("PROJECTS",null,null,null);
    if (!IvyXml.isElement(r,"RESULT")) {
       RoseLog.logE("STEM","Problem getting project information: " + IvyXml.convertXmlToString(r));
@@ -1814,6 +1816,8 @@ private boolean isAnonymousClass(String s)
 private void findFilesForUnits(Set<File> roots,Set<File> rslt)
 {
    Queue<File> todo = new ArrayDeque<>(roots);
+   
+   RoseLog.logD("STEM","FIND FILES FOR UNITS " + roots);
   
    Element r = sendBubblesXmlReply("PROJECTS",null,null,null);
    if (!IvyXml.isElement(r,"RESULT")) {
@@ -1927,6 +1931,8 @@ private Set<File> findAllSourceFiles()
 
 private Set<File> getProjectSourceFiles(String proj)
 {
+   RoseLog.logD("STEM","Get project source files " + proj);
+   
    Set<File> rslt = new HashSet<>();
    CommandArgs cargs = new CommandArgs("FILES",true);
    Element pxml = sendBubblesXmlReply("OPENPROJECT",proj,cargs,null);
