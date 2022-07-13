@@ -41,6 +41,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -49,6 +50,8 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.CompilationUnit;
@@ -183,8 +186,50 @@ private StemMain(String [] args)
    picot_factory = new PicotFactory(this);
    
    RoseLog.logD("STEM","CLASSPATH = " + System.getProperty("java.class.path"));
-   ASTNode n = JcompAst.parseSourceFile("package test; public class Test { protected Test() { int non = 1; } }");
+   ASTNode n = JcompAst.parseSourceFile("package test; public class Test { /** testing */protected Test() { int non = 1; ++non; non++;  } }");
    RoseLog.logD("STEM","Test parse yields " + n);
+   
+   loadCompiler();
+}
+
+
+private void loadCompiler()
+{
+   String cp = System.getProperty("java.class.path");
+   StringTokenizer tok = new StringTokenizer(cp,File.pathSeparator);
+   String jarf = null;
+   while (tok.hasMoreTokens()) {
+      String s = tok.nextToken();
+      if (s.endsWith("jdt.core.jar")) {
+         jarf = s;
+         break;
+       }
+    }
+   if (jarf == null) return;
+   try (ZipFile zipf = new ZipFile(jarf)) {
+      for (Enumeration<? extends ZipEntry> en = zipf.entries(); en.hasMoreElements(); ) {
+         ZipEntry ent = en.nextElement();
+         String nm = ent.getName();
+         if (nm.endsWith(".class")) {
+            int idx = nm.lastIndexOf(".class");
+            String cnm = nm.substring(0,idx);
+            if (cnm.contains("$")) continue;
+            cnm = cnm.replace("/",".");
+            cnm = cnm.replace("$",".");
+            if (cnm.matches(".*\\.[0-9]+")) continue;
+            else if (cnm.equals("org.eclipse.jdt.internal.core.ClasspathEntry")) continue;
+            else {
+               try {
+                  Class.forName(cnm);
+                }
+               catch (Throwable e) {
+                  RoseLog.logE("STEM","Problem loading class " + cnm,e);
+                }
+             }
+          }
+       }
+    }
+   catch (IOException e) { }
 }
 
 
