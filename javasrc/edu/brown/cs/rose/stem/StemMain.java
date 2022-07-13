@@ -183,7 +183,7 @@ private StemMain(String [] args)
    picot_factory = new PicotFactory(this);
    
    RoseLog.logD("STEM","CLASSPATH = " + System.getProperty("java.class.path"));
-   ASTNode n = JcompAst.parseSourceFile("package test; public class Test { protected Test() { } }");
+   ASTNode n = JcompAst.parseSourceFile("package test; public class Test { protected Test() { int non = 1; } }");
    RoseLog.logD("STEM","Test parse yields " + n);
 }
 
