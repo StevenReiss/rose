@@ -88,6 +88,10 @@ import edu.brown.cs.rose.root.RootControl;
 import edu.brown.cs.rose.root.RootLocation;
 import edu.brown.cs.rose.root.RoseException;
 import edu.brown.cs.rose.root.RoseLog;
+import edu.brown.cs.rose.sepal.SepalArgOrder;
+import edu.brown.cs.rose.sepal.SepalCommonProblems;
+import edu.brown.cs.rose.sepal.SepalForLoopIndex;
+import edu.brown.cs.rose.sepal.SepalIndexFixer;
 import edu.brown.cs.rose.validate.ValidateFactory;
 
 public class StemMain implements StemConstants, MintConstants, RootControl
@@ -142,6 +146,8 @@ private boolean         run_debug;
 private boolean         no_debug;
 private PicotFactory    picot_factory;
 
+private static boolean force_load = false;
+
 
 private static boolean	use_all_files = false;
 private static boolean  use_computed_files = false;
@@ -185,16 +191,26 @@ private StemMain(String [] args)
    scanArgs(args);
    picot_factory = new PicotFactory(this);
    
+   // Try to fix problem with class loading
    RoseLog.logD("STEM","CLASSPATH = " + System.getProperty("java.class.path"));
-   ASTNode n = JcompAst.parseSourceFile("package test; public class Test { /** testing */protected Test() { int non = 1; ++non; non++;  } }");
+   ASTNode n = JcompAst.parseSourceFile("package test; public class Test { /** testing */ @Override protected Test() { " +
+         " try { int non = 1; ++non; non++;  } catch (Throwable t) { }  } }");
    RoseLog.logD("STEM","Test parse yields " + n);
-   
+   new SepalCommonProblems();
+   new SepalArgOrder();
+   new SepalForLoopIndex();
+   new SepalIndexFixer();
    loadCompiler();
 }
 
 
 private void loadCompiler()
 {
+   // this loads all unnested classes in org.eclipse.jdt.core.jar
+   // for some reason, at random, these classes seem to disappear and 
+   // are not found when needed.  Pre-loading helps, but doesn't fix the problem
+   if (!force_load) return;
+   
    String cp = System.getProperty("java.class.path");
    StringTokenizer tok = new StringTokenizer(cp,File.pathSeparator);
    String jarf = null;

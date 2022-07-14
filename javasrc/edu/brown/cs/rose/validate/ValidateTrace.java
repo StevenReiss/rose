@@ -584,7 +584,7 @@ private Boolean compareVariable(BudLocalVariable local,Element valelt,BudLaunch 
           }
          return compareObject(local,valelt,launch,from,to);
       case "CLASS" :
-         System.err.println("CHECK HERE");
+         System.err.println("CHECK HERE compare CLASS");
          break;
       default :
          break;

@@ -89,7 +89,7 @@ StemQueryAssertionHistory(StemMain ctrl,RootProblem prob)
    
    ASTNode stmt = getSourceStatement();
    AssertionChecker checker = new AssertionChecker();
-   stmt.accept(checker);
+   if (stmt != null) stmt.accept(checker);
    
    String expr = checker.generateResult();
    
@@ -121,6 +121,7 @@ AssertionData getAssertionData()
    
    try {
       ASTNode stmt = getSourceStatement();
+      if (stmt == null) return null;
       AssertionChecker checker = new AssertionChecker();
       stmt.accept(checker);
       if (checker.getExpression() == null) return null;
