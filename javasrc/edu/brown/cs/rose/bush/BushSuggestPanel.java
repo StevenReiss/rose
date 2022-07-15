@@ -35,17 +35,24 @@
 
 package edu.brown.cs.rose.bush;
 
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 import javax.swing.AbstractAction;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListModel;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
@@ -56,11 +63,17 @@ import javax.swing.JTextPane;
 import javax.swing.ListCellRenderer;
 import javax.swing.ListModel;
 import javax.swing.SwingUtilities;
+import javax.swing.event.CaretEvent;
+import javax.swing.event.CaretListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultStyledDocument;
+import javax.swing.text.JTextComponent;
 import javax.swing.text.Position;
 import javax.swing.text.StyledDocument;
+import javax.swing.text.Utilities;
 
 import org.w3c.dom.Element;
 
@@ -108,6 +121,7 @@ private JLabel		done_label;
 private static boolean do_preview = true;
 
 private static final double THRESHOLD = 0.1;
+private final short MARGIN_WIDTH_PX = 35;
 
 private static final String PENDING = "Finding suggestions ...";
 
@@ -311,7 +325,8 @@ private void showPreviewBubble(RootRepair repair)
       return;
     }
 
-   PreviewPanel pnl = new PreviewPanel(repair,d1,d2);
+   int lno = bfo.findLineNumber(m0);
+   PreviewPanel pnl = new PreviewPanel(repair,d1,d2,lno);
 
    JTextPane tp = pnl.getOriginalEditor();
    tp.select(e0-m0,e1-m0);
@@ -688,7 +703,7 @@ private class PreviewPanel extends SwingGridPanel {
 
    private static final long serialVersionUID = 1;
 
-   PreviewPanel(RootRepair rep,StyledDocument d1,StyledDocument d2) {
+   PreviewPanel(RootRepair rep,StyledDocument d1,StyledDocument d2,int start) {
       for_repair = rep;
       String txt = "Preview of " + rep.getDescription();
       beginLayout();
@@ -696,13 +711,26 @@ private class PreviewPanel extends SwingGridPanel {
       addSeparator();
       before_editor = new PreviewEditor(d1);
       after_editor = new PreviewEditor(d2);
+      JScrollPane bsp = new JScrollPane(before_editor);
+      JScrollPane asp = new JScrollPane(after_editor);
+      if (start > 0) {
+         bsp.setRowHeaderView(new LineNumbersView(before_editor,start));
+         asp.setRowHeaderView(new LineNumbersView(after_editor,start));
+       }
+      
       SwingGridPanel codepanel = new SwingGridPanel();
-      codepanel.addGBComponent(new JScrollPane(before_editor),0,0,1,1,10,10);
+      codepanel.addGBComponent(bsp,0,0,1,1,10,10);
       codepanel.addGBComponent(new JSeparator(JSeparator.VERTICAL),1,0,1,1,0,10);
-      codepanel.addGBComponent(new JScrollPane(after_editor),2,0,1,1,10,10);
+      codepanel.addGBComponent(asp,2,0,1,1,10,10);
       addLabellessRawComponent("EDITS",codepanel);
       setBackground(BoardColors.getColor("Rose.background.color"));
       setOpaque(true);
+      if (start > 0) {
+         Dimension d = codepanel.getPreferredSize();
+         d.width += 2*MARGIN_WIDTH_PX + 6;
+         codepanel.setPreferredSize(d);
+       }
+      
     }
 
    RootRepair getRepair()				{ return for_repair; }
@@ -723,6 +751,96 @@ private class PreviewEditor extends JTextPane {
     }
 
 }	// end of inner class PreviewEditor
+
+
+private class LineNumbersView extends JComponent implements DocumentListener, CaretListener, ComponentListener {
+    
+   private static final long serialVersionUID = 1;
+   
+   private JTextComponent line_editor;
+   private Font line_font;
+   private int start_line;
+   
+   LineNumbersView(JTextComponent ed,int ln) {
+      line_editor = ed;
+      line_font = null;
+      start_line = ln;
+      ed.getDocument().addDocumentListener(this);
+      ed.addComponentListener(this);
+      ed.addCaretListener(this);
+    }
+   
+   @Override public void paintComponent(Graphics g) {
+      super.paintComponent(g);
+      Color fg = g.getColor();
+      
+      Rectangle clip = g.getClipBounds();
+      int startoffset = line_editor.viewToModel2D(new Point(0,clip.y));
+      int endoffset = line_editor.viewToModel2D(new Point(0,clip.y + clip.height));
+      
+      while (startoffset <= endoffset) {
+         try {
+            String lno = getLineNumber(startoffset);
+            if (lno != null) {
+               int x = getInsets().left + 2;
+               int y = getOffsetY(startoffset);
+               if (line_font == null) {
+                  line_font = new Font(Font.MONOSPACED, Font.BOLD, line_editor.getFont().getSize());
+                }
+               g.setFont(line_font);
+               g.setColor(isCurrentLine(startoffset) ? Color.RED : fg);
+               g.drawString(lno,x,y);
+             }
+            startoffset = Utilities.getRowEnd(line_editor,startoffset) + 1;
+          }
+         catch (BadLocationException e) { }
+       }
+    }
+   
+   private String getLineNumber(int offset) {
+      javax.swing.text.Element root = line_editor.getDocument().getDefaultRootElement();
+      int idx = root.getElementIndex(offset);
+      javax.swing.text.Element line = root.getElement(idx);
+      if (line.getStartOffset() != offset) return null;
+      return String.format("%4d ",idx + start_line);
+    }
+   
+   private int getOffsetY(int offset) throws BadLocationException {
+      FontMetrics fm = line_editor.getFontMetrics(line_editor.getFont());
+      int d = fm.getDescent();
+      Rectangle r = line_editor.modelToView2D(offset).getBounds();
+      int y = r.y + r.height - d;
+      return y;
+    }
+   
+   private boolean isCurrentLine(int offset) {
+      int cp = line_editor.getCaretPosition();
+      javax.swing.text.Element root = line_editor.getDocument().getDefaultRootElement();
+      return root.getElementIndex(offset) == root.getElementIndex(cp);
+    }
+   
+   private void documentChanged() {
+      SwingUtilities.invokeLater( () -> { repaint(); } );
+    }
+   
+   private void updateSize() {
+      Dimension sz = new Dimension(MARGIN_WIDTH_PX,line_editor.getHeight());
+      setPreferredSize(sz);
+      setSize(sz);
+      documentChanged();
+    }
+   
+   @Override public void insertUpdate(DocumentEvent e)          { documentChanged(); }
+   @Override public void removeUpdate(DocumentEvent e)          { documentChanged(); }
+   @Override public void changedUpdate(DocumentEvent e)         { documentChanged(); }
+   @Override public void caretUpdate(CaretEvent e)              { documentChanged(); }
+   @Override public void componentResized(ComponentEvent e)     { updateSize(); }
+   @Override public void componentShown(ComponentEvent e)       { updateSize(); }
+   @Override public void componentMoved(ComponentEvent e)       { }
+   @Override public void componentHidden(ComponentEvent e)      { }
+   
+}       // end of inner class LineNumbersView
+
 
 
 
