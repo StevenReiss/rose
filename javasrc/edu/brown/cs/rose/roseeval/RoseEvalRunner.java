@@ -217,7 +217,7 @@ private void loadTests(String [] args)
             if (suite.getName().equals(args[i]) ||
                   suite.getWorkspace().equals(args[i]) ||
                   suite.getProject().equals(args[i])) {
-               run_tests.addAll(suite.getTests());
+                               run_tests.addAll(suite.getTests());
              }
           }
        }

@@ -1149,7 +1149,8 @@ private class SuggestHandler implements MintHandler {
             if (ss != null) ss.endSuggestions();
             break;
        }
-    }
+      msg.replyTo("<OK/>");
+   }
 
 }       // end of inner class SuggestHandler
 

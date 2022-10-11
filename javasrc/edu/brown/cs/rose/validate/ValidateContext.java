@@ -466,7 +466,7 @@ double checkValidResult(ValidateExecution ve)
 {
    ValidateTrace e2 = base_execution.getSeedeResult();
    ValidateTrace e1 = ve.getSeedeResult();
-   if (e1.isCompilerError()) return 0;
+   if (e1 == null || e1.isCompilerError()) return 0;
    if (ve.getRepair() == null) return 1;
    
    ValidateChecker checker = new ValidateChecker(this,e2,e1,ve.getRepair());

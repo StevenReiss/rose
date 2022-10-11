@@ -588,17 +588,26 @@ private MintControl setupBedrock(String workspace,String project)
    String cmd = ec1.getAbsolutePath();
    cmd += " -application edu.brown.cs.bubbles.bedrock.application";
    cmd += " -data " + ec2.getAbsolutePath();
-   cmd += " -bhide";
+// cmd += " -bhide";
    cmd += " -nosplash";
    cmd += " -vmargs -Dedu.brown.cs.bubbles.MINT=" + mc.getMintName();
+   cmd += " -vmargs -XstartOnFirstThread";
    
    try {
       for (int i = 0; i < 250; ++i) {
 	 if (pingEclipse(mc)) {
 	    CommandArgs args = new CommandArgs("LEVEL","DEBUG");
-	    sendBubblesMessage(mc,"LOGLEVEL",null,args,null);
-	    sendBubblesMessage(mc,"ENTER");
+	    sendBubblesXmlReply(mc,"ENTER",null,null,null);
+            sendBubblesXmlReply(mc,"LOGLEVEL",null,args,null);
+            sendBubblesXmlReply(mc,"GETHOST",null,null,null);
+            sendBubblesXmlReply(mc,"PREFERENCES",null,null,null);
+            sendBubblesXmlReply(mc,"PROJECTS",null,null,null);
+            args = new CommandArgs("WS",workspace);
+            sendBubblesXmlReply(mc,"PROJECTS",null,args,null);
             args = new CommandArgs("PATHS",true);
+            args = new CommandArgs("REFRESH",false,"CLEAN",false,"FULL",false,"WS",workspace);
+            sendBubblesXmlReply(mc,"BUILDPROJECT",project,args,null);
+            
 	    Element pxml = sendBubblesXmlReply(mc,"OPENPROJECT",project,args,null);
 	    if (!IvyXml.isElement(pxml,"PROJECT")) pxml = IvyXml.getChild(pxml,"PROJECT");
             if (i != 0) checkProject(mc,pxml);
@@ -1056,6 +1065,7 @@ private class SuggestHandler implements MintHandler {
          if (tr != null) tr.handleTestResult(e);
          break;
     }
+   msg.replyTo("<OK/>");
 }
 
 }       // end of inner class SuggestHandler
