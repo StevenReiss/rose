@@ -100,6 +100,9 @@ private static final BractAstPattern int_double_result;
 private static final BractAstPattern to_string_pattern;
 private static final BractAstPattern to_string_result;
 
+private static final BractAstPattern substring_pattern;
+private static final BractAstPattern substring_result;
+
 
 static {
    cond_pattern = BractAstPattern.expression("Ex = Ey");
@@ -137,6 +140,9 @@ static {
    
    to_string_pattern = BractAstPattern.expression("Ex.toString()");
    to_string_result = BractAstPattern.expression("XString.valueOf(Ex)");
+   
+   substring_pattern = BractAstPattern.expression("Ex.substring(Ey)");
+   substring_result = BractAstPattern.expression("Ex.substring(Ey+1)");
 }
 
 
@@ -172,6 +178,7 @@ public SepalCommonProblems()
    checkSimplePattern(stmt,mult_pattern,mult_result,0.9);
    checkSimplePattern(stmt,and_pattern,and_result,0.75);
    checkSimplePattern(stmt,overflow_pattern,overflow_result,0.75);
+   checkSimplePattern(stmt,substring_pattern,substring_result,0.60);
    checkConversion(stmt);
    checkToString(stmt);
 }

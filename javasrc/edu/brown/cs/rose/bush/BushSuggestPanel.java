@@ -525,42 +525,42 @@ private class SuggestListModel extends DefaultListModel<BushRepair> {
       double th = 0;
       if (getSize() > 0) th = elementAt(0).getValidatedPriority() * THRESHOLD;
       if (r.getValidatedPriority() < th) return;
-
+   
       int min = 0;
       int max = getSize()-1;
       while (min <= max) {
-	 int mid = (min+max)/2;
-	 BushRepair r1 = elementAt(mid);
-	 if (r1.getValidatedPriority() >= r.getValidatedPriority()) {
-	    min = mid+1;
-	  }
-	 else {
-	    max = mid-1;
-	  }
+         int mid = (min+max)/2;
+         BushRepair r1 = elementAt(mid);
+         if (r1.getValidatedPriority() >= r.getValidatedPriority()) {
+            min = mid+1;
+          }
+         else {
+            max = mid-1;
+          }
        }
-
+   
       BoardLog.logD("BUSH","Add repair " + min + " " + getSize() + " " + r.getDescription());
-
+   
       add(min,r);
       if (min == 0) {
-	 th = r.getValidatedPriority() * THRESHOLD;
-	 int cut = -1;
-	 for (int i = 1; i < getSize(); ++i) {
-	    BushRepair r1 = elementAt(i);
-	    if (r1.getValidatedPriority() < th) {
-	       cut = i;
-	       break;
-	     }
-	  }
-	 if (cut > 0) {
-	    removeRange(cut,getSize()-1);
-	  }
+         th = r.getValidatedPriority() * THRESHOLD;
+         int cut = -1;
+         for (int i = 1; i < getSize(); ++i) {
+            BushRepair r1 = elementAt(i);
+            if (r1.getValidatedPriority() < th) {
+               cut = i;
+               break;
+             }
+          }
+         if (cut > 0) {
+            removeRange(cut,getSize()-1);
+          }
        }
-
+   
       int sz = Math.min(getSize(),10);
-
+   
       BoardLog.logD("BUSH","Set row count to " + sz);
-
+   
       suggestion_list.setVisibleRowCount(sz+1);
     }
 
