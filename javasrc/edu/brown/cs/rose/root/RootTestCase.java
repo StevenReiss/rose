@@ -64,6 +64,8 @@ private Map<String,String> check_values;
 private long            max_ticks;
 private int             max_repairs;
 private long            max_seede;
+private int             query_depth;
+private int             cond_depth;
 
 
 
@@ -84,6 +86,8 @@ public RootTestCase(Element xml)
    max_ticks = IvyXml.getAttrLong(xml,"MAXTIME");
    max_repairs = IvyXml.getAttrInt(xml,"MAXREPAIRS");
    max_seede = IvyXml.getAttrLong(xml,"MAXSEEDE");
+   query_depth = IvyXml.getAttrInt(xml,"DEPTH");
+   cond_depth = IvyXml.getAttrInt(xml,"CONDDEPTH");
 }
 
 
@@ -99,6 +103,8 @@ public RootTestCase(String fid,String rtn)
    max_ticks = -1;
    max_repairs = -1;
    max_seede = -1;
+   query_depth = 10;
+   cond_depth = 4;
 }
 
 
@@ -131,6 +137,9 @@ public String getThrowType()
 
 public long getMaxTime()                { return max_ticks; }
 
+public int getQueryDepth()              { return query_depth; }
+public int getCondDepth()               { return cond_depth; }
+
 
 public void setThrows(String exc)
 {
@@ -153,6 +162,9 @@ public void setMaxTime(long t)                  { max_ticks = t; }
 public void setMaxRepairs(int r)                { max_repairs = r; }
 
 public void setMaxSeede(long s)                 { max_seede = s; }
+
+public void setQueryDepth(int d)                { query_depth = d; }
+public void setCondDepth(int d)                 { cond_depth = d; }
 
 
 public void addCheckValue(String nm,String val)
@@ -185,6 +197,8 @@ public void outputXml(IvyXmlWriter xw)
    if (max_ticks > 0) xw.field("MAXTIME",max_ticks);
    if (max_repairs > 0) xw.field("MAXREPAIRS",max_repairs);
    if (max_seede > 0) xw.field("MAXSEEDE",max_seede);
+   if (query_depth > 0) xw.field("DEPTH",query_depth);
+   if (cond_depth > 0) xw.field("CONDDEPTH",cond_depth);
    if (return_value != null) xw.textElement("RETURNS",return_value);
    outputVarMap(xw,"INITIALIZE",initial_values);
    outputVarMap(xw,"CHECK",check_values);

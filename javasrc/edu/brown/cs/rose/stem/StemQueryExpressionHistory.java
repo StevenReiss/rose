@@ -96,12 +96,10 @@ private Element getHistoryData(StemMain stem)
 {
    stem.waitForAnalysis();
    
-   CommandArgs args = new CommandArgs("FILE",for_file.getAbsolutePath(),
-         "QTYPE","EXPRESSION",
+   CommandArgs args = new CommandArgs("QTYPE","EXPRESSION",
          "CURRENT",current_value,
-         "LINE",line_number,
-         "TOKEN",expression_name,
-         "METHOD",method_name);
+         "TOKEN",expression_name);
+   args = addCommandArgs(args);
    
    String qxml = null;
    if (node_context != null) {

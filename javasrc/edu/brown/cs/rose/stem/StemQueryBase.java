@@ -54,6 +54,7 @@ import edu.brown.cs.rose.bud.BudStackFrame;
 import edu.brown.cs.rose.root.RootLocation;
 import edu.brown.cs.rose.root.RootNodeContext;
 import edu.brown.cs.rose.root.RootProblem;
+import edu.brown.cs.rose.root.RootTestCase;
 import edu.brown.cs.rose.root.RoseException;
 
 abstract class StemQueryBase implements StemConstants
@@ -79,6 +80,8 @@ protected BudLaunch     bud_launch;
 protected RootNodeContext node_context;
 protected StemMain      stem_control;
 protected RootProblem   for_problem;
+protected int           query_depth;
+protected int           cond_depth;
 
 
 
@@ -99,6 +102,8 @@ protected StemQueryBase(StemMain ctrl,Element xml)
    line_number = IvyXml.getAttrInt(xml,"LINE");
    line_offset = IvyXml.getAttrInt(xml,"OFFSET");
    method_name = IvyXml.getAttrString(xml,"METHOD");
+   query_depth = IvyXml.getAttrInt(xml,"DEPTH",10);
+   cond_depth = IvyXml.getAttrInt(xml,"CONDDEPTH",4);
    stem_control = ctrl;
    for_problem = null;
    Element pxml = IvyXml.getChild(xml,"PROBLEM");
@@ -123,6 +128,13 @@ protected StemQueryBase(StemMain ctrl,RootProblem prob)
    method_name = loc.getMethod();
    node_context = prob.getNodeContext();
    for_problem = prob;
+   query_depth = 10;
+   cond_depth = 4;
+   RootTestCase rtc = prob.getCurrentTest();
+   if (rtc !=  null) {
+      query_depth = rtc.getQueryDepth();
+      cond_depth = rtc.getCondDepth();
+    }
    
    bud_launch = new BudLaunch(ctrl,prob);
 }

@@ -1324,6 +1324,8 @@ private class AdvancedPanel extends SwingGridPanel implements ActionListener {
    private SwingNumericField time_field;
    private SwingNumericField max_tests_field;
    private SwingNumericField max_seede_field;
+   private SwingNumericField depth_field;
+   private SwingNumericField cond_depth_field;
    private VariableValuePanel check_panel;
    private transient RootTestCase default_test;
    
@@ -1352,6 +1354,8 @@ private class AdvancedPanel extends SwingGridPanel implements ActionListener {
       time_field = addNumericField("Max Time (ticks)",10000,1000000,100000,this);
       max_tests_field = addNumericField("Max Repairs",50,1000,300,this);
       max_seede_field = addNumericField("Max Total Time (ticks)",100000,20000000,3000000,this);
+      depth_field = addNumericField("Back Slice Depth",5,100,10,this);
+      cond_depth_field = addNumericField("Condition Slice Depth",0,100,4,this);
       
       check_panel = new VariableValuePanel();
       addRawComponent("Checks",check_panel);
@@ -1394,6 +1398,10 @@ private class AdvancedPanel extends SwingGridPanel implements ActionListener {
              break;
           case "Max Total Time (ticks)" :
              break;
+          case "Back Slice Depth" :
+             break;
+          case "Condition Slice Depth" :
+             break;
           default :
              BoardLog.logE("BUSH","Unknown action command for advanced panel " + 
                    evt.getActionCommand());
@@ -1411,6 +1419,9 @@ private class AdvancedPanel extends SwingGridPanel implements ActionListener {
        default_test.setMaxTime((long) time_field.getValue());
        default_test.setMaxRepairs((int) max_tests_field.getValue());
        default_test.setMaxSeede((long) max_seede_field.getValue());
+       default_test.setQueryDepth((int) depth_field.getValue());
+       default_test.setCondDepth((int) cond_depth_field.getValue());
+       
        VariableValueSet vset = (VariableValueSet) check_panel.getListModel();
        for (int i = 0; i < vset.getSize(); ++i) {
           VariableValue vv = vset.getElementAt(i);

@@ -111,10 +111,8 @@ private Element getLocationData(StemMain stem,String locxml)
 {
    stem.waitForAnalysis();
    
-   CommandArgs args = new CommandArgs("FILE",for_file.getAbsolutePath(),
-         "QTYPE","LOCATION",
-         "LINE",line_number,
-         "METHOD",method_name);
+   CommandArgs args = new CommandArgs("QTYPE","LOCATION");
+   args = addCommandArgs(args);
    
    String qxml = locxml;
    String sxml = getXmlForStack();

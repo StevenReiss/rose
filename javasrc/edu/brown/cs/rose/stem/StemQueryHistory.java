@@ -40,6 +40,7 @@ import java.util.Map;
 
 import org.w3c.dom.Element;
 
+import edu.brown.cs.ivy.mint.MintConstants.CommandArgs;
 import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
 import edu.brown.cs.rose.bract.BractFactory;
@@ -107,6 +108,17 @@ protected StemQueryHistory(StemMain ctrl,RootProblem prob)
 abstract void process(StemMain stem,IvyXmlWriter xw) throws RoseException;
 
 
+protected CommandArgs addCommandArgs(CommandArgs args) 
+{
+   if (args == null) args = new CommandArgs();
+   args.put("FILE",for_file.getAbsolutePath());
+   args.put("LINE",line_number);
+   args.put("METHOD",method_name);
+   if (args.get("CONDDEPTH") == null) args.put("CONDDEPTH",cond_depth);
+   if (args.get("DEPTH") == null) args.put("DEPTH",query_depth);
+   
+   return args;
+}
 
 
 /********************************************************************************/

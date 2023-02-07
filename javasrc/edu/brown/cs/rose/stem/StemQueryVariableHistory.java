@@ -141,12 +141,10 @@ private Element getVarData(StemMain stem)
 
 private Element getHistoryData(StemMain stem,Element vdata) throws RoseException
 {
-   CommandArgs args = new CommandArgs("FILE",for_file.getAbsolutePath(),
-         "QTYPE","VARIABLE",
+   CommandArgs args = new CommandArgs("QTYPE","VARIABLE",
          "CURRENT",current_value,
-         "LINE",line_number,
-         "TOKEN",variable_name,
-         "METHOD",method_name);
+         "TOKEN",variable_name);
+   args = addCommandArgs(args);
    
    StringBuffer buf = new StringBuffer();
    Element reference = null;

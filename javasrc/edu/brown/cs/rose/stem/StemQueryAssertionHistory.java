@@ -95,10 +95,8 @@ StemQueryAssertionHistory(StemMain ctrl,RootProblem prob)
    
    if (expr == null) throw new RoseException("Can't find exception cause");
    
-   CommandArgs args = new CommandArgs("FILE",for_file.getAbsolutePath(),
-         "QTYPE","EXPRESSION",
-         "LINE",line_number,
-         "METHOD",method_name);
+   CommandArgs args = new CommandArgs("QTYPE","EXPRESSION");
+   args = addCommandArgs(args);
    
    String sxml = getXmlForStack();
    if (sxml != null) expr += sxml;

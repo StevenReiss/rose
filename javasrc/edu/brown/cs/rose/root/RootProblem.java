@@ -227,7 +227,6 @@ public void addIgnorePattern(String pat)        { ignore_patterns.add(pat); }
 public int getMaxUp()                           { return max_up; }
 public void setMaxUp(int mup)                   { max_up = mup; }
 
- 
 
 
 
