@@ -715,6 +715,7 @@ private Boolean compareValueAtTime(BudValue actval,Element valctx,BudLaunch laun
    if (actval.isNull()) {
       return IvyXml.getAttrBool(valctx,"NULL");
     }
+   if (ctxval == null) ctxval = "";
    
    // handle primitive types
    switch (typ.getName()) {

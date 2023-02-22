@@ -624,4 +624,13 @@
    </TEST>
 </SUITE>
 
+<SUITE NAME='nanoxml' WORKSPACE='nanoxml' PROJECT='nanoxml'>
+   <TEST NAME='testParsing16'>
+      <PROBLEM TYPE='JUNIT' />
+      <SOLUTION LINE='367'>
+	 <MATCH>+1</MATCH>
+      </SOLUTION>
+   </TEST>
+</SUITE>
+
 </ROSEEVAL>
