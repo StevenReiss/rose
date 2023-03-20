@@ -242,6 +242,7 @@ private class AssertionChecker extends ASTVisitor implements AssertionData {
          switch (ng.getNodeType()) {
             case ASTNode.NUMBER_LITERAL :
             case ASTNode.STRING_LITERAL :
+            case ASTNode.BOOLEAN_LITERAL :
             case ASTNode.NULL_LITERAL :
             case ASTNode.TEXT_BLOCK :
                int idx = givenidx;
