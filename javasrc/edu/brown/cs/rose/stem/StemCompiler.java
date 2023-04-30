@@ -281,8 +281,14 @@ private synchronized SourceFile getSourceFile(File f)
 {
    SourceFile sf = file_map.get(f);
    if (sf == null) {
+      File f1 = IvyFile.getCanonical(f);
+      sf = file_map.get(f1);
+    }
+   if (sf == null) {
       sf = new SourceFile(f);
       file_map.put(f,sf);
+      File f1 = IvyFile.getCanonical(f);
+      file_map.put(f1,sf);
     }
 
    return sf;

@@ -68,6 +68,9 @@ private int             method_offset;
 private int             method_length;
 private String          location_reason;
 
+private static File     last_file = null;
+private static CompilationUnit last_unit = null;
+
 
 
 
@@ -174,14 +177,29 @@ protected void setMethodData(String full,int off,int len)
 
 public int getLineNumber()
 {
+   if (line_number <= 0 && start_offset < 0) return -1;
+   
    if (line_number <= 0) {
-      try {
-         CompilationUnit cu = JcompAst.parseSourceFile(IvyFile.loadFile(for_file));
-         if (cu != null) {
+      synchronized (RootLocation.class) {
+         if (last_file != null && last_file.equals(for_file)) {
+            CompilationUnit cu = last_unit;
             line_number = cu.getLineNumber(start_offset);
+            return line_number;
           }
        }
-      catch (IOException e) { }
+    }
+    if (line_number <= 0) {  
+         try {
+            CompilationUnit cu = JcompAst.parseSourceFile(IvyFile.loadFile(for_file));
+            if (cu != null) {
+               line_number = cu.getLineNumber(start_offset);
+               synchronized (RootLocation.class) {
+                  last_file = for_file;
+                  last_unit = cu;
+                }
+             }
+          }
+         catch (IOException e) { }
     }
    return line_number;
 }

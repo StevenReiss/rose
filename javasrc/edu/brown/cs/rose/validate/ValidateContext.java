@@ -76,14 +76,20 @@ private List<ValidateAction> setup_actions;
 private int             num_checked;
 private long            seede_total;
 private double          best_score;
+private double          location_priority;
+private double          repair_priority;
+private double          finder_priority;
 private Map<File,ValidateExecution> testfile_map;
 
 private static final int        MAX_CHECKED_OK = 100;
+private static final int        MIN_CHECKED_OK = 60;
 private static final long       MAX_SEEDE_OK = 600000;
 private static final long       MIN_SEEDE_OK = 50000;
 private static final int        MAX_CHECKED = 300;
 private static final long       MAX_SEEDE_TOTAL = 3000000;
 private static final long       TIME_MULTIPLIER = 10;
+
+private static final double     GOOD_SCORE = 0.7;
 
 
 
@@ -121,6 +127,9 @@ private ValidateContext(RootControl ctrl)
    num_checked = 0;
    seede_total = 0;
    best_score = 0;
+   location_priority = 1.0;
+   repair_priority = 1.0;
+   finder_priority = 1.0;
 }
 
 
@@ -325,7 +334,10 @@ void setupBaseExecution(boolean showall,boolean tostring,boolean toarray)
    if (toarray) args.put("TOARRAY",true);
    
    Element rslt = root_control.sendSeedeMessage(null,"BEGIN",args,null);
-   if (!IvyXml.isElement(rslt,"RESULT")) return;
+   if (!IvyXml.isElement(rslt,"RESULT")) {
+      RoseLog.logE("VALIDATE","No result from BEGIN message");
+      return;
+    }
    Element sessxml = IvyXml.getChild(rslt,"SESSION");
    base_session = IvyXml.getAttrString(sessxml,"ID");
    if (base_session == null) return;
@@ -487,34 +499,60 @@ double checkValidResult(ValidateExecution ve)
 
 
 
-@Override public synchronized boolean canCheckResult()
+@Override public synchronized boolean canCheckResult(double locpri,double findpri)
 {
    if (base_execution.getSeedeResult().getProblemTime() < 0) 
       return false;
    
-   if (seede_total < MIN_SEEDE_OK) return true;
-   
+   boolean rslt = true;
    if (haveGoodResult()) {
-      if (num_checked > MAX_CHECKED_OK) return false;
-      if (seede_total > MAX_SEEDE_OK) return false;
+      if (num_checked > MAX_CHECKED_OK) rslt = false;
+      if (num_checked < MIN_CHECKED_OK && seede_total > MAX_SEEDE_OK) rslt = false;
+      if (!rslt && forceCheck(locpri,findpri)) rslt = true;
     }
+   if (num_checked > MAX_CHECKED) rslt = false;
+   else if (seede_total < MIN_SEEDE_OK) rslt = true;
+   else if (seede_total > MAX_SEEDE_TOTAL) rslt = false;
    
-   if (num_checked > MAX_CHECKED) return false;
-   if (seede_total > MAX_SEEDE_TOTAL) return false;
-   return true;
+   return rslt;
 }
 
 
 @Override public boolean haveGoodResult()
 {
-   return best_score >= 0.7;
+   return best_score >= GOOD_SCORE;
 }
+
+
+public boolean forceCheck(double locpri,double findpri)
+{
+   if (locpri < location_priority * 0.8) return false;
+
+   double usepri = 0.95;
+   double bestrepair = (locpri/4.0 + 0.75 +  1.0  + usepri)/3.0 * findpri;
+   if (bestrepair < repair_priority) return false;
+   
+   RoseLog.logD("VALDIATE","Force check at this point");
+   
+   return true;
+}
+
+
+
 
 synchronized void noteSeedeLength(long t,RootRepair repair,double score) 
 {
    num_checked++;
    seede_total += t;
-   if (score > best_score) best_score = score;
+   if (score > best_score) {
+      best_score = score;
+      double p = repair.getLocation().getPriority();
+      if (p < location_priority) location_priority = p;
+      double p1 = repair.getPriority();
+      if (p1 < repair_priority) repair_priority = p1;
+      double p2 = repair.getFinderPriority();
+      if (p2 < finder_priority) finder_priority = p2;
+    }
    repair.setCount(num_checked);
    repair.setSeedeCount(seede_total);
 }

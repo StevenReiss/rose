@@ -63,9 +63,10 @@ void validateAndSend(RootProcessor rp,RootRepair rr);
 boolean checkTestResult(RootTrace rt);
 
 
-boolean canCheckResult();
+boolean canCheckResult(double locpriority,double finderpriority);
 
 boolean haveGoodResult();
+
 
 RootTrace getExecutionTrace();
 

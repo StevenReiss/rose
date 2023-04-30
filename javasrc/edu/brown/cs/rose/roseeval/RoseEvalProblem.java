@@ -52,11 +52,12 @@ class RoseEvalProblem implements RoseEvalConstants
 /*                                                                              */
 /********************************************************************************/
 
-private String problem_type;
-private String problem_item;
-private String original_value;
-private String target_value;
-private Double target_precision;
+private String  problem_type;
+private String  problem_item;
+private String  original_value;
+private String  target_value;
+private Double  target_precision;
+private int     max_up;
 
 
 
@@ -80,6 +81,7 @@ private RoseEvalProblem(String typ,String item,String oval,String tval,Double pr
    original_value = oval;
    target_value = tval;
    target_precision = prec;
+   max_up = -1;
 }
 
 
@@ -88,30 +90,42 @@ static RoseEvalProblem createProblem(Element xml)
    String type = IvyXml.getAttrString(xml,"TYPE");
    if (type == null) return null;
    
+   RoseEvalProblem prob = null;
    switch (type) {
       case "EXCEPTION" :
-         return createException(IvyXml.getAttrString(xml,"CATCH"));
+         prob = createException(IvyXml.getAttrString(xml,"CATCH"));
+         break;
       case "VARIABLE" :
-         return createVariable(IvyXml.getAttrString(xml,"NAME"),
+         prob = createVariable(IvyXml.getAttrString(xml,"NAME"),
                IvyXml.getAttrString(xml,"CURRENT"),
                IvyXml.getAttrString(xml,"TARGET"),
                IvyXml.getAttrDouble(xml,"PRECISION"));
+         break;
       case "EXPRESSION" :
-         return createExpression(IvyXml.getAttrString(xml,"NAME"),
+         prob = createExpression(IvyXml.getAttrString(xml,"NAME"),
                IvyXml.getAttrString(xml,"CURRENT"),
                IvyXml.getAttrString(xml,"TARGET"));
+         break;
       case "LOCATION" :
-         return createLocation();
+         prob = createLocation();
+         break;
       case "ASSERTION" :
-         return createAssertion();
+         prob = createAssertion();
+         break;
       case "JUNIT" :
-         return createJunitAssertion();
+         prob = createJunitAssertion();
+         break;
       case "NOPROBLEM" :
-         return createNoProblem(IvyXml.getAttrString(xml,"VARIABLES"));
+         prob = createNoProblem(IvyXml.getAttrString(xml,"VARIABLES"));
+         break;
       default : 
          RoseLog.logT("ROSEEVAL","Unknown problem type " + type);
          return null;
     }
+   
+   prob.max_up = IvyXml.getAttrInt(xml,"MAXUP",-1);
+   
+   return prob;
 }
 
 
@@ -182,6 +196,7 @@ String getDescription(RoseEvalFrameData fd)
    xw.field("TYPE",problem_type);
    xw.field("IGNOREMAIN",true);
    xw.field("IGNORETESTS",true);
+   if (max_up >= 0) xw.field("MAXUP",max_up);
    if (target_precision != null) xw.field("PRECISION",target_precision);
    if (problem_item != null) xw.textElement("ITEM",problem_item);
    if (original_value != null) xw.textElement("ORIGINAL",original_value);

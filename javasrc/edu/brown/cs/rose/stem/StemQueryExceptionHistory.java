@@ -159,7 +159,7 @@ ASTNode getExceptionNode()
             break;
        }
       
-      if (checker != null) {
+      if (checker != null && stmt != null) {
          checker.doCheck(stmt);
          return checker.getResult();
        }
@@ -175,7 +175,7 @@ private String getExceptionCause() throws RoseException
 {
   ASTNode stmt = getSourceStatement();
   
-  if (exception_type == null) return null;
+  if (exception_type == null || stmt == null) return null;
   
   ExceptionChecker checker = null;
   switch (exception_type) {

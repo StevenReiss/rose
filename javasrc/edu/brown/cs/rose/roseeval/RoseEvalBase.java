@@ -607,7 +607,7 @@ private MintControl setupBedrock(String workspace,String project)
 	    args = new CommandArgs("PATHS",true);
 	    args = new CommandArgs("REFRESH",false,"CLEAN",false,"FULL",false,"WS",workspace);
 	    sendBubblesXmlReply(mc,"BUILDPROJECT",project,args,null);
-	
+	    args = new CommandArgs("PATHS",true);
 	    Element pxml = sendBubblesXmlReply(mc,"OPENPROJECT",project,args,null);
 	    if (!IvyXml.isElement(pxml,"PROJECT")) pxml = IvyXml.getChild(pxml,"PROJECT");
 	    if (i != 0) checkProject(mc,pxml);

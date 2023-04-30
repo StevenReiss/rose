@@ -73,7 +73,7 @@
 	 <MATCH><![CDATA[sublist(k,arr.size())]]></MATCH>
       </SOLUTION>
    </TEST>
-   <TEST NAME='Knapsack'>
+   <TEST NAME='Knapsack' TIME='50000' >
       <PROBLEM TYPE='ASSERTION' />
       <SOLUTION LINE='37'>
 	 <MATCH><![CDATA[<=]]></MATCH>
@@ -184,7 +184,7 @@
    <TEST NAME='ShortestPathLengths' TIME='500000'>
       <PROBLEM TYPE='ASSERTION' />
       <SOLUTION LINE='46'>
-	 <MATCH><![CDATA[Arrays.aslist(k,j)]]></MATCH>
+	 <MATCH><![CDATA[Arrays.asList(k,j)]]></MATCH>
       </SOLUTION>
    </TEST>
    <TEST NAME='ShortestPaths' TIME='50000'>
@@ -272,6 +272,12 @@
 	 <MATCH><![CDATA[2.0]]></MATCH>
       </SOLUTION>
    </TEST>
+   <TEST NAME='Math22A'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='210' FILE='UniformRealDistribution.java'>
+	 <MATCH><![CDATA[true]]></MATCH>
+      </SOLUTION>
+   </TEST>
 <!--
    <TEST NAME='Math25'>
       <PROBLEM TYPE='LOCATION' />
@@ -302,6 +308,12 @@
       <PROBLEM TYPE='LOCATION' />
       <SOLUTION LINE='223' FILE='ListPopulation.java'>
 	 <MATCH><![CDATA[getChromosomes()]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Math35A'>
+      <PROBLEM TYPE='LOCATION' />
+      <SOLUTION LINE='72' FILE='ElitisticListPopulation.java'>
+	 <MATCH><![CDATA[setElitismRate]]></MATCH>
       </SOLUTION>
    </TEST>
 </SUITE>
@@ -350,6 +362,18 @@
       <PROBLEM TYPE='ASSERTION' />
       <SOLUTION LINE='97' FILE='ValueMarker.java'>
 	 <MATCH><![CDATA[,outline]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Chart14A'>
+      <PROBLEM TYPE='EXCEPTION' CATCH='java.lang.NullPointerException'/>
+      <SOLUTION LINE='2936' FILE='CategoryPlot.java'>
+	 <MATCH><![CDATA[if (markers == null]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Chart25A'>
+      <PROBLEM TYPE='EXCEPTION' CATCH='java.lang.NullPointerException' MAXUP='1' />
+      <SOLUTION LINE='293' FILE='StatisticalBarRenderer.java'>
+	 <MATCH><![CDATA[if (meanValue == null]]></MATCH>
       </SOLUTION>
    </TEST>
 </SUITE>
@@ -441,6 +465,12 @@
       <PROBLEM TYPE='EXCEPTION' CATCH='java.lang.NullPointerException' />
       <SOLUTION LINE='991' FILE='ClassUtils.java'>
 	 <MATCH><![CDATA[array[i] == null]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Lang47A'>
+      <PROBLEM TYPE='EXCEPTION' CATCH='java.lang.NullPointerException' />
+      <SOLUTION LINE='1309' FILE='StrBuilder.java'>
+	 <MATCH><![CDATA[if (str == null]]></MATCH>
       </SOLUTION>
    </TEST>
    <TEST NAME='Lang59'>

@@ -37,6 +37,8 @@ package edu.brown.cs.rose.bract;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import edu.brown.cs.ivy.mint.MintConstants.CommandArgs;
@@ -143,6 +145,8 @@ private void work()
       uselocs.add(at_location);
     }
    
+   Collections.sort(uselocs,new LocationSorter());
+   
    RoseLog.logI("BRACT","Start processing " + uselocs.size() + " " +
          location_classes.size());
    
@@ -176,6 +180,16 @@ private void work()
    RootMetrics.noteCommand("BRACT","ENDREPAIR",t1-start_time,num_checked);
    CommandArgs args = new CommandArgs("NAME",reply_id,"CHECKED",num_checked);
    rose_control.sendRoseMessage("ENDSUGGEST",args,null,-1);
+}
+
+
+
+private class LocationSorter implements Comparator<RootLocation> {
+   
+   @Override public int compare(RootLocation l1,RootLocation l2) {
+      return Double.compare(l2.getPriority(),l1.getPriority());
+    }
+   
 }
 
 
@@ -291,7 +305,7 @@ private static class ProcessorTask extends RootTask implements PriorityTask {
        }
    
       try {
-         if (repair_validate.canCheckResult()) {
+         if (repair_validate.canCheckResult(loc.getPriority(),repair_finder.getFinderPriority())) {
             repair_finder.process();
           }
          else {

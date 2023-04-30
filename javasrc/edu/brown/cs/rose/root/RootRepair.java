@@ -54,6 +54,7 @@ abstract public class RootRepair implements RootConstants
 /********************************************************************************/
 
 private String          repair_finder;
+private double          finder_priority;
 private String          repair_description;
 private String          repair_logdata;
 private String          repair_id;
@@ -79,6 +80,7 @@ protected RootRepair(RootRepairFinder finder,String desc,double pri,
       RootLocation loc,RootEdit edit,RootLineMap linemap,String logdata)
 { 
    repair_finder = finder.getClass().getName();
+   finder_priority = finder.getFinderPriority();
    repair_description = desc;
    repair_priority = pri;
    repair_edit = edit;
@@ -96,7 +98,8 @@ protected RootRepair(RootRepairFinder finder,String desc,double pri,
 
 protected RootRepair(Element xml,RootLocation loc)
 {
-   repair_finder = IvyXml.getAttrString(xml,"FINDER:");
+   repair_finder = IvyXml.getAttrString(xml,"FINDER");
+   finder_priority = IvyXml.getAttrDouble(xml,"FINDERPRIORITY",0.5);
    repair_priority = IvyXml.getAttrDouble(xml,"PRIORITY");
    repair_description = IvyXml.getTextElement(xml,"DESCRIPTION");
    repair_edit = new RootEdit(IvyXml.getChild(xml,"REPAIREDIT"));
@@ -131,6 +134,11 @@ public double getPriority()
 public double getValidatedPriority()
 {
    return validate_score*repair_priority;
+}
+
+public double getFinderPriority()
+{
+   return finder_priority;
 }
 
 
@@ -200,6 +208,7 @@ public void outputXml(IvyXmlWriter xw)
    xw.field("PRIORITY",repair_priority);
    if (validate_score > 0) xw.field("VALIDATE",validate_score);
    xw.field("FINDER",repair_finder);
+   xw.field("FINDERPRIORITY",finder_priority);
    xw.field("ID",repair_id);
    if (repair_time > 0) xw.field("TIME",repair_time);
    if (repair_count > 0) xw.field("COUNT",repair_count);

@@ -190,6 +190,8 @@ private void addSuite(Element xml)
 
 private void loadTests(String [] args)
 {
+   boolean fnd = false;
+   
    RootThreadPool.setMaxThreads(1);
    
    for (int i = 0; i < args.length; ++i) {
@@ -217,11 +219,12 @@ private void loadTests(String [] args)
             if (suite.getName().equals(args[i]) ||
                   suite.getWorkspace().equals(args[i]) ||
                   suite.getProject().equals(args[i])) {
-                               run_tests.addAll(suite.getTests());
+               run_tests.addAll(suite.getTests());
              }
           }
        }
       else {
+         fnd = true;
          RoseEvalTest test = null;
          for (RoseEvalSuite suite : test_suites) {
             test = suite.findTest(args[i]);
@@ -234,7 +237,7 @@ private void loadTests(String [] args)
           }
        }
     }
-   if (run_tests.size() == 0) {
+   if (run_tests.size() == 0 && !fnd) {
       run_setup = true;
       for (RoseEvalSuite suite : test_suites) {
          run_tests.addAll(suite.getTests());
