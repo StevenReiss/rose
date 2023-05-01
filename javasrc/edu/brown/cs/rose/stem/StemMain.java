@@ -962,7 +962,16 @@ private boolean startSeede()
    RoseLog.logD("STEM","START SEEDE " + seede_running + " " + seede_started);
    
    synchronized (this) {
-      if (seede_running || seede_started) return false;      // quick, informal check
+      if (seede_running) return false;                          // quick, informal check
+      if (seede_started) {
+         while (!seede_running) {
+            try {
+               wait(5000);
+             }
+            catch (InterruptedException e) { }
+          }
+         return false;
+       }
       seede_started = true;
     }
    
@@ -1051,7 +1060,10 @@ private boolean startSeede()
       mint_control.send("<SEEDE DO='PING' SID='*' />",rply,MINT_MSG_FIRST_NON_NULL);
       String rslt = rply.waitForString(1000);
       if (rslt != null) {
-         seede_running = true;
+         synchronized (this) {
+            seede_running = true;
+            notifyAll();
+          }
          break;
        }
       if (i == 0) {
@@ -2255,7 +2267,9 @@ private void buildProjectMap()
             String fnm = IvyXml.getAttrString(fxml,"PATH");
             File f = new File(fnm);
             project_map.putIfAbsent(f,nm);
-            if (default_project != null) default_project = nm;
+            File f1 = IvyFile.getCanonical(f);
+            if (f1 != f) project_map.putIfAbsent(f,nm);
+            if (default_project == null) default_project = nm;
           }
        }
     }

@@ -455,6 +455,14 @@ private void setupStem(String workspace)
       String [] argarr = new String[args.size()];
       argarr = args.toArray(argarr);
       StemMain.main(argarr);
+      for (int i = 0; i < 100; ++i) {
+	 Element ping = sendStemReply(mc,"PING",null,null);
+	 if (ping != null) break;
+	 try {
+	    Thread.sleep(2000);
+	  }
+	 catch (InterruptedException e) { }
+       }
     }
    else {
       List<String> callargs = new ArrayList<>();
@@ -1098,14 +1106,14 @@ private static class SuggestionSet {
 
    synchronized List<RoseEvalSuggestion> getSuggestions() {
       while (!is_done) {
-	 try {
-	    wait(1000);
-	  }
-	 catch (InterruptedException e) { }
+         try {
+            wait(1000);
+          }
+         catch (InterruptedException e) { }
        }
       List<RoseEvalSuggestion> rslt = new ArrayList<>();
       for (Element e : suggest_nodes) {
-	 rslt.add(new RoseEvalSuggestion(e));
+         rslt.add(new RoseEvalSuggestion(e));
        }
       Collections.sort(rslt);
       return rslt;

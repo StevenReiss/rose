@@ -331,6 +331,7 @@ private boolean isRelevant(JcompSymbol rep,JcompSymbol orig,ASTNode base)
    if (rep.getSymbolKind() == JcompSymbolKind.LOCAL) {
       if (rep.getDefinitionNode().getStartPosition() >= base.getStartPosition()) return false;
     }
+   if (rep.getName().equals("serialVersionUID")) return false;
    
    return true;
 }

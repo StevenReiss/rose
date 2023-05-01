@@ -422,7 +422,8 @@ void runBaseExecution(String sid)
    base_execution = new ValidateExecution(sid,this,null);
    base_execution.start(root_control);
    
-   base_execution.getSeedeResult().setupForLaunch(getLaunch());
+   ValidateTrace vt = base_execution.getSeedeResult();
+   if (vt != null) vt.setupForLaunch(getLaunch());
 }
 
 

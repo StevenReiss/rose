@@ -509,7 +509,7 @@
    </TEST>
 </SUITE>
 
-<SUITE NAME='closure' WORKSPACE='d4jclosure' PROJECT='d4jclosure' TIME='100000' IGNORE='true' >
+<SUITE NAME='closure' WORKSPACE='d4jclosure' PROJECT='d4jclosure' TIME='100000' >
    <TEST NAME='Closure38' LOCAL='true' FRAMES='0'>
       <PROBLEM TYPE='ASSERTION' />
       <SOLUTION LINE='248' FILE='CodeConsumer.java'>

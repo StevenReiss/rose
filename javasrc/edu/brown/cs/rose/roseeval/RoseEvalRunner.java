@@ -215,6 +215,7 @@ private void loadTests(String [] args)
        }
       else if (args[i].startsWith("-s") && i+1 < args.length) {         // -suite <name>
          ++i;
+         fnd = true;
          for (RoseEvalSuite suite : test_suites) {
             if (suite.getName().equals(args[i]) ||
                   suite.getWorkspace().equals(args[i]) ||
