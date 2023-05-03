@@ -105,10 +105,13 @@ String getStartingFrame(boolean usecur)
     }
    else if (base_problem.getMaxUp() >= 0) {
       int ct = 0;
+      BudStackFrame last = null;
       for (BudStackFrame bsf : for_launch.getStack().getFrames()) {
          if (ct == base_problem.getMaxUp()) return bsf.getFrameId();
+         last = bsf;
          ++ct;
        }
+      if (last != null) startframe = last.getFrameId();
     }
    else {
       List<RootLocation> locs = root_control.getLocations(base_problem);

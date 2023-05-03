@@ -85,8 +85,8 @@ private static final int        MAX_CHECKED_OK = 100;
 private static final int        MIN_CHECKED_OK = 60;
 private static final long       MAX_SEEDE_OK = 600000;
 private static final long       MIN_SEEDE_OK = 50000;
-private static final int        MAX_CHECKED = 300;
-private static final long       MAX_SEEDE_TOTAL = 3000000;
+private static final int        MAX_CHECKED = 350;
+private static final long       MAX_SEEDE_TOTAL = 5000000;
 private static final long       TIME_MULTIPLIER = 10;
 
 private static final double     GOOD_SCORE = 0.7;
@@ -514,6 +514,8 @@ double checkValidResult(ValidateExecution ve)
    if (num_checked > MAX_CHECKED) rslt = false;
    else if (seede_total < MIN_SEEDE_OK) rslt = true;
    else if (seede_total > MAX_SEEDE_TOTAL) rslt = false;
+   
+   if (rslt)  return rslt;
    
    return rslt;
 }

@@ -76,6 +76,8 @@ private List<RootTask> sub_tasks;
 private long    start_time;
 private int     num_checked;
 
+private static boolean sort_locations = false;
+
 
 
 /********************************************************************************/
@@ -145,7 +147,9 @@ private void work()
       uselocs.add(at_location);
     }
    
-   Collections.sort(uselocs,new LocationSorter());
+   if (sort_locations) {
+      Collections.sort(uselocs,new LocationSorter());
+    }
    
    RoseLog.logI("BRACT","Start processing " + uselocs.size() + " " +
          location_classes.size());

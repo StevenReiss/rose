@@ -107,6 +107,15 @@ public SepalIfCondition()
    if (cond == null) return;
    RoseLog.logD("SEPAL","Check condition on " +  getLocation().getLineNumber() + " " + stmt);
    
+   handleCondition(cond);
+}
+
+
+
+private void handleCondition(Expression cond) 
+{
+   if (cond == null) return;
+   
    if (cond instanceof InfixExpression) {
       InfixExpression ifx = (InfixExpression) cond;
       if (ifx.getOperator() == InfixExpression.Operator.CONDITIONAL_AND) {
@@ -121,6 +130,7 @@ public SepalIfCondition()
     }
    else invertCondition(cond);
 }
+
 
 
 
@@ -276,14 +286,24 @@ private Expression invertBooleanCondition(Expression ex,boolean paren)
 
 private void handleAndAndCondition(InfixExpression ex)
 {
-   
+   handleCondition(ex.getLeftOperand());
+   handleCondition(ex.getRightOperand());
+   for (Object o : ex.extendedOperands()) {
+      Expression e1 = (Expression) o;
+      handleCondition(e1);
+    }
 }
 
 
 
 private void handleOrOrCondition(InfixExpression ex)
 {
-   
+   handleCondition(ex.getLeftOperand());
+   handleCondition(ex.getRightOperand());
+   for (Object o : ex.extendedOperands()) {
+      Expression e1 = (Expression) o;
+      handleCondition(e1);
+    }
 }
 
 

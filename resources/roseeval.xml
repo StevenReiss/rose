@@ -1,6 +1,6 @@
 <ROSEEVAL>
 
-<SUITE NAME='quix' WORKSPACE='quixspr' PROJECT='quixbugs' TIME='10000'>
+<SUITE N A'='quix' WORKSPACE='quixspr' PROJECT='quixbugs' TIME='10000'>
    <TEST NAME='BitCount'>
       <PROBLEM TYPE='JUNIT'/>
       <SOLUTION LINE='25'>
@@ -397,7 +397,7 @@
 	 <MATCH><![CDATA[`b' with `a]]></MATCH>
       </SOLUTION>
    </TEST>
-   <TEST NAME='Math69'>
+   <TEST NAME='Math69' TIME='30000' >
       <PROBLEM TYPE='ASSERTION' />
       <SOLUTION LINE='176' FILE='PearsonsCorrelation.java'>
 	 <MATCH><![CDATA[2 * (1 - tDistribution.cumula... with 2.0 * tDistribution.cumulat]]></MATCH>
@@ -443,8 +443,8 @@
 </SUITE>
 
 <SUITE NAME='lang' WORKSPACE='d4jlang' PROJECT='d4jlang' TIME='100000' >
-   <TEST NAME='Lang06'>
-      <PROBLEM TYPE='EXCEPTION' CATCH='java.lang.StringIndexOutOfBoundsException' />
+   <TEST NAME='Lang06' TIME='5000'>
+      <PROBLEM TYPE='EXCEPTION' CATCH='java.lang.StringIndexOutOfBoundsException' MAXUP='8' />
       <SOLUTION LINE='97' FILE='CharSequenceTranslator.java'>
 	 <MATCH><![CDATA[pt]]></MATCH>
       </SOLUTION>
@@ -475,7 +475,7 @@
    </TEST>
    <TEST NAME='Lang59'>
       <PROBLEM TYPE='EXCEPTION' CATCH='java.lang.StringIndexOutOfBoundsException' />
-      <SOLUTION LINE='1359' FILE='StrBuilder.java'>
+      <SOLUTION LINE='1360' FILE='StrBuilder.java'>
 	 <MATCH><![CDATA[width]]></MATCH>
       </SOLUTION>
    </TEST>
@@ -515,12 +515,21 @@
       <SOLUTION LINE='248' FILE='CodeConsumer.java'>
 	 <MATCH><![CDATA[negativeZero]]></MATCH>
       </SOLUTION>
+      <FILE>/pro/d4jspr/closure/javasrc/edu/brown/cs/d4jspr/BugClosure38.java</FILE>
+      <FILE>/pro/d4jspr/closure/javasrc/com/google/javascript/jscomp/CodeConsumer.java</FILE>
+      <FILE>/pro/d4jspr/closure/javasrc/com/google/javascript/jscomp/CodeGenerator.java</FILE>
+      <FILE>/pro/d4jspr/closure/javasrc/com/google/javascript/jscomp/CodePrinter.java</FILE>
+      <FILE>/pro/d4jspr/closure/javasrc/edu/brown/cs/d4jspr/BugConstants.java</FILE>
    </TEST>
    <TEST NAME='Closure52' LOCAL='true' FRAMES='0'>
       <PROBLEM TYPE='ASSERTION' />
-      <SOLUTION LINE='825' FILE='CodeCGenerator.java'>
-	 <MATCH><![CDATA[s.charAt(0) 1= '0']]></MATCH>
+      <SOLUTION LINE='825' FILE='CodeGenerator.java'>
+	 <MATCH><![CDATA[s.charAt(0) != '0']]></MATCH>
       </SOLUTION>
+      <FILE>/pro/d4jspr/closure/javasrc/edu/brown/cs/d4jspr/BugClosure52.java</FILE>
+      <FILE>/pro/d4jspr/closure/javasrc/com/google/javascript/jscomp/CodeGenerator.java</FILE>
+      <FILE>/pro/d4jspr/closure/javasrc/com/google/javascript/jscomp/CodePrinter.java</FILE>
+      <FILE>/pro/d4jspr/closure/javasrc/edu/brown/cs/d4jspr/BugConstants.java</FILE>
    </TEST>
    <TEST NAME='Closure57' LOCAL='true' FRAMES='0'>
       <PROBLEM TYPE='ASSERTION' />
@@ -528,37 +537,56 @@
 	 <MATCH><![CDATA[target.isString()]]></MATCH>
 	 <MATCH><![CDATA[target.getType() == Token.STRING]]></MATCH>
       </SOLUTION>
+      <FILE>/pro/d4jspr/closure/javasrc/edu/brown/cs/d4jspr/BugClosure57.java</FILE>
+      <FILE>/pro/d4jspr/closure/javasrc/com/google/javascript/jscomp/ClosureCodingConvention.java</FILE>
    </TEST>
    <TEST NAME='Closure62' LOCAL='true' FRAMES='0'>
       <PROBLEM TYPE='ASSERTION' />
       <SOLUTION LINE='101' FILE='LightweightMessageFormatter.java'>
 	 <MATCH><![CDATA[charno <= source]]></MATCH>
       </SOLUTION>
+      <FILE>/pro/d4jspr/closure/javasrc/edu/brown/cs/d4jspr/BugClosure62.java</FILE>
+      <FILE>/pro/d4jspr/closure/javasrc/com/google/javascript/jscomp/LightweightMessageFormatter.java</FILE>
    </TEST>
    <TEST NAME='Closure65' LOCAL='true' FRAMES='0'>
       <PROBLEM TYPE='ASSERTION' />
-      <SOLUTION LINE='101' FILE='CodeGenerator.java'>
+      <SOLUTION LINE='1091' FILE='CodeGenerator.java'>
 	 <MATCH><![CDATA[\\000]]></MATCH>
 	 <MATCH><![CDATA[\\0x00]]></MATCH>
       </SOLUTION>
+      <FILE>/pro/d4jspr/closure/javasrc/edu/brown/cs/d4jspr/BugClosure65.java</FILE>
+      <FILE>/pro/d4jspr/closure/javasrc/com/google/javascript/jscomp/CodeGenerator.java</FILE>
+      <FILE>/pro/d4jspr/closure/javasrc/com/google/javascript/jscomp/CodePrinter.java</FILE>
+      <FILE>/pro/d4jspr/closure/javasrc/edu/brown/cs/d4jspr/BugConstants.java</FILE>
    </TEST>
    <TEST NAME='Closure73' LOCAL='true' FRAMES='0'>
       <PROBLEM TYPE='ASSERTION' />
       <SOLUTION LINE='1189' FILE='CodeGenerator.java'>
 	 <MATCH><![CDATA[&& c <= 0x7f]]></MATCH>
       </SOLUTION>
+      <FILE>/pro/d4jspr/closure/javasrc/edu/brown/cs/d4jspr/BugClosure73.java</FILE>
+      <FILE>/pro/d4jspr/closure/javasrc/com/google/javascript/jscomp/CodeGenerator.java</FILE>
+      <FILE>/pro/d4jspr/closure/javasrc/com/google/javascript/jscomp/CodePrinter.java</FILE>
+      <FILE>/pro/d4jspr/closure/javasrc/edu/brown/cs/d4jspr/BugConstants.java</FILE>
    </TEST>
    <TEST NAME='Closure104' LOCAL='true' FRAMES='0'>
       <PROBLEM TYPE='ASSERTION' />
       <SOLUTION LINE='327' FILE='UnionType.java'>
 	 <MATCH><![CDATA[!result.isNoType]]></MATCH>
       </SOLUTION>
+      <FILE>/pro/d4jspr/closure/javasrc/edu/brown/cs/d4jspr/BugClosure104.java</FILE>
+      <FILE>/pro/d4jspr/closure/javasrc/com/google/javascript/rhino/jstype/UnionType.java</FILE>
+      <FILE>/pro/d4jspr/closure/javasrc/com/google/javascript/rhino/jstype/JSType.java</FILE>
    </TEST>
    <TEST NAME='Closure123' LOCAL='true' FRAMES='0'>
       <PROBLEM TYPE='ASSERTION' />
       <SOLUTION LINE='327' FILE='CodeGenerator.java'>
 	 <MATCH><![CDATA[getContextForNoInOperator]]></MATCH>
       </SOLUTION>
+      <FILE>/pro/d4jspr/closure/javasrc/edu/brown/cs/d4jspr/BugClosure73.java</FILE>
+      <FILE>/pro/d4jspr/closure/javasrc/com/google/javascript/jscomp/CodeGenerator.java</FILE>
+      <FILE>/pro/d4jspr/closure/javasrc/com/google/javascript/jscomp/CodePrinter.java</FILE>
+      <FILE>/pro/d4jspr/closure/javasrc/edu/brown/cs/d4jspr/BugConstants.java</FILE>
    </TEST>
 </SUITE>
 
