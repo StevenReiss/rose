@@ -1,6 +1,6 @@
 <ROSEEVAL>
 
-<SUITE N A'='quix' WORKSPACE='quixspr' PROJECT='quixbugs' TIME='10000'>
+<SUITE NAME='quix' WORKSPACE='quixspr' PROJECT='quixbugs' TIME='10000'>
    <TEST NAME='BitCount'>
       <PROBLEM TYPE='JUNIT'/>
       <SOLUTION LINE='25'>

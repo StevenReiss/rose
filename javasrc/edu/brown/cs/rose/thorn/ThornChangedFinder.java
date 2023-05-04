@@ -367,8 +367,10 @@ private ThornChangeMap convertChangesToParent(ThornChangeMap orig,BudStackFrame 
          if (pno >= 0) {
             NodeVarFinder finder = new NodeVarFinder(newmap);
             List<?> args = cf.getArgumentList();
-            ASTNode argn = (ASTNode) args.get(pno);
-            argn.accept(finder);
+            if (args != null) {
+               ASTNode argn = (ASTNode) args.get(pno);
+               argn.accept(finder);
+             }
           }
        }
     }
