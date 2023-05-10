@@ -40,6 +40,7 @@ import java.util.List;
 
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Assignment;
 import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.Expression;
@@ -132,7 +133,7 @@ public SepalUseSetter()
    List<JcompSymbol> mthds = ctyp.getDefinedMethods(JcompAst.getTyper(stmt));
    for (JcompSymbol m : mthds) {
       if (m.getName().equalsIgnoreCase("set"+nm)) {
-         if (isGoodSetter(m)) {
+         if (isGoodSetter(m,nm)) {
             AST ast = stmt.getAST();
             MethodInvocation mi = ast.newMethodInvocation();
             SimpleName mnm = JcompAst.getSimpleName(ast,m.getName());
@@ -149,7 +150,7 @@ public SepalUseSetter()
 
 
 
-private boolean isGoodSetter(JcompSymbol m)
+private boolean isGoodSetter(JcompSymbol m,String nm)
 {
    if (m.isStatic()) return false;
    JcompType mtyp = m.getType();
@@ -162,10 +163,44 @@ private boolean isGoodSetter(JcompSymbol m)
    MethodDeclaration md = (MethodDeclaration) n;
    Block blk = md.getBody();
    if (blk == null) return false;
-   if (blk.statements().size() > 2) return false;
+   if (blk.statements().size() > 2) {
+      SetterChecker sc = new SetterChecker(nm);
+      blk.accept(sc);
+      if (!sc.isSetter()) return false;
+    }
    
    return true;
 }
+
+
+
+private static class SetterChecker extends ASTVisitor {
+
+   private String field_name;
+   private boolean found_set;
+   
+   SetterChecker(String fld) {
+      field_name = fld;
+      found_set = false;
+    }
+   
+   boolean isSetter()                   { return found_set; }
+   
+   @Override public void endVisit(Assignment n) {
+      if (n.getOperator() != Assignment.Operator.ASSIGN) return;
+      Expression lhs = n.getLeftHandSide();
+      if (lhs instanceof FieldAccess) {
+         FieldAccess fldacc = (FieldAccess) lhs;
+         if (!(fldacc.getExpression() instanceof ThisExpression)) return;
+         if (fldacc.getName().getIdentifier().equals(field_name)) found_set = true;
+       }
+      else if (lhs instanceof SimpleName) {
+         SimpleName sn = (SimpleName) lhs;
+         if (sn.getIdentifier().equals(field_name)) found_set = true;
+       }
+    }
+   
+}       // end of inner class SetterChecker
 
 
 }       // end of class SepalUseSetter
