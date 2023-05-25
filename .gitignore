@@ -47,3 +47,4 @@ experiment
 rose.jar
 checkpoint.txt
 javasrc/edu/brown/cs/rose/roseeval/runeval.csh
+.DS_Store
