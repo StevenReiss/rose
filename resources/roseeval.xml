@@ -317,7 +317,6 @@
       </SOLUTION>
    </TEST>
 </SUITE>
-
 <SUITE NAME='chart' WORKSPACE='d4jchart' PROJECT='d4jchart' TIME='100000'>
    <TEST NAME='Chart01'>
       <PROBLEM TYPE='ASSERTION' />
