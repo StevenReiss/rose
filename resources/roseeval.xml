@@ -339,6 +339,12 @@
 	 <MATCH><![CDATA[NaN]]></MATCH>
       </SOLUTION>
    </TEST>
+   <TEST NAME='Chart06'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='1096' FILE='Week.java'>
+	 <MATCH><![CDATA[zone]]></MATCH>
+      </SOLUTION>
+   </TEST>
    <TEST NAME='Chart09'>
       <PROBLEM TYPE='LOCATION' />
       <SOLUTION LINE='1154' FILE='TimeSeries.java'>
@@ -369,6 +375,12 @@
 	 <MATCH><![CDATA[if (markers == null]]></MATCH>
       </SOLUTION>
    </TEST>
+   <TEST NAME='Chart17'>
+      <PROBLEM TYPE='EXCEPTION' CATCH='java.lang.IllegalArgumentException'/>
+      <SOLUTION LINE='1069' FILE='TimeSeries.java'>
+	 <MATCH><![CDATA[TimeSeries clone]]></MATCH>
+      </SOLUTION>
+   </TEST>
    <TEST NAME='Chart25A'>
       <PROBLEM TYPE='EXCEPTION' CATCH='java.lang.NullPointerException' MAXUP='1' />
       <SOLUTION LINE='293' FILE='StatisticalBarRenderer.java'>
@@ -378,10 +390,28 @@
 </SUITE>
 
 <SUITE NAME='math' WORKSPACE='d4jmath' PROJECT='d4jmath' TIME='100000'>
+   <TEST NAME='Math39'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='250-263' FILE='EmbeddedRungeKuttaIntegrator.java'>
+	 <MATCH><![CDATA[stepStart + stepSize >= t]]></MATCH>
+      </SOLUTION>
+   </TEST>
    <TEST NAME='Math41'>
       <PROBLEM TYPE='ASSERTION' />
       <SOLUTION LINE='522' FILE='Variance.java'>
 	 <MATCH><![CDATA[begin + length]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Math53'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='158-163' FILE='Complex.java'>
+	 <MATCH><![CDATA[isNaN]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Math56'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='238' FILE='MultidimensionalCounter.java'>
+	 <MATCH><![CDATA[index - count]]></MATCH>
       </SOLUTION>
    </TEST>
    <TEST NAME='Math58'>
@@ -412,6 +442,12 @@
       <PROBLEM TYPE='VARIABLE' NAME='pivotRow' CURRENT='2' TARGET='5' />
       <SOLUTION LINE='98' FILE='SimplexSolver.java'>
 	 <MATCH><![CDATA[> 0]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Math91'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='309-313' FILE='Fraction.java'>
+	 <MATCH><![CDATA[long nOd]]></MATCH>
       </SOLUTION>
    </TEST>
    <TEST NAME='Math94'>
@@ -448,6 +484,18 @@
 	 <MATCH><![CDATA[pt]]></MATCH>
       </SOLUTION>
    </TEST>
+   <TEST NAME='Lang09'>
+      <PROBLEM TYPE='LOCATION' />
+      <SOLUTION LINE='141' FILE='FastDateParser.java'>
+	 <MATCH><![CDATA[patternMatcher.regionStart]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Lang11'>
+      <PROBLEM TYPE='ASSERTION'/>
+      <SOLUTION LINE='245-250' FILE='RandomStringUtils.java'>
+	 <MATCH><![CDATA[end <= start]]></MATCH>
+      </SOLUTION>
+   </TEST>
    <TEST NAME='Lang21'>
       <PROBLEM TYPE='ASSERTION'/>
       <SOLUTION LINE='243-250' FILE='DateUtils.java'>
@@ -460,16 +508,46 @@
 	 <MATCH><![CDATA[!hasDecPoint]]></MATCH>
       </SOLUTION>
    </TEST>
+   <TEST NAME='Lang25'>
+      <PROBLEM TYPE='ASSERTION'/>
+      <SOLUTION LINE='80' FILE='EntityArrays.java'>
+	 <MATCH><![CDATA[00CA]]></MATCH>
+      </SOLUTION>
+   </TEST>
    <TEST NAME='Lang33'>
       <PROBLEM TYPE='EXCEPTION' CATCH='java.lang.NullPointerException' />
       <SOLUTION LINE='991' FILE='ClassUtils.java'>
 	 <MATCH><![CDATA[array[i] == null]]></MATCH>
       </SOLUTION>
    </TEST>
+   <TEST NAME='Lang39'>
+      <PROBLEM TYPE='EXCEPTION' CATCH='java.lang.NullPointerException' />
+      <SOLUTION LINE='4615' FILE='StringUtils.java'>
+	 <MATCH><![CDATA[searchList[i] == null]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Lang43'>
+      <PROBLEM TYPE='ASSERTION'/>
+      <SOLUTION LINE='484-486' FILE='ExtendedMessageFormat.java'>
+	 <MATCH><![CDATA[next(pos)]]></MATCH>
+      </SOLUTION>
+   </TEST>
    <TEST NAME='Lang47A'>
       <PROBLEM TYPE='EXCEPTION' CATCH='java.lang.NullPointerException' />
       <SOLUTION LINE='1309' FILE='StrBuilder.java'>
 	 <MATCH><![CDATA[if (str == null]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Lang54'>
+      <PROBLEM TYPE='LOCATION' />
+      <SOLUTION LINE='108-111' FILE='LocaleUtils.java'>
+	 <MATCH><![CDATA[ch3 == '_']]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Lang58'>
+      <PROBLEM TYPE='LOCATION' />
+      <SOLUTION LINE='515-521' FILE='NumberUtils.java'>
+	 <MATCH><![CDATA[isDigits]]></MATCH>
       </SOLUTION>
    </TEST>
    <TEST NAME='Lang59'>
@@ -504,6 +582,12 @@
       <PROBLEM TYPE='VARIABLE' NAME='offset' CURRENT='0' TARGET='3600000'/>
       <SOLUTION LINE='923' FILE='DateTimeZone.java'>
 	 <MATCH><![CDATA[>=]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Time24' >
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='368-375' FILE='DateTimeParserBucket.java'>
+	 <MATCH><![CDATA[millis = savedFields[i].set]]></MATCH>
       </SOLUTION>
    </TEST>
 </SUITE>
