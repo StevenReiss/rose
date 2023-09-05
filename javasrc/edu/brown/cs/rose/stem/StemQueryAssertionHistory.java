@@ -40,6 +40,7 @@ import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.AssertStatement;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.MethodInvocation;
+import org.eclipse.jdt.core.dom.SimpleName;
 import org.w3c.dom.Element;
 
 import edu.brown.cs.ivy.jcomp.JcompAst;
@@ -49,6 +50,7 @@ import edu.brown.cs.ivy.xml.IvyXmlWriter;
 import edu.brown.cs.rose.bud.BudValue;
 import edu.brown.cs.rose.root.RootProblem;
 import edu.brown.cs.rose.root.RoseException;
+import edu.brown.cs.rose.root.RoseLog;
 import edu.brown.cs.rose.root.RootControl.AssertionData;
 
 class StemQueryAssertionHistory extends StemQueryHistory
@@ -238,17 +240,22 @@ private class AssertionChecker extends ASTVisitor implements AssertionData {
        }
       
       if (givenidx >= 0 && targetidx >= 0) {
+         boolean flip = false;
          ASTNode ng = getArgument(givenidx,mi);
-         switch (ng.getNodeType()) {
-            case ASTNode.NUMBER_LITERAL :
-            case ASTNode.STRING_LITERAL :
-            case ASTNode.BOOLEAN_LITERAL :
-            case ASTNode.NULL_LITERAL :
-            case ASTNode.TEXT_BLOCK :
-               int idx = givenidx;
-               givenidx = targetidx;
-               targetidx = idx;
-               break;
+         ExprChecker exckg = new ExprChecker();
+         ng.accept(exckg);
+         ASTNode nt = getArgument(targetidx,mi);
+         ExprChecker exckt = new ExprChecker();
+         nt.accept(exckt);
+         if (!exckg.foundCall() && !exckg.foundVariable()) flip = true;
+         else if (!exckg.foundCall() && exckt.foundCall()) flip = true;
+         RoseLog.logD("STEM","CHECK FLIP " + exckg.foundCall() + " " + exckg.foundVariable() +
+               " " + exckt.foundCall() + " " + exckt.foundVariable() + " " + 
+               flip);
+         if (flip) {
+            int idx = givenidx;
+            givenidx = targetidx;
+            targetidx = idx;
           }
        }
       
@@ -326,6 +333,28 @@ private class AssertionChecker extends ASTVisitor implements AssertionData {
 }       // end of inner class AssertionChecker
 
 
+private static class ExprChecker extends ASTVisitor {
+
+   private boolean found_call;
+   private boolean found_var;
+   
+   ExprChecker() {
+      found_call = false;
+      found_var = false;
+    } 
+   
+   boolean foundCall()                  { return found_call; }
+   boolean foundVariable()              { return found_var; }
+   
+   @Override public void endVisit(SimpleName n) {
+      found_var = true;
+    }
+   
+   @Override public void endVisit(MethodInvocation n) {
+      found_call = true;
+    }
+   
+}       // end of inner class ExprChecker
 
 }       // end of class StemQueryAssertionHistory
 
