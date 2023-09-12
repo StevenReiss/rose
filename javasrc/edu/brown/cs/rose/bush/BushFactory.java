@@ -144,16 +144,7 @@ private BushFactory()
 
 public static void setup()
 {
-   switch (BoardSetup.getSetup().getLanguage()) {
-      default :
-      case JS :
-      case PYTHON :
-      case REBUS :
-      case DART :
-	 return;
-      case JAVA :
-	 break;
-    }
+   if (!BumpClient.getBump().getOptionBool("bubbles.useRose")) return;
 
    getFactory().setupHandlers();
 }
@@ -161,17 +152,8 @@ public static void setup()
 
 public static void initialize(BudaRoot root)
 {
-   switch (BoardSetup.getSetup().getLanguage()) {
-      default :
-      case JS :
-      case PYTHON :
-      case REBUS :
-      case DART :
-	 return;
-      case JAVA :
-	 break;
-    }
-
+   if (!BumpClient.getBump().getOptionBool("bubbles.useRose")) return;
+   
    // start cocker
    CockerStarter cs = new CockerStarter();
    BoardThreadPool.start(cs);
