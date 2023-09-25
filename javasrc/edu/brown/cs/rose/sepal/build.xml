@@ -20,6 +20,7 @@
 	 <pathelement location="${BUBBLES}/lib/junit.jar" />
 	 <pathelement location='${PRO}/rose/lib/sharpfix.jar' />
 	 <pathelement location='${PRO}/rose/lib/sequencer.jar' />
+	 <pathelement location='${PRO}/rose/lib/chatgpt_repair.jar' />
       </path>
       <path id='test.classpath'>
 	 <pathelement location='${PRO}/rose/java' />

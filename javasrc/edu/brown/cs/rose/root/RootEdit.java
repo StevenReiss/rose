@@ -111,6 +111,7 @@ public Element getTextEditXml()
    IvyXmlWriter xw = new IvyXmlWriter();
    xw.begin("EDIT");
    xw.field("FILE",base_file);
+   xw.field("TYPE","NONE");
    outputTextEdit(text_edit,xw);
    xw.end("EDIT");
    Element rslt = IvyXml.convertStringToXml(xw.toString());
@@ -281,6 +282,8 @@ TextEdit computeTextEdit(Element xml)
       case "INSERT" :
          te = new InsertEdit(off,cnts);
          break;
+      case "NONE" :
+         break;
       default :
          RoseLog.logE("ROOT","Edit type " + type + " not found");
          return null;
@@ -288,7 +291,8 @@ TextEdit computeTextEdit(Element xml)
    
    for (Element celt : IvyXml.children(xml,"EDIT")) {
       TextEdit te1 = computeTextEdit(celt);
-      if (te1 != null) te.addChild(te1);
+      if (te == null) te = te1;
+      else if (te1 != null) te.addChild(te1);
     }
    
    return te;

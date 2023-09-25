@@ -50,6 +50,8 @@
 	 <fileset dir='./resources' includes='rose.palette' />
 	 <fileset dir='./resources' includes='images/*.png' />
 	 <zipfileset src='lib/sharpfix.jar' excludes='META-INF/*' />
+	 <zipfileset src='lib/sequencer.jar' excludes='META-INF/*' />
+	 <zipfileset src='lib/chatgpt_repair.jar' excludes='META-INF/*' />
       </jar>
       <copy file='rose.jar' tofile='${PRO}/bubbles/dropins/rose.jar' verbose='true' />
       <copy file='rose.jar' tofile='${PRO}/bubbles/dropins.export/rose.jar' verbose='true' />
