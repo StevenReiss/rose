@@ -14,7 +14,6 @@ import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.Statement;
 import org.w3c.dom.Element;
 
-import edu.brown.cs.ivy.xml.IvyXmlWriter;
 import edu.brown.cs.rose.root.RootControl;
 import edu.brown.cs.rose.root.RootEdit;
 import edu.brown.cs.rose.root.RootRepairFinderDefault;
