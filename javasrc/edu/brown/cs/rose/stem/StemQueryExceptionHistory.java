@@ -54,6 +54,7 @@ import org.eclipse.jdt.core.dom.IfStatement;
 import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.SwitchStatement;
+import org.eclipse.jdt.core.dom.ThrowStatement;
 import org.eclipse.jdt.core.dom.WhileStatement;
 import org.w3c.dom.Element;
 
@@ -178,26 +179,31 @@ private String getExceptionCause() throws RoseException
   if (exception_type == null || stmt == null) return null;
   
   ExceptionChecker checker = null;
-  switch (exception_type) {
-     case "java.lang.NullPointerException" :
-        checker = new NullPointerChecker();
-        break;
-     case "java.lang.ArrayIndexOutOfBoundsException" :
-        checker = new ArrayIndexOutOfBoundsChecker();
-        break;
-     case "java.lang.IndexOutOfBoundsException" :
-     case "java.util.NoSuchElementException" :
-        checker = new IndexOutOfBoundsChecker();
-        break;
-     case "java.lang.StringIndexOutOfBoundsException" :
-        checker = new StringIndexOutOfBoundsChecker();
-        break;
-     case "java.lang.StackOverflowError" :
-        checker = new StackOverflowChecker();
-        break;
-     case "java.lang.ClassCastException" :
-        checker = new ClassCastChecker();
-        break;
+  if (stmt instanceof ThrowStatement) {
+     checker = new ThrowChecker();
+   }
+  else {
+     switch (exception_type) {
+        case "java.lang.NullPointerException" :
+           checker = new NullPointerChecker();
+           break;
+        case "java.lang.ArrayIndexOutOfBoundsException" :
+           checker = new ArrayIndexOutOfBoundsChecker();
+           break;
+        case "java.lang.IndexOutOfBoundsException" :
+        case "java.util.NoSuchElementException" :
+           checker = new IndexOutOfBoundsChecker();
+           break;
+        case "java.lang.StringIndexOutOfBoundsException" :
+           checker = new StringIndexOutOfBoundsChecker();
+           break;
+        case "java.lang.StackOverflowError" :
+           checker = new StackOverflowChecker();
+           break;
+        case "java.lang.ClassCastException" :
+           checker = new ClassCastChecker();
+           break;
+      }
    }
   
   if (checker != null) {
@@ -619,6 +625,39 @@ private class StackOverflowChecker extends ExceptionChecker {
       return true;
     }
    
+}       // end of inner class StackOverflowChecker
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Throw checker -- handle explicit throws                                 */
+/*                                                                              */
+/********************************************************************************/
+
+private class ThrowChecker extends ExceptionChecker {
+   
+   ThrowChecker() {
+    }
+   
+   @Override void doCheck(ASTNode stmt) {
+      ASTNode prev = stmt;
+      for (ASTNode p = stmt.getParent(); p != null; p = p.getParent()) {
+         if (p instanceof IfStatement) {
+            IfStatement ifstmt = (IfStatement) p;
+            Boolean val = null;
+            if (prev == ifstmt.getThenStatement()) val = true;
+            else if (prev == ifstmt.getElseStatement()) val = false;
+            String oval = (prev == null ? null : Boolean.toString(val));
+            String tval = (prev == null ? null : Boolean.toString(!val));
+            useNode(ifstmt.getExpression(),oval,tval);
+            break;
+          }
+         // TODO: should check for previous statement with break/continue in a block
+         prev = p;
+       }
+    }
+
 }       // end of inner class StackOverflowChecker
 
 

@@ -31,16 +31,17 @@
 	 <MATCH><![CDATA[lo < hi]]></MATCH>
       </SOLUTION>
    </TEST>
-   <TEST NAME='FindInSorted' SKIP='4' >
+   <TEST NAME='FindInSorted' SKIP='2' >
       <PROBLEM TYPE='VARIABLE' NAME='start' CURRENT='3' TARGET='4' />
       <SOLUTION LINE='30'>
 	 <MATCH><![CDATA[mid + 1]]></MATCH>
+	 <MATCH><![CDATA[mid+1]]></MATCH>
       </SOLUTION>
    </TEST>
    <TEST NAME='Flatten' SKIP='1'>
       <PROBLEM TYPE='LOCATION'/>
-      <SOLUTION LINE='29'>
-	 <MATCH><![CDATA[flatten(x)]]></MATCH>
+      <SOLUTION LINE='24-29'>
+	 <MATCH><![CDATA[result.add(x)]]></MATCH>
       </SOLUTION>
    </TEST>
    <TEST NAME='Gcd' SKIP='2'>
@@ -70,25 +71,26 @@
    <TEST NAME='KHeapSort'>
       <PROBLEM TYPE='ASSERTION' />
       <SOLUTION LINE='37'>
-	 <MATCH><![CDATA[sublist(k,arr.size())]]></MATCH>
+	 <MATCH><![CDATA[subList(k,arr.size())]]></MATCH>
+	 <MATCH><![CDATA[subList(k, arr.size())]]></MATCH>
       </SOLUTION>
    </TEST>
    <TEST NAME='Knapsack' TIME='50000' >
       <PROBLEM TYPE='ASSERTION' />
-      <SOLUTION LINE='37'>
+      <SOLUTION LINE='32-37'>
 	 <MATCH><![CDATA[<=]]></MATCH>
       </SOLUTION>
    </TEST>
    <TEST NAME='Kth'>
       <PROBLEM TYPE='EXCEPTION' CATCH='java.lang.IndexOutOfBoundsException' />
       <SOLUTION LINE='39'>
-	 <MATCH><![CDATA[k - numlessoreq]]></MATCH>
+	 <MATCH><![CDATA[k - num_lessoreq]]></MATCH>
       </SOLUTION>
    </TEST>
    <TEST NAME='LcsLength'>
       <PROBLEM TYPE='ASSERTION' />
-      <SOLUTION LINE='46'>
-	 <MATCH><![CDATA[p.get(i-1).containsKey(j-1)]]></MATCH>
+      <SOLUTION LINE='43-46'>
+	 <MATCH><![CDATA[dp.get(i-1).containsKey(j-1)]]></MATCH>
       </SOLUTION>
    </TEST>
    <TEST NAME='Levenshtein' TIME='500000'>
@@ -99,19 +101,19 @@
    </TEST>
    <TEST NAME='Lis'>
       <PROBLEM TYPE='ASSERTION' />
-      <SOLUTION LINE='42'>
+      <SOLUTION LINE='40-42'>
 	 <MATCH><![CDATA[Math.max]]></MATCH>
       </SOLUTION>
    </TEST>
    <TEST NAME='LongestCommonSubsequence' TIME='50000'>
       <PROBLEM TYPE='ASSERTION' />
-      <SOLUTION LINE='26'>
+      <SOLUTION LINE='22-26'>
 	 <MATCH><![CDATA[b.substring(1)]]></MATCH>
       </SOLUTION>
    </TEST>
    <TEST NAME='MaxSublistSum'>
       <PROBLEM TYPE='ASSERTION' />
-      <SOLUTION LINE='25'>
+      <SOLUTION LINE='24-25'>
 	 <MATCH><![CDATA[Math.max(0]]></MATCH>
       </SOLUTION>
    </TEST>
@@ -121,16 +123,17 @@
 	 <MATCH><![CDATA[<= 1]]></MATCH>
       </SOLUTION>
    </TEST>
-   <TEST NAME='MinimumSpanningTree'>
+   <TEST NAME='MinimumSpanningTree' TIME='50000'>
       <PROBLEM TYPE='ASSERTION' />
       <SOLUTION LINE='46'>
-	 <MATCH><![CDATA[groupByNode.put(node,groupByNode.get(vertex_u)]]></MATCH>
+	 <MATCH><![CDATA[groupByNode.put(node,]]></MATCH>
       </SOLUTION>
    </TEST>
    <TEST NAME='NextPalindrome'>
       <PROBLEM TYPE='ASSERTION' />
       <SOLUTION LINE='44'>
 	 <MATCH><![CDATA[length - 1]]></MATCH>
+	 <MATCH><![CDATA[length-1]]></MATCH>
       </SOLUTION>
    </TEST>
    <TEST NAME='NextPermutation'>
@@ -143,6 +146,7 @@
       <PROBLEM TYPE='EXCEPTION' CATCH='java.lang.IndexOutOfBoundsException' />
       <SOLUTION LINE='28'>
 	 <MATCH><![CDATA[c <= r]]></MATCH>
+	 <MATCH><![CDATA[c<=r]]></MATCH>
       </SOLUTION>
    </TEST>
    <TEST NAME='PossibleChange'>
@@ -159,13 +163,13 @@
    </TEST>
    <TEST NAME='QuickSort'>
       <PROBLEM TYPE='ASSERTION' />
-      <SOLUTION LINE='35'>
-	 <MATCH><![CDATA[>=]]></MATCH>
+      <SOLUTION LINE='31-35'>
+	 <MATCH><![CDATA[x >= pivot]]></MATCH>
       </SOLUTION>
    </TEST>
    <TEST NAME='ReverseLinkedList'>
       <PROBLEM TYPE='EXCEPTION' CATCH='java.lang.NullPointerException' />
-      <SOLUTION LINE='26'>
+      <SOLUTION LINE='23-26'>
 	 <MATCH><![CDATA[prevnode = node]]></MATCH>
       </SOLUTION>
    </TEST>
@@ -177,20 +181,20 @@
    </TEST>
    <TEST NAME='ShortestPathLength'>
       <PROBLEM TYPE='ASSERTION' />
-      <SOLUTION LINE='53'>
+      <SOLUTION LINE='50-54'>
 	 <MATCH><![CDATA[distance]]></MATCH>
       </SOLUTION>
    </TEST>
    <TEST NAME='ShortestPathLengths' TIME='500000'>
       <PROBLEM TYPE='ASSERTION' />
-      <SOLUTION LINE='46'>
+      <SOLUTION LINE='45-46'>
 	 <MATCH><![CDATA[Arrays.asList(k,j)]]></MATCH>
       </SOLUTION>
    </TEST>
    <TEST NAME='ShortestPaths' TIME='50000'>
       <PROBLEM TYPE='ASSERTION' />
       <SOLUTION LINE='40'>
-	 <MATCH><![CDATA[edge.get(i)]]></MATCH>
+	 <MATCH><![CDATA[edge.get(1)]]></MATCH>
       </SOLUTION>
    </TEST>
    <TEST NAME='ShuntingYard'>
@@ -219,7 +223,7 @@
    </TEST>
    <TEST NAME='ToBase'>
       <PROBLEM TYPE='ASSERTION' />
-      <SOLUTION LINE='26'>
+      <SOLUTION LINE='23-26'>
 	 <MATCH><![CDATA[+ result]]></MATCH>
       </SOLUTION>
    </TEST>
@@ -341,7 +345,13 @@
    </TEST>
    <TEST NAME='Chart06'>
       <PROBLEM TYPE='ASSERTION' />
-      <SOLUTION LINE='1096' FILE='Week.java'>
+      <SOLUTION LINE='112' FILE='ShapeList.java'>
+	 <MATCH><![CDATA[ShapeList) obj]]></MATCH>
+      </SOLUTION>
+   </TEST>
+   <TEST NAME='Chart08'>
+      <PROBLEM TYPE='ASSERTION' />
+      <SOLUTION LINE='175-182' FILE='Week.java'>
 	 <MATCH><![CDATA[zone]]></MATCH>
       </SOLUTION>
    </TEST>
@@ -355,6 +365,7 @@
       <PROBLEM TYPE='ASSERTION' />
       <SOLUTION LINE='278' FILE='ShapeUtilities.java'>
 	 <MATCH><![CDATA[p1.getPathIterator]]></MATCH>
+	 <MATCH><![CDATA[p1.getPathIterator]]></MATCH>
       </SOLUTION>
    </TEST>
    <TEST NAME='Chart12'>
@@ -367,6 +378,7 @@
       <PROBLEM TYPE='ASSERTION' />
       <SOLUTION LINE='97' FILE='ValueMarker.java'>
 	 <MATCH><![CDATA[,outline]]></MATCH>
+	 <MATCH><![CDATA[, outline]]></MATCH>
       </SOLUTION>
    </TEST>
    <TEST NAME='Chart14A'>
@@ -424,12 +436,14 @@
       <PROBLEM TYPE='ASSERTION' />
       <SOLUTION LINE='3515' FILE='FastMath.java'>
 	 <MATCH><![CDATA[`b' with `a]]></MATCH>
+	 <MATCH><![CDATA[: a]]></MATCH>
       </SOLUTION>
    </TEST>
    <TEST NAME='Math69' TIME='30000' >
       <PROBLEM TYPE='ASSERTION' />
       <SOLUTION LINE='176' FILE='PearsonsCorrelation.java'>
 	 <MATCH><![CDATA[2 * (1 - tDistribution.cumula... with 2.0 * tDistribution.cumulat]]></MATCH>
+	 <MATCH><![CDATA[2 * tDistribution.cumulat]]></MATCH>
       </SOLUTION>
    </TEST>
    <TEST NAME='Math75'>
@@ -775,3 +789,685 @@
 </SUITE>
 
 </ROSEEVAL>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

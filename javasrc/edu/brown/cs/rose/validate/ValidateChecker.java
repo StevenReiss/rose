@@ -316,7 +316,7 @@ private class ValidateCheckerVariable extends ValidateProblemChecker {
          otyp = oval.substring(0,idx);
          oval = oval.substring(idx+1);
        }
-      // might need to separate oval into type and value
+      // might need to separate oval into type and v`alue
       String nval = prob.getTargetValue();
       // might need to change nval to null to indicate any other value
       oval = fixValue(oval,otyp);

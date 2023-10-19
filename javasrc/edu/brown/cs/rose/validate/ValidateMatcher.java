@@ -96,6 +96,9 @@ ValidateMatcher(ValidateTrace orig,ValidateTrace match,RootRepair repair,boolean
    test_match = istest;
    delta_time = 0;
    
+   if (repair.getDescription().contains("copy.minY")) {
+      System.err.println("CHECK HERE");
+    }
    problem_context = orig.getProblemContext();
    problem_time = orig.getProblemTime();
    

@@ -159,6 +159,14 @@ protected ASTNode getResolvedStatementForLocation(RootLocation loc)
    return bract_control.getController().getSourceNode(loc,true,true);
 }
 
+protected Statement getResolvedStatementOnly(RootLocation loc) 
+{
+   ASTNode n = getResolvedStatementForLocation(loc);
+   if (n == null) return null;
+   if (n instanceof Statement) return (Statement) n;
+   return null;
+}
+
 
 /**
  *      Add a potential repair.  Given the ASTRewrite based on the AST returned

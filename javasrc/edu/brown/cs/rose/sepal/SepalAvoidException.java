@@ -105,7 +105,8 @@ public SepalAvoidException()
 {
    ConditionMaker cm = null;
    RootProblem rp = getProblem();
-   Statement stmt = (Statement) getResolvedStatementForLocation(null);
+   Statement stmt = getResolvedStatementOnly(null);
+   if (stmt == null) return;
    RootLocation ploc = rp.getBugLocation();
    ASTNode bstmt = getResolvedStatementForLocation(ploc);
    if (stmt != bstmt) {

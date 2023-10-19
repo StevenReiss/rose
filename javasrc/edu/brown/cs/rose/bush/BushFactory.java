@@ -45,6 +45,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -163,6 +164,21 @@ public static void initialize(BudaRoot root)
 
 public static void postLoad()
 {
+   BoardProperties bp = BoardProperties.getProperties("Rose");
+   BumpClient bc = BumpClient.getBump();
+
+   Set<String> skipproj = bp.getStringSet("Rose.no.autostart");
+   boolean nostart = false;
+   
+   Element xml = bc.getAllProjects(5000);
+   if (xml != null) {
+      for (Element pe : IvyXml.children(xml,"PROJECT")) {
+	 String pnm = IvyXml.getAttrString(pe,"NAME");
+         if (skipproj != null && skipproj.contains(pnm)) nostart = true;
+       }
+    }
+   if (nostart) return;
+   
    try {
       Class<?> bsean = BemaMain.findClass("edu.brown.cs.faitbb.bsean.BseanFactory");
       if (bsean == null) {

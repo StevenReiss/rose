@@ -48,6 +48,7 @@ import java.util.Set;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.Statement;
 import org.eclipse.jface.text.Document;
 import org.eclipse.jface.text.IDocument;
@@ -179,8 +180,10 @@ static ASTNode getStatementOfNode(ASTNode node)
 {
    while (node != null) {
       if (node instanceof Statement) break;
+      if (node instanceof FieldDeclaration) break;
       node = node.getParent();
     }
+   
 
    return node;
 }

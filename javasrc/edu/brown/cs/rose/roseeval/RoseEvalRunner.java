@@ -61,6 +61,8 @@ public static void main(String [] args)
    RoseEvalRunner runner = new RoseEvalRunner(args);
    
    runner.process();
+   
+   System.exit(0);
 }
 
 /********************************************************************************/
