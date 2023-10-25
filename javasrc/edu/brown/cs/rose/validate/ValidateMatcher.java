@@ -227,7 +227,7 @@ private void matchLines(ValidateCall origctx,ValidateCall matchctx)
    
    int checkrepair = -1;
    if (for_repair != null && matchFiles(for_repair.getLocation().getFile(),file)) {
-      checkrepair = for_repair.getLocation().getLineNumber();
+      checkrepair = for_repair.getLocation().getStatementLine();
     }
    
    if (origline == null || matchline == null) return;

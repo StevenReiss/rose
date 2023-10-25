@@ -42,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.rose.root.RootValidate;
@@ -67,6 +68,7 @@ private ValidateTrace   for_trace;
 /*      Constructors                                                            */
 /*                                                                              */
 /********************************************************************************/
+
 ValidateCall(ValidateTrace vt,Element ctx)
 {
    for_trace = vt;
@@ -124,6 +126,7 @@ ValidateTrace getTrace()
    return for_trace;
 }
 
+
 List<ValidateCall> getInnerCalls()
 {
    List<ValidateCall> rslt = new ArrayList<>();
@@ -155,6 +158,17 @@ List<ValidateCall> getInnerCalls()
 }
 
 
+@Override public ValidateCall getParentCall()
+{
+   for (Node n = context_element.getParentNode(); n != null; n = n.getParentNode()) {
+      if (IvyXml.isElement(n,"CONTEXT")) {
+         return  for_trace.getCallForContext((Element) n);
+       }
+    }
+   return null;
+}
+
+
 Map<String,ValidateVariable> getVariables()
 {
    Map<String,ValidateVariable> rslt = new LinkedHashMap<>();
@@ -177,10 +191,6 @@ Map<String,ValidateVariable> getVariables()
     }
    return rslt;
 }
-
-
-
-
 
 
 

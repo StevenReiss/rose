@@ -565,6 +565,9 @@ private Boolean compareVariable(BudLocalVariable local,Element valelt,BudLaunch 
       case "STRING" :
          valtxt = IvyXml.getText(valelt);
          String ltxt = local.getValue();
+         if (ltxt == null && valtxt == null) return true;
+         if (ltxt == null || valtxt == null)
+            return false;
          boolean fg = ltxt.equals(valtxt);
          if (fg) return true;
          // UTF-16 strings are not correct when reported from bedrock
@@ -753,7 +756,13 @@ private Boolean compareValueAtTime(BudValue actval,Element valctx,BudLaunch laun
    if (idx2 > 0) s2 = s2.substring(0,idx2);
    s1 = s1.replace("$",".");
    
-   if (!s1.equals(s2)) return false;
+   if (!s1.equals(s2)) {
+      if ((s1.endsWith("Set") || s1.endsWith("SetN")) &&
+            (s2.endsWith("Set") || s2.endsWith("SetN"))) {
+         return null; 
+       }
+      return false;
+    }
    
    // handle objects and arrays when nested -- ignore for now
    

@@ -119,7 +119,7 @@ public static void main(String ... args)
 /*										*/
 /********************************************************************************/
 
-enum AnalysisState { NONE, PENDING, READY };
+enum AnalysisState { NONE, PENDING, FILES, READY };
 
 private MintControl	mint_control;
 private String		workspace_path;
@@ -658,8 +658,9 @@ private void handleParameterValuesCommand(MintMessage msg) throws RoseException
             loc.setReason(reason);
             usefiles.add(loc.getFile());
             RoseLog.logD("STEM","Consider file " + loc.getFile() + " " + loc.getLineNumber());
+            //TODO:  need to map location line number to start of statement
             if (!isLocationRelevant(loc,prob)) continue;
-            String s = loc.getFile().getPath() + "@" + loc.getLineNumber();
+            String s = loc.getFile().getPath() + "@" + loc.getStatementLine();
             RootLocation oloc = done.putIfAbsent(s,loc);
             if (oloc != null) {
                double p2 = oloc.getPriority();
@@ -671,7 +672,12 @@ private void handleParameterValuesCommand(MintMessage msg) throws RoseException
           }
        }
       if (!usefiles.isEmpty()) {
-         seede_files = usefiles;
+         Set<File> sfiles = new HashSet<>();
+         for (File f : usefiles) {
+            if (f.getName().endsWith("Exception.java")) continue;
+            sfiles.add(f);
+          }
+         seede_files = sfiles;
        }
     }
    else {
@@ -1599,14 +1605,23 @@ private class WaitForExit extends Thread {
       nset.addAll(findStackFiles(threadid));
       return nset;
     }
-   return loaded_files;
+   Set<File> nset = new HashSet<>();
+   for (File f : loaded_files) {
+      if (f.getName().endsWith("Exception.java")) continue;
+      nset.add(f);
+    }
+   return nset;
 }
 
 
 
 @Override public void useFaitFilesForSeede()
 {
-   seede_files = new HashSet<>(loaded_files);
+   seede_files = new HashSet<>();
+   for (File f : loaded_files) {
+      if (f.getName().endsWith("Exception.java")) continue;
+      seede_files.add(f);
+    }
 }
 
 
@@ -1637,6 +1652,13 @@ private class WaitForExit extends Thread {
       else if (use_fait_files) files = findFaitFiles(tid);
       else files = findStackFiles(tid);
     }
+   
+   Set<File> nset = new HashSet<>();
+   for (File f : files) {
+      File f1 = IvyFile.getCanonical(f);
+      if (f1.exists()) nset.add(f1);
+    }
+   files = nset;
 
    StringBuffer buf = new StringBuffer();
    int ct = 0;
@@ -1655,6 +1677,12 @@ private class WaitForExit extends Thread {
 	 if (IvyXml.getAttrBool(xw,"ADDED")) {
 	    analysis_state = AnalysisState.PENDING;
 	  }
+       }
+      synchronized (this) {
+         if (analysis_state == AnalysisState.FILES) {
+            analysis_state = AnalysisState.READY;
+            notifyAll();
+          }
        }
     }
    else {
@@ -1786,6 +1814,7 @@ private Set<File> findFaitFiles(String threadid) throws RoseException
          throw new RoseException("ANALYZE for session failed");
        }
       waitForAnalysis();
+      analysis_state = AnalysisState.FILES;
     }
    
    Set<File> rslt = new HashSet<>();

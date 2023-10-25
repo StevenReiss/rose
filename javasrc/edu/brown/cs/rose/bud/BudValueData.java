@@ -306,10 +306,17 @@ private void initialize(Element xml,String expr)
    value_kind = IvyXml.getAttrEnum(xml,"KIND",RoseValueKind.UNKNOWN);
    val_value = IvyXml.getTextElement(xml,"DESCRIPTION");
    if (val_value == null) val_value = "";
+   if (value_kind == RoseValueKind.STRING && IvyXml.getAttrBool(xml,"CHARS")) {
+      int len = IvyXml.getAttrInt(xml,"LENGTH");
+      val_value = IvyXml.decodeCharacters(val_value,len);
+      array_length = 0;
+    }
+   else {
+      array_length = IvyXml.getAttrInt(xml,"LENGTH",0);
+    }
    has_values = IvyXml.getAttrBool(xml,"HASVARS");
    is_local = IvyXml.getAttrBool(xml,"LOCAL");
    is_static = IvyXml.getAttrBool(xml,"STATIC");
-   array_length = IvyXml.getAttrInt(xml,"LENGTH",0);
    sub_values = null;
    hash_code = 0;
    val_expr = expr;

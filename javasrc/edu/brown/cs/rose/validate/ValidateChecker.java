@@ -510,13 +510,38 @@ private class ValidateCheckerLocation extends ValidateProblemChecker {
             return 0.8;
           }  
        }
-      if (vc == null) return 0.5;
      
+      while (vc != null && t0 > vc.getEndTime()) {
+         vc = vc.getParentCall();
+       }
+      
+      if (vc == null) return 0.5;
+      
       ValidateVariable vv = vc.getLineNumbers();
       int lmatch = vv.getLineAtTime(t0);
       if (lmatch <= 0) return 0.8;
       
-      return 0.0;
+      ValidateCall ovc = execution_matcher.getProblemContext();
+      ValidateCall mvc = execution_matcher.getMatchProblemContext();
+      if (ovc == null) ovc = vc;
+      if (mvc == null) return 0.5;
+      
+      long t1 = execution_matcher.getProblemTime();
+      ValidateVariable ovv = ovc.getLineNumbers();
+      ValidateVariable mvv = mvc.getLineNumbers();
+      int olno = ovv.getLineAtTime(t1);
+      int mlno = mvv.getLineAtTime(t0);
+      
+      if (mlno == olno) return 0;
+      
+      boolean fnd = false;
+      for (ValidateValue mv : mvv.getValues(check_execution)) {
+         int elno = mv.getLineValue();
+         if (elno == olno) fnd = true;
+       }
+      if (fnd) return 0.6;
+      
+      return 0.9;
     }
 
    @Override boolean validateTestLocal() {

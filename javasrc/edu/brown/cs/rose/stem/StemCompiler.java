@@ -184,7 +184,6 @@ static ASTNode getStatementOfNode(ASTNode node)
       node = node.getParent();
     }
    
-
    return node;
 }
 

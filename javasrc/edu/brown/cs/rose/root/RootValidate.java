@@ -97,6 +97,7 @@ interface RootTraceCall {
    List<RootTraceCall> getInnerTraceCalls();
    RootTraceVariable getLineNumbers();
    Map<String,RootTraceVariable> getTraceVariables();
+   RootTraceCall getParentCall();
 }
 
 

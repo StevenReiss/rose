@@ -130,6 +130,11 @@ ValidateValue(Element v)
       // getting more detailed info requires handling REFS
       return "[" + getDataType() + "]";
     }
+   else if (IvyXml.getAttrBool(value_element,"CHARS")) {
+      int len = IvyXml.getAttrInt(value_element,"LENGTH");
+      String txt = IvyXml.getText(value_element);
+      return IvyXml.decodeCharacters(txt,len);
+    }
    
    return IvyXml.getText(value_element);
 }

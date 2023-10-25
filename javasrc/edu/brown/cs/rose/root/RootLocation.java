@@ -38,7 +38,10 @@ package edu.brown.cs.rose.root;
 import java.io.File;
 import java.io.IOException;
 
+import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.FieldDeclaration;
+import org.eclipse.jdt.core.dom.Statement;
 import org.w3c.dom.Element;
 
 import edu.brown.cs.ivy.file.IvyFile;
@@ -67,6 +70,7 @@ private String          full_method;
 private int             method_offset;
 private int             method_length;
 private String          location_reason;
+private int             statement_line;
 
 private static File     last_file = null;
 private static CompilationUnit last_unit = null;
@@ -97,6 +101,7 @@ protected RootLocation(RootControl ctrl,Element xml)
     }
     
    line_number = IvyXml.getAttrInt(xml,"LINE");
+   statement_line = IvyXml.getAttrInt(xml,"STATEMENT");
    location_priority = IvyXml.getAttrDouble(xml,"PRIORITY",DEFAULT_PRIORITY);
    location_reason = IvyXml.getTextElement(xml,"REASON");
    full_method = null;
@@ -205,6 +210,52 @@ public int getLineNumber()
 }
 
 
+public int getStatementLine()
+{
+   if (statement_line <= 0 && start_offset < 0) return -1;
+   
+   if (statement_line <= 0) {
+      synchronized (RootLocation.class) {
+         if (last_file != null && last_file.equals(for_file)) {
+            CompilationUnit cu = last_unit;
+            statement_line = getStatmentLine(cu);
+          }
+       }
+    }
+   if (statement_line <= 0) {  
+      try {
+         CompilationUnit cu = JcompAst.parseSourceFile(IvyFile.loadFile(for_file));
+         if (cu != null) {
+            statement_line = getStatmentLine(cu);
+            synchronized (RootLocation.class) {
+               last_file = for_file;
+               last_unit = cu;
+             }
+          }
+       }
+      catch (IOException e) { }
+    }
+
+   return statement_line;
+}
+
+
+private int getStatmentLine(CompilationUnit cu)
+{
+   ASTNode node = JcompAst.findNodeAtOffset(cu,start_offset);
+   while (node != null) {
+      if (node instanceof Statement) break;
+      if (node instanceof FieldDeclaration) break;
+      node = node.getParent();
+    }
+   
+   if (node == null) return -1;
+   
+   return cu.getLineNumber(node.getStartPosition());
+}
+
+
+
 
 /********************************************************************************/
 /*                                                                              */
@@ -227,6 +278,7 @@ public void outputXml(IvyXmlWriter xw)
       xw.field("ENDOFFSET",start_offset+1);
     }
    if (line_number > 0) xw.field("LINE",line_number);
+   if (statement_line > 0) xw.field("STATEMENT",line_number);
    if (project_name != null) xw.field("PROJECT",project_name);
    if (in_method != null) {
       xw.field("TYPE","Function");

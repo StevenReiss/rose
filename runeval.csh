@@ -8,7 +8,7 @@ end
 
 foreach i (/pro/ivy/lib/eclipsejar/*.jar)
    set CP = ${CP}:$i
-end							
+end						
 
 foreach i (poppy cocker)
    set CP = ${CP}:/pro/bubbles/lib/${i}.jar
@@ -32,7 +32,7 @@ echo $CP
 
 foreach i ( $WHAT )
    echo Work on $i
-   java -Xmx16000m -cp ${CP} edu.brown.cs.rose.roseeval.RoseEvalRunner -RUN -s $i |& tee ~/RoseEval/$i.out
+   java -Xmx20000m -cp ${CP} edu.brown.cs.rose.roseeval.RoseEvalRunner -RUN -s $i |& tee ~/RoseEval/$i.out
 #  java -Xmx16000m -cp ${CP} edu.brown.cs.rose.roseeval.RoseEvalRunner -RX -s $i |& tee ~/RoseEval/$i.out
 end
 
