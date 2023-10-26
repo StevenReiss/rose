@@ -38,6 +38,7 @@ package edu.brown.cs.rose.root;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public interface RootValidate extends RootConstants
 {
@@ -76,6 +77,7 @@ void setOutputOptions(boolean showall,boolean tostring,boolean toarray);
 void createTestSession(File f,RootLocation loc);
 RootTrace getTestTrace(File f);
 void finishTestSession(File f);
+Set<String> getExecutedLocations();
 
 
 

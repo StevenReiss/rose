@@ -39,6 +39,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Stack;
 
 import org.w3c.dom.Element;
@@ -802,6 +803,16 @@ Element dereference(Element val)
 }
 
 
+/********************************************************************************/
+/*                                                                              */
+/*      Location methods                                                        */
+/*                                                                              */
+/********************************************************************************/
+
+void getExecutedLocations(Set<String> rslt)
+{
+   getRootContext().getExecutedLocations(rslt);
+}
 
 /********************************************************************************/
 /*                                                                              */

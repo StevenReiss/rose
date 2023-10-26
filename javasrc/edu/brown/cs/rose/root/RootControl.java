@@ -149,7 +149,7 @@ CompilationUnit compileSource(RootLocation loc,String code);
  *      Return locations associated with a problem
  **/
 
-List<RootLocation> getLocations(RootProblem prob);
+List<RootLocation> getLocations(RootProblem prob,Set<String> execlocs);
 
 
 

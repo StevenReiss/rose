@@ -38,8 +38,10 @@ package edu.brown.cs.rose.validate;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.w3c.dom.Element;
 
@@ -558,6 +560,25 @@ synchronized void noteSeedeLength(long t,RootRepair repair,double score)
     }
    repair.setCount(num_checked);
    repair.setSeedeCount(seede_total);
+}
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Location mechanism                                                      */
+/*                                                                              */
+/********************************************************************************/
+
+@Override public Set<String> getExecutedLocations()
+{
+   Set<String> rslt = new HashSet<>();
+   
+   getExecutionTrace().getExecutedLocations(rslt);
+   
+   if (rslt.isEmpty()) return null;
+   
+   return rslt;
 }
 
 

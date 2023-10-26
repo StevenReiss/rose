@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -190,6 +191,28 @@ Map<String,ValidateVariable> getVariables()
       rslt.put(nm,new ValidateVariable(e));
     }
    return rslt;
+}
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Location methods                                                        */
+/*                                                                              */
+/********************************************************************************/
+
+void getExecutedLocations(Set<String> rslt)
+{
+   ValidateVariable vv = getLineNumbers();
+   String file = getFile().getPath();
+   for (ValidateValue v : vv.getValues(null)) {
+      int ln = v.getLineValue();
+      String key = file + "@" + ln;
+      rslt.add(key);
+    }
+   for (ValidateCall vc : getInnerCalls()) {
+      vc.getExecutedLocations(rslt);
+    }
 }
 
 

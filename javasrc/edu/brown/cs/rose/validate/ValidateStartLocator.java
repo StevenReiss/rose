@@ -114,7 +114,7 @@ String getStartingFrame(boolean usecur)
       if (last != null) startframe = last.getFrameId();
     }
    else {
-      List<RootLocation> locs = root_control.getLocations(base_problem);
+      List<RootLocation> locs = root_control.getLocations(base_problem,null);
       if (locs != null) {
 	 for (RootLocation loc : locs) {
 	    startframe = updateFrameForLocation(startframe,loc);

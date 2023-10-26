@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 
 import edu.brown.cs.ivy.mint.MintConstants.CommandArgs;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
@@ -147,6 +148,8 @@ private void work()
       uselocs.add(at_location);
     }
    
+   // can we restrict locations by what is actually executed here
+   
    if (sort_locations) {
       Collections.sort(uselocs,new LocationSorter());
     }
@@ -231,8 +234,9 @@ private ProcessorTask startTask(Class<?> cls,RootProblem p,RootLocation l)
 
 private List<RootLocation> getLocations()
 {
-   // compute the set of all locations -- use stem processing?
-   return rose_control.getLocations(for_problem);
+   Set<String> execlocs = null;
+   if (base_validator != null) execlocs = base_validator.getExecutedLocations();
+   return rose_control.getLocations(for_problem,execlocs);
 }
 
 

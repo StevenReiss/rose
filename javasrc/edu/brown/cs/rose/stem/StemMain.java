@@ -44,6 +44,7 @@ import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -424,6 +425,39 @@ private void handleFinishedCommand(MintMessage msg)
 }
 
 
+private void handleRemoveSeedeFiles(Collection<File> files) 
+{
+   if (files == null || files.isEmpty()) return;
+   
+   for (Iterator<File> it = files.iterator(); it.hasNext(); ) {
+      File f1 = it.next();
+      if (!added_files.contains(f1)) it.remove();
+    }
+   if (files.isEmpty()) return;
+   
+   StringBuffer buf = new StringBuffer();
+   int ct = 0;
+   for (File f1 : files) {
+      if (files.contains(f1)) {
+         buf.append("<FILE NAME='");
+         buf.append(f1.getAbsolutePath());
+         buf.append("' />");
+         ++ct;
+       }
+    }
+   
+   if (ct > 0) {
+      loaded_files.removeAll(files);
+      added_files.removeAll(files);
+      if (seede_files != null) seede_files.removeAll(files);
+      Element xw = sendSeedeMessage(session_id,"REMOVEFILE",null,buf.toString());
+      if (!IvyXml.isElement(xw,"RESULT")) {
+         RoseLog.logE("STEM","Problem removing seede files");
+       }
+    }
+}
+
+
 
 private boolean startFaitProcess()
 {
@@ -628,9 +662,10 @@ private void handleParameterValuesCommand(MintMessage msg) throws RoseException
 /*										*/
 /********************************************************************************/
 
-@Override public List<RootLocation> getLocations(RootProblem prob)
+@Override public List<RootLocation> getLocations(RootProblem prob,Set<String> execlocs)
 {
    List<RootLocation> rslt = new ArrayList<>();
+   Set<File> oldfiles = seede_files;
    seede_files = null;
    StemQueryHistory histq = StemQueryHistory.createHistoryQuery(this,prob);
    if (histq != null) {
@@ -656,11 +691,15 @@ private void handleParameterValuesCommand(MintMessage msg) throws RoseException
             p1 = p1 * p;
             loc.setPriority(p1);
             loc.setReason(reason);
-            usefiles.add(loc.getFile());
             RoseLog.logD("STEM","Consider file " + loc.getFile() + " " + loc.getLineNumber());
             //TODO:  need to map location line number to start of statement
             if (!isLocationRelevant(loc,prob)) continue;
             String s = loc.getFile().getPath() + "@" + loc.getStatementLine();
+            if (execlocs != null && !execlocs.contains(s)) {
+               RoseLog.logD("STEM","IGNORE location " + s + " because it isn't executed");
+               continue;
+             }
+            usefiles.add(loc.getFile());
             RootLocation oloc = done.putIfAbsent(s,loc);
             if (oloc != null) {
                double p2 = oloc.getPriority();
@@ -673,10 +712,12 @@ private void handleParameterValuesCommand(MintMessage msg) throws RoseException
        }
       if (!usefiles.isEmpty()) {
          Set<File> sfiles = new HashSet<>();
+         if (oldfiles != null) oldfiles.removeAll(usefiles);
          for (File f : usefiles) {
             if (f.getName().endsWith("Exception.java")) continue;
             sfiles.add(f);
           }
+         handleRemoveSeedeFiles(oldfiles);
          seede_files = sfiles;
        }
     }
@@ -706,27 +747,35 @@ private boolean isLocationRelevant(RootLocation loc,RootProblem prob)
       if (n != null) {
          JcompSymbol js = JcompAst.getDefinition(n);
          if (js != null) {
-            RoseLog.logD("STEM","CHECK IGNORE " + js.getFullName());
             if (prob.ignoreMain()) {
                if (js.getName().equals("main") && js.isStatic() &&
-                     js.getType().getBaseType().isVoidType()) 
+                     js.getType().getBaseType().isVoidType()) {
+                  RoseLog.logD("STEM","IGNORE MAIN " + js.getFullName());
                   return false;
+                }
              }
             if (prob.ignoreTests() && js.getAnnotations() != null) {
                for (JcompAnnotation ja : js.getAnnotations()) {
-                  if (ja.getAnnotationType().getName().equals("org.junit.Test"))
+                  if (ja.getAnnotationType().getName().equals("org.junit.Test")) {
+                     RoseLog.logD("STEM","IGNORE TEST " + js.getFullName());
                      return false;
+                   }
                 }
-               if (js.isPublic() && js.getName().startsWith("test")) 
+               if (js.isPublic() && js.getName().startsWith("test")) {
+                  RoseLog.logD("STEM","IGNORE TEST " + js.getFullName());
                   return false;
+                }
              }
             if (prob.ignoreTests() && js.getName().startsWith("test")) {
+               RoseLog.logD("STEM","IGNORE TEST " + js.getFullName());
                return false;
              }
             if (prob.ignoreDriver()) {
                RootLocation loc0 = prob.getBugLocation();
-               RoseLog.logD("STEM","CHECK IGNORE " + loc.getMethod() + " " + loc0.getMethod());
-               if (loc.getMethod().equals(loc0.getMethod())) return false;
+               if (loc.getMethod().equals(loc0.getMethod())) {
+                  RoseLog.logD("STEM","IGNORE DRIVER " + js.getFullName());
+                  return false;
+                }
              }
           }
        }
@@ -801,7 +850,7 @@ private void handleLocationCommand(MintMessage msg) throws RoseException
    long start = System.currentTimeMillis();
    Element probxml = IvyXml.getChild(msgxml,"PROBLEM");
    RootProblem prob = BractFactory.getFactory().createProblemDescription(this,probxml);
-   List<RootLocation> locs = getLocations(prob);
+   List<RootLocation> locs = getLocations(prob,null);
    if (locs == null) {
       msg.replyTo();
     }

@@ -172,6 +172,15 @@ static {
    catch (BadLocationException e) {
       rep = stmt.toString();
     }
+    
+   if (stmt instanceof IfStatement && patch.endsWith("{")) {
+      int idx4 = rep.indexOf("{");
+      if (idx4 > 0) {
+         rep = rep.substring(0,idx4+1);
+         slen = rep.length();
+       }
+    }
+   
    
    if (rep.replace(" ","").equals(patch.replace(" ",""))) {
       RoseLog.logD("SEPAL","CHATGPT returned original statement");

@@ -44,7 +44,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.eclipse.jdt.core.dom.ASTNode;
-import org.eclipse.jdt.core.dom.Statement;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 
 import edu.brown.cs.rose.bract.BractSearch;
@@ -113,7 +112,7 @@ public SepalLocalSearch()
 @Override public void process()
 {
    RootControl ctrl = getProcessor().getController();
-   Statement stmt = (Statement) getResolvedStatementForLocation(null);
+   ASTNode stmt = getResolvedStatementForLocation(null);
    if (stmt == null) return;
    List<BractSearchResult> rslts = search_engine.getResults(stmt,SEARCH_THRESHOLD,MAX_RETURN);
    if (rslts == null || rslts.isEmpty()) return; 
@@ -177,7 +176,7 @@ public SepalLocalSearch()
 
 
 
-private boolean isRelevant(int lno,Statement stmt,PatchAsASTRewriteWithScore r)
+private boolean isRelevant(int lno,ASTNode stmt,PatchAsASTRewriteWithScore r)
 {
    // ignore method replace
    if (r.getType().equals("METHODREPLACE")) return false;
@@ -224,7 +223,7 @@ private boolean isRelevant(int lno,Statement stmt,PatchAsASTRewriteWithScore r)
 /*                                                                              */
 /********************************************************************************/
 
-private void restrictPatches(int lno,Statement stmt,List<PatchAsASTRewriteWithScore> patches)
+private void restrictPatches(int lno,ASTNode stmt,List<PatchAsASTRewriteWithScore> patches)
 {
    // first remove irrelevant patches
    for (Iterator<PatchAsASTRewriteWithScore> it = patches.iterator(); it.hasNext(); ) {
