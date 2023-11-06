@@ -131,7 +131,14 @@ public RootLocation createLocation(RootControl ctrl,Element xml)
 public RootLocation createLocation(File f,int loc,int eloc,int lin,String proj,
       String mthd)
 {
-   return new BractLocation(f,loc,eloc,lin,proj,mthd);
+   return new BractLocation(f,loc,eloc,lin,proj,mthd,0);
+}
+
+
+public RootLocation createLocation(File f,int loc,int eloc,int lin,String proj,
+      String mthd,double pri)
+{
+   return new BractLocation(f,loc,eloc,lin,proj,mthd,pri);
 }
 
 

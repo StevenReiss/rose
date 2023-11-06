@@ -53,6 +53,7 @@ import org.w3c.dom.Element;
 import edu.brown.cs.ivy.exec.IvyExec;
 import edu.brown.cs.ivy.exec.IvyExecQuery;
 import edu.brown.cs.ivy.file.IvyFile;
+import edu.brown.cs.ivy.file.IvyFormat;
 import edu.brown.cs.ivy.leash.LeashIndex;
 import edu.brown.cs.ivy.mint.MintArguments;
 import edu.brown.cs.ivy.mint.MintControl;
@@ -159,7 +160,8 @@ protected void runEvaluation(RoseEvalTest test)
       String cnts = test.getProblem().getDescription(fd);
 
       System.err.println("START " + test.getName());
-
+      RoseLog.logW("ROSEEVAL","START TEST " + test.getName());
+      
       long starttime = System.currentTimeMillis();
       switch (test.getTestType()) {
 	 case ROSE :
@@ -391,7 +393,8 @@ private void processSuggestions(String name,SuggestionSet ss,RoseEvalSolution so
    for (RoseEvalSuggestion sug : ss.getSuggestions()) {
       if (max == 0) max = sug.getPriority()*0.1;
       if (fnd < 0) {
-	 System.err.println("CHECK " + sug.getPriority() + " " + sug.getLine() + " " + sug.getDescription() +
+	 System.err.println("CHECK " + IvyFormat.formatNumber(sug.getPriority()) + " " +
+               sug.getLine() + " " + sug.getDescription() +
 	       " " + sug.getTime() + " " + sug.getCount());
        }
       if (sol.match(sug) && fnd < 0) {

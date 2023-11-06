@@ -15,11 +15,12 @@
       <PROBLEM TYPE='ASSERTION'/>
       <SOLUTION LINE='29'>
 	 <MATCH>`arr' with `counts'</MATCH>
+	 <MATCH>count : counts</MATCH>
       </SOLUTION>
    </TEST>
    <TEST NAME='DepthFirstSearch' SKIP='3'>
       <PROBLEM TYPE='LOCATION'/>
-      <SOLUTION LINE='44' MATCH='nodes_visited.add' />
+      <SOLUTION LINE='44-49' MATCH='nodes_visited.add' />
    </TEST>
    <TEST NAME='DetectCycle'>
       <PROBLEM TYPE='EXCEPTION' CATCH='java.lang.NullPointerException'/>
@@ -40,8 +41,10 @@
    </TEST>
    <TEST NAME='Flatten' SKIP='1'>
       <PROBLEM TYPE='LOCATION'/>
-      <SOLUTION LINE='24-29'>
+      <SOLUTION LINE='29'>
 	 <MATCH><![CDATA[result.add(x)]]></MATCH>
+	 <MATCH><![CDATA[x' instead of `flatten(x]]></MATCH>
+	 <MATCH><![CDATA[x instead of flatten(x]]></MATCH>
       </SOLUTION>
    </TEST>
    <TEST NAME='Gcd' SKIP='2'>
@@ -60,6 +63,7 @@
       <PROBLEM TYPE='ASSERTION'/>
       <SOLUTION LINE='35'>
 	<MATCH><![CDATA[`helper' with `end']]></MATCH>
+	<MATCH><![CDATA[(start, end)]]></MATCH>
       </SOLUTION>
    </TEST>
    <TEST NAME='IsValidParenthesization'>
@@ -147,12 +151,13 @@
       <SOLUTION LINE='28'>
 	 <MATCH><![CDATA[c <= r]]></MATCH>
 	 <MATCH><![CDATA[c<=r]]></MATCH>
+	 <MATCH><![CDATA[c<r+1]]></MATCH>
       </SOLUTION>
    </TEST>
    <TEST NAME='PossibleChange'>
       <PROBLEM TYPE='EXCEPTION' CATCH='java.lang.ArrayIndexOutOfBoundsException' />
-      <SOLUTION LINE='28'>
-	 <MATCH><![CDATA[.length]]></MATCH>
+      <SOLUTION LINE='24'>
+	 <MATCH><![CDATA[|| coins.length]]></MATCH>
       </SOLUTION>
    </TEST>
    <TEST NAME='PowerSet'>
@@ -177,11 +182,12 @@
       <PROBLEM TYPE='ASSERTION' />
       <SOLUTION LINE='43'>
 	 <MATCH><![CDATA[apply(b,a)]]></MATCH>
+	 <MATCH><![CDATA[apply(b, a)]]></MATCH>
       </SOLUTION>
    </TEST>
    <TEST NAME='ShortestPathLength'>
       <PROBLEM TYPE='ASSERTION' />
-      <SOLUTION LINE='50-54'>
+      <SOLUTION LINE='50-55'>
 	 <MATCH><![CDATA[distance]]></MATCH>
       </SOLUTION>
    </TEST>
@@ -199,7 +205,7 @@
    </TEST>
    <TEST NAME='ShuntingYard'>
       <PROBLEM TYPE='ASSERTION' />
-      <SOLUTION LINE='48'>
+      <SOLUTION LINE='46'>
 	 <MATCH><![CDATA[opstack.push(token)]]></MATCH>
       </SOLUTION>
    </TEST>
@@ -207,6 +213,7 @@
       <PROBLEM TYPE='ASSERTION' />
       <SOLUTION LINE='47'>
 	 <MATCH><![CDATA[`any' with `all']]></MATCH>
+	 <MATCH><![CDATA[all(list_comp']]></MATCH>
       </SOLUTION>
    </TEST>
    <TEST NAME='Sqrt' SKIP='4'>
@@ -235,7 +242,7 @@
    </TEST>
    <TEST NAME='Wrap'>
       <PROBLEM TYPE='ASSERTION' />
-      <SOLUTION LINE='36'>
+      <SOLUTION LINE='25-36'>
 	 <MATCH><![CDATA[lines.add(text)]]></MATCH>
       </SOLUTION>
    </TEST>
@@ -291,7 +298,7 @@
    </TEST>
 -->
    <TEST NAME='Math27'>
-      <PROBLEM TYPE='ASSERTION' />
+      <PROBLEM TYPE='ASSERTION' />                                                               _?
       <SOLUTION LINE='599' FILE='Fraction.java'>
 	 <MATCH><![CDATA[100 * doubleValue]]></MATCH>
       </SOLUTION>
@@ -300,9 +307,10 @@
       <PROBLEM TYPE='VARIABLE' NAME='r' CURRENT='NaN' TARGET='0.9747770814386078' PRECISION='1e-5' />
       <SOLUTION LINE='180' FILE='MannWhitneyUTest.java'>
 	 <MATCH><![CDATA[double]]></MATCH>
+	 <MATCH><![CDATA[(long)]]></MATCH>
       </SOLUTION>
    </TEST>
-   <TEST NAME='Math32'>
+   <TEST NAME='Math32' FRAMES='2'>
       <PROBLEM TYPE='EXCEPTION' CATCH='java.lang.ClassCastException' />
       <SOLUTION LINE='529' FILE='PolygonsSet.java'>
 	 <MATCH><![CDATA[tree.getCut() == null]]></MATCH>
@@ -406,7 +414,7 @@
 </SUITE>
 
 <SUITE NAME='math' WORKSPACE='d4jmath' PROJECT='d4jmath' TIME='100000'>
-   <TEST NAME='Math39'>
+   <TEST NAME='Math39' TIME='4000'>
       <PROBLEM TYPE='ASSERTION' />
       <SOLUTION LINE='250-263' FILE='EmbeddedRungeKuttaIntegrator.java'>
 	 <MATCH><![CDATA[stepStart + stepSize >= t]]></MATCH>
@@ -480,7 +488,7 @@
    </TEST>
    <TEST NAME='Math96'>
       <PROBLEM TYPE='ASSERTION' />
-      <SOLUTION LINE='350' FILE='Complex.java'>
+      <SOLUTION LINE='350-352' FILE='Complex.java'>
 	 <MATCH><![CDATA[real == c.real]]></MATCH>
 	 <MATCH><![CDATA[real == c.getReal]]></MATCH>
       </SOLUTION>
@@ -545,14 +553,14 @@
    </TEST>
    <TEST NAME='Lang39'>
       <PROBLEM TYPE='EXCEPTION' CATCH='java.lang.NullPointerException' />
-      <SOLUTION LINE='4615' FILE='StringUtils.java'>
+      <SOLUTION LINE='4611-4615' FILE='StringUtils.java'>
 	 <MATCH><![CDATA[searchList[i] == null]]></MATCH>
       </SOLUTION>
    </TEST>
    <TEST NAME='Lang43'>
       <PROBLEM TYPE='ASSERTION'/>
       <SOLUTION LINE='484-486' FILE='ExtendedMessageFormat.java'>
-	 <MATCH><![CDATA[next(pos)]]></MATCH>
+	 <MATCH><![CDATA[next(pos)]]></MATCH>						
       </SOLUTION>
    </TEST>
    <TEST NAME='Lang47A'>
@@ -581,8 +589,8 @@
    </TEST>
    <TEST NAME='Lang61'>
       <PROBLEM TYPE='ASSERTION' />
-      <SOLUTION LINE='2255-2272' FILE='StrBuilder.java'>
-	 <MATCH><![CDATA[size - strlen + 1]]></MATCH>
+      <SOLUTION LINE='2255-2273' FILE='StrBuilder.java'>
+	 <MATCH><![CDATA[size - strLen + 1]]></MATCH>
       </SOLUTION>
    </TEST>
 </SUITE>
@@ -653,7 +661,7 @@
       </SOLUTION>
       <FILE>/pro/d4jspr/closure/javasrc/edu/brown/cs/d4jspr/BugClosure62.java</FILE>
       <FILE>/pro/d4jspr/closure/javasrc/com/google/javascript/jscomp/LightweightMessageFormatter.java</FILE>
-   </TEST>												@
+   </TEST>			
    <TEST NAME='Closure65' LOCAL='true' FRAMES='0'>
       <PROBLEM TYPE='ASSERTION' />
       <SOLUTION LINE='1091' FILE='CodeGenerator.java'>

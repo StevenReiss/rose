@@ -146,6 +146,7 @@ private Set<File>       seede_files;
 private boolean         run_debug;
 private boolean         no_debug;
 private PicotFactory    picot_factory;
+private long            seede_timeout;
 
 private static boolean force_load = false;
 
@@ -203,6 +204,7 @@ private StemMain(String [] args)
    seede_files = null;
    run_debug = true;
    no_debug = false;
+   seede_timeout = 40000;
    scanArgs(args);
    picot_factory = new PicotFactory(this);
    
@@ -294,7 +296,7 @@ private void scanArgs(String [] args)
 	    RoseLog.setLogLevel(RoseLog.LogLevel.DEBUG);
 	  }
          else if (args[i].startsWith("-NoD")) {                         // -NoDebug
-	    RoseLog.setLogLevel(RoseLog.LogLevel.INFO);
+	    RoseLog.setLogLevel(RoseLog.LogLevel.WARNING);
             run_debug = false;
             no_debug = true;
 	  }
@@ -307,6 +309,9 @@ private void scanArgs(String [] args)
          else if (args[i].startsWith("-lseede")) {                       // -local seede
 	    local_seede = true;
 	  }
+         else if (args[i].startsWith("-timeout") && i+1 < args.length) {
+            seede_timeout = Long.parseLong(args[++i]);
+          }
 	 else badArgs();
        }
       else badArgs();
@@ -870,6 +875,8 @@ private void handleLocationCommand(MintMessage msg) throws RoseException
 
 private void handleStartFrame(MintMessage msg) throws RoseException
 {
+   waitForAnalysis();
+   
    Element msgxml = msg.getXml();
    Element probxml = IvyXml.getChild(msgxml,"PROBLEM");
    RootProblem prob = BractFactory.getFactory().createProblemDescription(this,probxml);
@@ -1109,6 +1116,10 @@ private boolean startSeede()
    args.add(logf.getPath());
    if (run_debug && bp.getBoolean("Rose.seede.debug")) args.add("-D");
    if (run_debug && bp.getBoolean("Rose.seede.trace")) args.add("-T");
+   if (seede_timeout > 0) {
+      args.add("-timeout");
+      args.add(Long.toString(seede_timeout));
+    }
    
    for (int i = 0; i < 100; ++i) {
       MintDefaultReply rply = new MintDefaultReply();

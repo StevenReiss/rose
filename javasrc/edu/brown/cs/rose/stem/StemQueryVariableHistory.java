@@ -85,7 +85,6 @@ StemQueryVariableHistory(StemMain ctrl,RootProblem prob)
 
 @Override void process(StemMain stem,IvyXmlWriter xw) throws RoseException
 {
-   
    Element qrslt = getVarData(stem);
    if (qrslt == null) throw new RoseException("Can't find variable");
    

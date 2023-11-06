@@ -811,7 +811,8 @@ Element dereference(Element val)
 
 void getExecutedLocations(Set<String> rslt)
 {
-   getRootContext().getExecutedLocations(rslt);
+   ValidateCall vc = getRootContext();
+   if (vc != null) vc.getExecutedLocations(rslt);
 }
 
 /********************************************************************************/

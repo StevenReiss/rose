@@ -12,17 +12,33 @@ import java.io.File;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.Assignment;
+import org.eclipse.jdt.core.dom.Block;
+import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.Expression;
+import org.eclipse.jdt.core.dom.ExpressionStatement;
+import org.eclipse.jdt.core.dom.ForStatement;
 import org.eclipse.jdt.core.dom.IfStatement;
-import org.eclipse.jface.text.BadLocationException;
-import org.eclipse.jface.text.IDocument;
+// import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.ReturnStatement;
+import org.eclipse.jdt.core.dom.Statement;
+import org.eclipse.jdt.core.dom.Type;
+import org.eclipse.jdt.core.dom.WhileStatement;
 import org.w3c.dom.Element;
 
 import edu.brown.cs.bubbles.board.BoardProperties;
+import edu.brown.cs.ivy.file.IvyFile;
+import edu.brown.cs.ivy.file.IvyFormat;
+import edu.brown.cs.ivy.jcomp.JcompAst;
+import edu.brown.cs.rose.bract.BractFactory;
 import edu.brown.cs.rose.root.RootControl;
 import edu.brown.cs.rose.root.RootEdit;
+import edu.brown.cs.rose.root.RootLocation;
 import edu.brown.cs.rose.root.RootRepairFinderDefault;
 import edu.brown.cs.rose.root.RoseLog;
+import redis.clients.jedis.Jedis;
 
+import org.eclipse.text.edits.InsertEdit;
 import org.eclipse.text.edits.ReplaceEdit;
 import org.eclipse.text.edits.TextEdit;
 
@@ -38,13 +54,23 @@ public class SepalChatGPT extends RootRepairFinderDefault
 /*                                                                              */
 /********************************************************************************/
 
+private ASTNode         patch_node;
+private String          patch_contents;
+private String          patch_description;
+private int             source_position;
+private int             source_length;
+private String          source_text;
+private boolean         no_change;
+
 private static boolean use_chatgpt;
 
 private static String api_host;
 private static String api_key;
+private static Jedis  cache_base;
 
 // make null to allow concurrent calls
 private static ReentrantLock chatgpt_lock = new ReentrantLock();
+private static ReentrantLock redis_lock = new ReentrantLock();
 
 
 static {
@@ -55,6 +81,33 @@ static {
    if (api_key != null && api_key.contains("XXXXXX")) api_key = null;
    if (api_host != null && api_key != null) use_chatgpt = true;
    else use_chatgpt = false;
+   
+   cache_base = null;
+   try {
+      cache_base = new Jedis("localhost",6379);
+    }
+   catch (Throwable t) { 
+      RoseLog.logI("SEPAL","Connected to redis: " + cache_base);
+    }
+}
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Setup methods                                                           */
+/*                                                                              */
+/********************************************************************************/
+
+@Override protected void localSetup()
+{
+   patch_node = null;
+   patch_contents = null;
+   patch_description = null;
+   source_position = -1;
+   source_length = -1;
+   source_text = null;
+   no_change = false;
 }
 
 
@@ -74,147 +127,408 @@ static {
 
 @Override public void process()
 {
-   RoseLog.logD("SEPAL","Start CHATGPT check " + use_chatgpt + " " + getProcessor().haveGoodResult());
+   RoseLog.logD("SEPAL","Start CHATGPT check " + use_chatgpt + " " + getProcessor().haveGoodResult() +
+         " " + getLocation().getLineNumber() + " " + getLocation().getFile());
 // if (getProcessor().haveGoodResult()) return;
    if (!use_chatgpt) return;
 
    RootControl ctrl = getProcessor().getController();
-   ASTNode stmt = getResolvedStatementForLocation(null);
-   RoseLog.logD("SEPAL","CHATGPT statement " + stmt);
-   if (stmt == null) return;
+   patch_node = getResolvedStatementForLocation(null);
+   RoseLog.logD("SEPAL","CHATGPT statement " + patch_node);
+   if (patch_node == null) return;
+// if (patch_node instanceof Block && patch_node.getParent() instanceof MethodDeclaration) {
+//    RoseLog.logD("SEPAL","CHATGPT: Skip method body");
+//    return;
+//  }
 
    File bfile = getLocation().getFile();
-// int lno = getLocation().getLineNumber();
    String bcnts = ctrl.getSourceContents(bfile);
-
-   // get enclosing method
-   ASTNode enclosingMethod = stmt.getParent();
-   while (enclosingMethod != null && 
-         enclosingMethod.getNodeType() != ASTNode.METHOD_DECLARATION) {
-      enclosingMethod = enclosingMethod.getParent();
-      // TODO: also allow for fields in a type declaration -- need to change query, etc.
-   }
-   if (enclosingMethod == null) {
-      RoseLog.logD("SEPAL","CHATGPT: No enclosing method");
-      return;
-    }
-   // TODO: How to get the source code of this method? Is this correct?
-   String buggy_method = bcnts.substring(enclosingMethod.getStartPosition(),
-      enclosingMethod.getStartPosition() + enclosingMethod.getLength());
-
-   // get patch from ChatGPT (one patch per faulty line)
-   String patch = null;
-   for (int i = 0; i < 2; ++i) {
-      if (chatgpt_lock != null) chatgpt_lock.lock();
-      try {
-         // 1: getPatch(buggy_method: String, faulty_stmt_start_index: int, faulty_stmt_length: int, api_host: String, api_key: String)
-         // 2: getPatch(buggy_method: String, faulty_stmt_line: int, api_host: String, api_key: String)
-         patch = ChatgptRepair.getPatch(buggy_method,
-               stmt.getStartPosition() - enclosingMethod.getStartPosition(), stmt.getLength(),
-               api_host, api_key);
-         break;
-       }
-      catch (com.plexpt.chatgpt.exception.ChatException e) {
-         RoseLog.logI("SEPAL","Rate limit: " + e);
-         // rate limit
-         return;
-       }
-      catch (Throwable e) {
-         RoseLog.logE("SEPAL","Problem with chatgpt",e);
-         // this can be retried successfully
-       }
-      finally {
-         if (chatgpt_lock != null) chatgpt_lock.unlock();
-       }
-    }
    
-   if (patch == null) {
+   accessChatGPT(ctrl,bcnts);
+  
+   if (patch_contents == null) {
       RoseLog.logD("SEPAL","CHATGPT: No patch returned");
       return;
     }
    
-   int idx2 = patch.indexOf("```");
-   if (idx2 >= 0) {
-      int idx = patch.indexOf("\n",idx2);
-      if (idx > 0) patch = patch.substring(idx+1);
-    }
-   int idx3 = patch.lastIndexOf("```");
-   if (idx3 > 0) {
-      int idx4 = patch.lastIndexOf("\n",idx3);
-      if (idx4 > 0) patch = patch.substring(0,idx4);
+   cleanupPatch();
+   if (patch_contents == null) {
+      RoseLog.logD("SEPAL","CHATGPT: No patch returned");
+      return;
     }
    
-   boolean ifpatch = false;
-   if (stmt instanceof IfStatement && !patch.trim().startsWith("if")) {
-      boolean condonly = false;
-      if (patch.contains(";") || patch.contains("}")) condonly = false;
-      else if (patch.startsWith("(")) condonly = true;
-      else if (patch.contains("&&") || patch.contains("||")) condonly = true;
-      if (condonly) {
-         IfStatement ifstmt = (IfStatement) stmt;
-         stmt = ifstmt.getExpression();
-         patch = "(" + patch + ")";
-         ifpatch = true;
-       }
-    }
-   else if (stmt instanceof IfStatement && patch.trim().startsWith("if ")) {
-      patch = checkIfStatement(patch);
-    }
+   checkInsertAfter(bcnts);
    
-   int spos = stmt.getStartPosition();
-   int slen = stmt.getLength();
-   
-   IDocument doc = ctrl.getSourceDocument(bfile);
-   String rep = null;
-   try {
-      rep = doc.get(spos,slen);
-    }
-   catch (BadLocationException e) {
-      rep = stmt.toString();
-    }
+   source_position = patch_node.getStartPosition();
+   source_length = patch_node.getLength();
+   source_text = bcnts.substring(source_position,source_position+source_length);
     
-   if (stmt instanceof IfStatement && patch.endsWith("{")) {
-      int idx4 = rep.indexOf("{");
-      if (idx4 > 0) {
-         rep = rep.substring(0,idx4+1);
-         slen = rep.length();
-       }
+   handlePartialStatements();
+   if (patch_contents == null) {
+      RoseLog.logD("SEPAL","CHATGPT: No patch returned");
+      return;
     }
    
+   computeDiff();
    
-   if (rep.replace(" ","").equals(patch.replace(" ",""))) {
+   if (no_change) {
       RoseLog.logD("SEPAL","CHATGPT returned original statement");
       return;
     }
    
-   RoseLog.logD("SEPAL","Found CHATGPT patch: " + patch);
+   RoseLog.logD("SEPAL","Found CHATGPT patch: " + patch_contents);
    
-   String desc = null;
-   int len = slen;
-   int patchlf = patch.indexOf("\n");
-   int stmtlt = rep.indexOf("\n");
-   if (ifpatch) {
-      desc = "Replace if exprsssion with " + patch;
-    }
-   if (patchlf < 0) {
-      if (stmtlt > 0) {
-//       len = stmtlt;
-       }
-      desc = "Replace line with " + patch;
-    }
-   else {
-      desc = "Replace statement with " + patch.replace("\n"," ");
-    }
+   getDescription(bcnts);
       
-   // add repair
-   // addRepair(edit: Element/ASTRewrite, description: String, logdata: String, priority_score: double)
-   // TODO: How to create an edit xml? Is this correct?
-   TextEdit te = new ReplaceEdit(spos,len, patch);
+   RoseLog.logD("SETUP PATCH " + source_position + " " + source_length + " `" + patch_contents + "'");
+   
+   TextEdit te = new ReplaceEdit(source_position,source_length, patch_contents);
    
    RootEdit redit = new RootEdit(bfile, te);
    Element edit = redit.getTextEditXml();
-   addRepair(edit, desc, getClass().getName() + "@ChatGPT", 0.25);
+   addRepair(edit, patch_description, getClass().getName() + "@ChatGPT", 0.50);
 }
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Access ChatGPT                                                          */
+/*                                                                              */
+/********************************************************************************/
+
+private void accessChatGPT(RootControl ctrl,String bcnts)
+{
+   // get enclosing method
+   ASTNode enclosingmethod = patch_node.getParent();
+   while (enclosingmethod != null && 
+         enclosingmethod.getNodeType() != ASTNode.METHOD_DECLARATION) {
+      enclosingmethod = enclosingmethod.getParent();
+      // TODO: also allow for fields in a type declaration -- need to change query, etc.
+    }
+   if (enclosingmethod == null) {
+      RoseLog.logD("SEPAL","CHATGPT: No enclosing method");
+      return;
+    }
+   // TODO: How to get the source code of this method? Is this correct?
+   String buggymethod = bcnts.substring(enclosingmethod.getStartPosition(),
+         enclosingmethod.getStartPosition() + enclosingmethod.getLength());
+   
+   patch_contents = null;
+   
+   String key = null;
+   if (cache_base != null) {
+      String k1 = buggymethod + "@" + patch_node.getStartPosition() + "@" +
+         patch_node.getLength();
+      key = IvyFile.digestString(k1);
+      if (key !=  null) {
+         if (redis_lock != null) redis_lock.lock();
+         try {
+            patch_contents = cache_base.get(key);
+          }
+         catch (Throwable t) {
+            RoseLog.logE("SEPAL","Problem accessing REDIS",t);
+          }
+         finally {
+            if (redis_lock != null) redis_lock.unlock();
+          }
+       }
+    }
+   if (patch_contents == null) {
+      for (int i = 0; i < 2; ++i) {
+         if (chatgpt_lock != null) chatgpt_lock.lock();
+         try {
+            // 1: getPatch(buggy_method: String, faulty_stmt_start_index: int, faulty_stmt_length: int, api_host: String, api_key: String)
+            // 2: getPatch(buggy_method: String, faulty_stmt_line: int, api_host: String, api_key: String)
+            patch_contents = ChatgptRepair.getPatch(buggymethod,
+                  patch_node.getStartPosition() - enclosingmethod.getStartPosition(),
+                  patch_node.getLength(),
+                  api_host, api_key);
+            break;
+          }
+         catch (com.plexpt.chatgpt.exception.ChatException e) {
+            RoseLog.logI("SEPAL","Rate limit: " + e);
+            // rate limit
+            return;
+          }
+         catch (Throwable e) {
+            RoseLog.logE("SEPAL","Problem with chatgpt " + i + ":",e);
+            // this can be retried successfully
+          }
+         finally {
+            if (chatgpt_lock != null) chatgpt_lock.unlock();
+          }
+       }
+      if (patch_contents != null && key != null) {
+         if (redis_lock != null) redis_lock.lock();
+         try {
+            cache_base.set(key,patch_contents);
+          }
+         catch (Throwable t) {
+            RoseLog.logE("SEPAL","Problem saving in REDIS",t);
+          }
+         finally {
+            if (redis_lock != null) redis_lock.unlock();
+          }
+       }
+    }
+}
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Clean up output from ChatGPT                                            */
+/*                                                                              */
+/********************************************************************************/
+
+private void cleanupPatch()
+{
+   int idx2 = patch_contents.indexOf("```");
+   if (idx2 >= 0) {
+      int idx = patch_contents.indexOf("\n",idx2);
+      if (idx > 0) patch_contents = patch_contents.substring(idx+1);
+    }
+   int idx3 = patch_contents.lastIndexOf("```");
+   if (idx3 > 0) {
+      int idx4 = patch_contents.lastIndexOf("\n",idx3);
+      if (idx4 > 0) patch_contents = patch_contents.substring(0,idx4);
+    }
+   
+   if (patch_node instanceof IfStatement && !patch_contents.trim().startsWith("if")) {
+      boolean condonly = false;
+      if (patch_contents.contains(";") || patch_contents.contains("}")) condonly = false;
+      else if (patch_contents.startsWith("(")) condonly = true;
+      else if (patch_contents.contains("&&") || patch_contents.contains("||")) condonly = true;
+      if (condonly) {
+         IfStatement ifstmt = (IfStatement) patch_node;
+         patch_node = ifstmt.getExpression();
+         patch_contents = "(" + patch_contents + ")";
+       }
+    }
+   else if (patch_node instanceof IfStatement && patch_contents.trim().startsWith("if ")) {
+      patch_contents = checkIfStatement(patch_contents);
+    }
+   
+   if (patch_contents.startsWith("`") && patch_contents.endsWith("`")) {
+      int len = patch_contents.length();
+      patch_contents = patch_contents.substring(1,len-1);
+    }
+}
+
+
+
+private void handlePartialStatements()
+{
+   if ((patch_node instanceof IfStatement || 
+         patch_node instanceof WhileStatement ||
+         patch_node instanceof ForStatement) 
+         && patch_contents.endsWith("{")) {
+      int idx4 = source_text.indexOf("{");
+      if (idx4 > 0) {
+         source_text = source_text.substring(0,idx4+1);
+         source_length = source_text.length();
+       }
+    }
+   else if (patch_node instanceof Block && !patch_contents.trim().startsWith("{")) {
+      patch_contents = "{ " + patch_contents + " }";
+//    patch_contents = null;
+    }
+   else {
+      String tp = patch_contents.trim();
+      if (!tp.endsWith(";") && !tp.endsWith("}")) {
+         patch_contents += ";";
+       }
+    }
+}
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Diff patch with original code                                           */
+/*                                                                              */
+/********************************************************************************/
+
+private void computeDiff()
+{
+   int repmatch = 0;
+   int patmatch = 0;
+   int rlin = 0;
+   int rpos = 0;
+   int ppos = 0;
+   while (rpos < source_text.length() && ppos < patch_contents.length()) {
+      char repch = source_text.charAt(rpos);
+      char patch = patch_contents.charAt(ppos);
+      if (repch == patch) {
+         if (repch == '\n') ++rlin;
+         ++rpos;
+         ++ppos;
+         repmatch = rpos;
+         patmatch = ppos;
+       }
+      else if (Character.isWhitespace(repch)) {
+         if (repch == '\n') ++ rlin;
+         ++rpos;
+       }
+      else if (Character.isWhitespace(patch)) {
+         ++ppos;
+       }
+      else break;
+    }
+   // Source is now used form 0 to repmatch
+   // Patch is then used from patmatch
+   
+   int erepmatch = source_text.length();
+   int epatmatch = patch_contents.length();
+   int repos = source_text.length()-1;
+   int pepos = patch_contents.length()-1;
+   while (repos >= repmatch && pepos >= patmatch) {
+      char repch = source_text.charAt(repos);
+      char patch = patch_contents.charAt(pepos);
+      if (repch == patch) {
+         erepmatch = repos;
+         epatmatch = pepos;
+         --repos;
+         --pepos;
+       }
+      else if (Character.isWhitespace(repch)) {
+         --repos;
+       }
+      else if (Character.isWhitespace(patch)) {
+         --pepos;
+       }
+      else break;
+    }
+   
+   // Source is now used from 0 to repmatch and erepmatch to end
+   // Patch is now used from patmatch to epatmatch
+   
+   RoseLog.logD("SEPAL","DIFFR ORIG:  " + source_length + " " + 
+         IvyFormat.formatString(source_text));
+   RoseLog.logD("SEPAL","DIFFR PATCH: " + patch_contents.length() + " " + 
+         IvyFormat.formatString(patch_contents));
+   RoseLog.logD("SEPAL","DIFFR START: " + repmatch + " " + patmatch + " " + rlin);
+   RoseLog.logD("SEPAL","DIFFR END: " + erepmatch + " " + epatmatch);
+   
+   if (patmatch >= epatmatch) no_change = true;
+   else {
+      patch_contents = patch_contents.substring(patmatch,epatmatch);
+      source_position = source_position + repmatch;
+      // include any spaces in rpos
+      source_length = erepmatch - repmatch;
+      RootLocation oloc = getLocation();
+      BractFactory bf = BractFactory.getFactory();
+      RootLocation loc = bf.createLocation(oloc.getFile(),
+            source_position,source_position+source_length,
+            oloc.getLineNumber() + rlin,
+            oloc.getProject(),oloc.getMethod(),oloc.getPriority());
+      setLocation(loc);
+      ASTNode pn = getResolvedAstNodeForLocation(loc);
+      int epos = source_position+source_length;
+      while (pn != null && pn.getStartPosition() + pn.getLength() < epos) {
+         pn = pn.getParent();
+       }
+      if (pn == null) {
+         patch_node = getResolvedAstNodeForLocation(loc);
+       }
+      else patch_node = pn;
+    }
+}
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Get Description for patch                                               */
+/*                                                                              */
+/********************************************************************************/
+
+private void getDescription(String bcnts)
+{
+   patch_description = null;
+   
+   // get relevant node and node type
+   String what = null;
+   ASTNode usenode = patch_node;
+   ASTNode prevnode = usenode;
+   
+   while (usenode != null && (usenode instanceof Expression || usenode instanceof Type)) {
+      prevnode = usenode;
+      switch (usenode.getNodeType()) {
+         case ASTNode.METHOD_INVOCATION :
+         case ASTNode.CONSTRUCTOR_INVOCATION :
+         case ASTNode.SUPER_CONSTRUCTOR_INVOCATION :
+            what = "Call";
+            break;
+         case ASTNode.CLASS_INSTANCE_CREATION :
+            what = "New";
+            break;
+         case ASTNode.LAMBDA_EXPRESSION :
+            what = "Lambda";
+            break;
+         case ASTNode.VARIABLE_DECLARATION_EXPRESSION :
+            what = "Declaration";
+            break;
+         default :
+            break;
+       }
+      if (what != null) break;
+      usenode = usenode.getParent();
+    }
+   
+   // now get original text and patched text
+// int pstart = patch_node.getStartPosition();
+// int plen = patch_node.getLength();
+   int pstart1 = prevnode.getStartPosition();
+   int plen1 = prevnode.getLength();
+   String origtxt = bcnts.substring(pstart1,pstart1+plen1);
+   String txt0 = origtxt.substring(0,source_position-pstart1);
+   String txt1 = patch_contents;
+   String txt2 = origtxt.substring(source_position-pstart1+source_length);
+// if (source_length > 0) {
+//    txt2 = origtxt.substring(pstart - pstart1 + source_length,plen1);
+//  }
+// else {
+//    txt2 = "";
+//  }
+   String newtxt = txt0 + txt1 + txt2;
+   
+   origtxt = IvyFormat.formatString(compress(origtxt));
+   newtxt = IvyFormat.formatString(compress(newtxt));
+   
+   patch_description = "G: Use " + newtxt + " instead of " + trunc(origtxt,24);
+}
+
+
+private String trunc(String txt,int len)
+{
+   if (txt.length() < len) return txt;
+   return txt.substring(0,len-2) + "..";
+}
+
+
+private String compress(String text)
+{
+   StringBuffer buf = new StringBuffer();
+   char havespace = 0;
+   for (int i = 0; i < text.length(); ++i) {
+      char ch = text.charAt(i);
+      if (Character.isWhitespace(ch)) {
+         if (havespace == 0) {
+            havespace = ch;
+          }
+       }
+      else {
+         if (havespace != 0) buf.append(havespace);
+         havespace = 0;
+         buf.append(ch);
+       }
+    }
+   
+   return buf.toString();
+}
+
 
 
 
@@ -247,6 +561,82 @@ private String checkIfStatement(String patch)
     }
    return patch;
 }
+
+
+
+
+/********************************************************************************/
+/*                                                                              */
+/*      Treat patch as code to insert after given statement                     */
+/*                                                                              */
+/********************************************************************************/
+
+private void checkInsertAfter(String bcnts)
+{
+   ASTNode stmt = patch_node;
+   String patch = patch_contents;
+   if (!(stmt instanceof Statement)) return;
+   if (stmt instanceof ReturnStatement) return;
+   if (!(stmt.getParent() instanceof Block)) return;
+   ASTNode patchast = JcompAst.parseStatement(patch,true);
+   if (patchast == null) return;
+   if (patchast.getClass() == stmt.getClass()) {
+      if (patchast instanceof ExpressionStatement && stmt instanceof ExpressionStatement) {
+         ExpressionStatement esp = (ExpressionStatement) patchast;
+         ExpressionStatement ssp = (ExpressionStatement) stmt;
+         if (esp.getExpression() instanceof Assignment &&
+               ssp.getExpression() instanceof Assignment) {
+            Assignment pass = (Assignment) esp.getExpression();
+            Assignment sass = (Assignment) ssp.getExpression();
+            if (pass.getLeftHandSide().toString().equals(sass.getLeftHandSide().toString()))
+               return;
+          }
+         else return;
+       }
+      else return;
+    }
+   
+   String tp = patch.trim();
+   if (!tp.endsWith(";") && !tp.endsWith("}")) {
+      String xp = patchast.toString();
+      if (xp.trim().endsWith(";")) patch += ";";
+    }
+   
+   // if the statements and patch are close, then skip
+   int epos = stmt.getStartPosition() + stmt.getLength();
+   int xepos;
+   int lfct = 0;
+   for (xepos = epos; xepos < bcnts.length(); ++xepos) {
+      char ch = bcnts.charAt(xepos);
+      if (!Character.isWhitespace(ch)) break;
+      if (ch == '\n' && lfct++ > 0) break;
+    }
+   String white = bcnts.substring(epos,xepos);
+   if (white.isEmpty()) white = "\n   ";
+   String insert = patch+white;
+   
+   String insdesc = IvyFormat.formatString(compress(patch));
+   String after = IvyFormat.formatString(compress(stmt.toString()));
+   String desc = "Insert " + insdesc + " after " + trunc(after,24);
+   
+   File bfile = getLocation().getFile();
+   RootLocation oloc = getLocation();
+   BractFactory bf = BractFactory.getFactory();
+   CompilationUnit cu = (CompilationUnit) stmt.getRoot();
+   int lno = cu.getLineNumber(xepos);
+   RootLocation nloc = bf.createLocation(bfile,xepos,xepos,lno,
+         oloc.getProject(),oloc.getMethod(),oloc.getPriority());
+   TextEdit te = new InsertEdit(xepos,insert);
+   RootEdit redit = new RootEdit(bfile,te);
+   Element edit = redit.getTextEditXml();
+   setLocation (nloc);
+   double prob = 0.50;
+   // reduce priority for multiline patches
+   addRepair(edit,desc,getClass().getName() + "@ChatGPT",prob);
+   setLocation(oloc);
+}
+
+
 }       // end of class SepalChatGPT
 
 

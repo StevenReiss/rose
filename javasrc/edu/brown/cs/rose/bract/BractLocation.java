@@ -58,9 +58,9 @@ BractLocation(RootControl ctrl,Element xml)
 }
 
 
-BractLocation(File f,int loc,int eloc,int lin,String proj,String mthd)
+BractLocation(File f,int loc,int eloc,int lin,String proj,String mthd,double pri)
 {
-   super(f,loc,eloc,lin,proj,mthd,0);
+   super(f,loc,eloc,lin,proj,mthd,pri);
 }
 
 

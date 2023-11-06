@@ -274,7 +274,12 @@ TextEdit computeTextEdit(Element xml)
          te = new MultiTextEdit(off,len);
          break;
       case "REPLACE" :
-         te = new ReplaceEdit(off,len,cnts);
+         if (cnts == null) {
+            te = new DeleteEdit(off,len);
+          } 
+         else {
+            te = new ReplaceEdit(off,len,cnts);
+          }
          break;
       case "DELETE" :
          te = new DeleteEdit(off,len);

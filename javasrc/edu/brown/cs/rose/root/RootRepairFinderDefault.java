@@ -118,7 +118,10 @@ protected RootProblem getProblem()              { return for_problem; }
 
 @Override public RootLocation getLocation()     { return at_location; }
 
-
+protected void setLocation(RootLocation loc)
+{
+   at_location = loc;
+}
 
 
 /********************************************************************************/

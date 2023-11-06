@@ -2,20 +2,20 @@
 
 set CP = /pro/rose/java:/pro/ivy/java:/pro/fait/java:/pro/bubbles/java
 
-foreach i (/pro/rose/lib/*.jar)
-   set CP = ${CP}:$i
-end
-
-foreach i (asm json junit jsoup mysql postgresql)
+foreach i (asm json junit jsoup mysql postgresql commonmark)
    set CP = ${CP}:/pro/ivy/lib/${i}.jar
 end
 
 foreach i (/pro/ivy/lib/eclipsejar/*.jar)
    set CP = ${CP}:$i
-end
+end					
 
 foreach i (poppy cocker)
    set CP = ${CP}:/pro/bubbles/lib/${i}.jar
+end
+
+foreach i (/pro/rose/lib/*.jar)
+   set CP = ${CP}:$i
 end
 
 set CP = ${CP}:/pro/rose/resources
@@ -23,12 +23,11 @@ set CP = ${CP}:/pro/rose/resources
 set WHAT = $*
 
 if ( X$WHAT == X ) then
-   set WHAT = ( test01 )
+   set WHAT = ( quix chart lang math3 math time closure mockito )
 endif
 
 java --version
 echo $CP
-
 
 foreach i ( $WHAT )
    echo Work on $i

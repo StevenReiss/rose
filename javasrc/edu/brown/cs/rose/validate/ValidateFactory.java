@@ -194,7 +194,12 @@ void unregister(String ssid)
 private class SeedeHandler implements MintHandler {
    
    @Override public void receive(MintMessage msg,MintArguments args) {
-      RoseLog.logD("VALIDATE","SEEDE message: " + msg.getText());
+      String txt = msg.getText();
+      RoseLog.logD("VALIDATE","SEEDE message: " + txt);
+      
+      if (txt.length() > 102400000) {
+         RoseLog.logW("VALIDATE","Seede message length " + txt.length());
+       }
       
       String typ = args.getArgument(0);
       String id = args.getArgument(1);

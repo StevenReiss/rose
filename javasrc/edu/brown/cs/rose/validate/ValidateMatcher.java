@@ -225,6 +225,8 @@ private void matchLines(ValidateCall origctx,ValidateCall matchctx)
    int checkrepair = -1;
    if (for_repair != null && matchFiles(for_repair.getLocation().getFile(),file)) {
       checkrepair = for_repair.getLocation().getStatementLine();
+      RoseLog.logD("VALIDATE","CHECK REPAIR " + checkrepair + " " +
+            origctx.getContextId() + " " + matchctx.getContextId());
     }
    
    if (origline == null || matchline == null) return;
