@@ -92,9 +92,11 @@ ValidateStartLocator(RootProblem rp,BudLaunch bl,RootLocation at)
 /*										*/
 /********************************************************************************/
 
-String getStartingFrame(boolean usecur)
+String getStartingFrame(boolean usecur,int upframes)
 {
    String startframe = for_launch.getFrame();
+   int upct = base_problem.getMaxUp();
+   if (upframes >= 0) upct = upframes;
 
    if (at_location != null) {
       startframe = updateFrameForLocation(startframe,at_location);
@@ -103,11 +105,11 @@ String getStartingFrame(boolean usecur)
    else if (usecur) {
       // might want to check that startframe is a source frame
     }
-   else if (base_problem.getMaxUp() >= 0) {
+   else if (upct >= 0) {
       int ct = 0;
       BudStackFrame last = null;
       for (BudStackFrame bsf : for_launch.getStack().getFrames()) {
-         if (ct == base_problem.getMaxUp()) return bsf.getFrameId();
+         if (ct == upct) return bsf.getFrameId();
          last = bsf;
          ++ct;
        }

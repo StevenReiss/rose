@@ -94,7 +94,7 @@ BudStackFrame findStartingPoint()
    // first find the frame containing potential errors
    // the actual starting point should be this or above this
    ValidateFactory validate = ValidateFactory.getFactory(test_creator.getRootControl());
-   BudStackFrame frame0 = validate.getStartingFrame(problem,null,false);
+   BudStackFrame frame0 = validate.getStartingFrame(problem,null,false,-1);
    
    if (problem.getMaxUp() >= 0) return frame0;
    

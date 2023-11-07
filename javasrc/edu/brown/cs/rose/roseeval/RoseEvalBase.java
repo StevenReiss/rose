@@ -249,7 +249,7 @@ private SuggestionSet runTest(MintControl ctrl,RoseEvalFrameData fd,String oprob
    boolean usecur = test.getUpFrames() == 0;
    long max = test.getTime();
    String startloc = (usecur ? "*" : null);
-   String prob = getStartFrame(ctrl,oprob,startloc,max);
+   String prob = getStartFrame(ctrl,oprob,startloc,max,test.getUpFrames());
 
    SuggestionSet ss = getSuggestionsFor(ctrl,fd,prob);
 
@@ -328,7 +328,7 @@ protected void getChangedVariables(MintControl ctrl,RoseEvalFrameData fd,String 
 }
 
 
-private String getStartFrame(MintControl ctrl,String prob,String loc,long max)
+private String getStartFrame(MintControl ctrl,String prob,String loc,long max,int upframes)
 {
    CommandArgs args = new CommandArgs();
    String cnts = prob;
@@ -336,6 +336,7 @@ private String getStartFrame(MintControl ctrl,String prob,String loc,long max)
       loc = null;
       args.put("CURRENT",true);
     }
+   if (upframes >= 0) args.put("UPFRAMES",upframes);
    if (loc != null) cnts += loc;
    Element rslt = sendStemReply(ctrl,"STARTFRAME",args,cnts);
    String startframe = IvyXml.getAttrString(rslt,"STARTFRAME");
