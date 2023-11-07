@@ -220,6 +220,7 @@
       <PROBLEM TYPE='LOCATION' />
       <SOLUTION LINE='23'>
 	 <MATCH><![CDATA[approx * approx]]></MATCH>
+	 <MATCH><![CDATA[approx*approx]]></MATCH>
       </SOLUTION>
    </TEST>
    <TEST NAME='Subsequences'>
@@ -560,7 +561,7 @@
    <TEST NAME='Lang43'>
       <PROBLEM TYPE='ASSERTION'/>
       <SOLUTION LINE='484-486' FILE='ExtendedMessageFormat.java'>
-	 <MATCH><![CDATA[next(pos)]]></MATCH>						
+	 <MATCH><![CDATA[next(pos)]]></MATCH>				
       </SOLUTION>
    </TEST>
    <TEST NAME='Lang47A'>
@@ -661,7 +662,7 @@
       </SOLUTION>
       <FILE>/pro/d4jspr/closure/javasrc/edu/brown/cs/d4jspr/BugClosure62.java</FILE>
       <FILE>/pro/d4jspr/closure/javasrc/com/google/javascript/jscomp/LightweightMessageFormatter.java</FILE>
-   </TEST>			
+   </TEST>	
    <TEST NAME='Closure65' LOCAL='true' FRAMES='0'>
       <PROBLEM TYPE='ASSERTION' />
       <SOLUTION LINE='1091' FILE='CodeGenerator.java'>

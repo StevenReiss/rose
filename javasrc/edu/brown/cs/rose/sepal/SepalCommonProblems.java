@@ -103,6 +103,9 @@ private static final BractAstPattern to_string_result;
 private static final BractAstPattern substring_pattern;
 private static final BractAstPattern substring_result;
 
+private static final BractAstPattern zero_pattern;
+private static final BractAstPattern zero_result;
+
 
 static {
    cond_pattern = BractAstPattern.expression("Ex = Ey");
@@ -143,6 +146,9 @@ static {
    
    substring_pattern = BractAstPattern.expression("Ex.substring(Ey)");
    substring_result = BractAstPattern.expression("Ex.substring(Ey+1)");
+   
+   zero_pattern = BractAstPattern.expression("\"\\\\0\"");
+   zero_result = BractAstPattern.expression("\"\\\\000\"");
 }
 
 
@@ -179,6 +185,7 @@ public SepalCommonProblems()
    checkSimplePattern(stmt,and_pattern,and_result,0.75);
    checkSimplePattern(stmt,overflow_pattern,overflow_result,0.75);
    checkSimplePattern(stmt,substring_pattern,substring_result,0.60);
+   checkSimplePattern(stmt,zero_pattern,zero_result,0.60);
    checkConversion(stmt);
    checkToString(stmt);
 }

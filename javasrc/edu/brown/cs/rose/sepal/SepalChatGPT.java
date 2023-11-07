@@ -9,6 +9,9 @@
 package edu.brown.cs.rose.sepal;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.util.Properties;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -36,7 +39,6 @@ import edu.brown.cs.rose.root.RootEdit;
 import edu.brown.cs.rose.root.RootLocation;
 import edu.brown.cs.rose.root.RootRepairFinderDefault;
 import edu.brown.cs.rose.root.RoseLog;
-import redis.clients.jedis.Jedis;
 
 import org.eclipse.text.edits.InsertEdit;
 import org.eclipse.text.edits.ReplaceEdit;
@@ -66,11 +68,12 @@ private static boolean use_chatgpt;
 
 private static String api_host;
 private static String api_key;
-private static Jedis  cache_base;
+private static Properties property_cache;
+private static File cache_file;
 
 // make null to allow concurrent calls
 private static ReentrantLock chatgpt_lock = new ReentrantLock();
-private static ReentrantLock redis_lock = new ReentrantLock();
+private static ReentrantLock cache_lock = new ReentrantLock();
 
 
 static {
@@ -82,13 +85,13 @@ static {
    if (api_host != null && api_key != null) use_chatgpt = true;
    else use_chatgpt = false;
    
-   cache_base = null;
-   try {
-      cache_base = new Jedis("localhost",6379);
+   File home = new File(System.getProperty("user.home"));
+   cache_file = new File(home,".sepalchatgpt.cache");
+   property_cache = new Properties();
+   try (FileInputStream rdr = new FileInputStream(cache_file)) {
+      property_cache.loadFromXML(rdr);
     }
-   catch (Throwable t) { 
-      RoseLog.logI("SEPAL","Connected to redis: " + cache_base);
-    }
+   catch (Throwable t) { }
 }
 
 
@@ -217,25 +220,27 @@ private void accessChatGPT(RootControl ctrl,String bcnts)
    patch_contents = null;
    
    String key = null;
-   if (cache_base != null) {
+   if (property_cache != null) {
       String k1 = buggymethod + "@" + patch_node.getStartPosition() + "@" +
          patch_node.getLength();
       key = IvyFile.digestString(k1);
       if (key !=  null) {
-         if (redis_lock != null) redis_lock.lock();
+         if (cache_lock != null) cache_lock.lock();
          try {
-            patch_contents = cache_base.get(key);
+            patch_contents = property_cache.getProperty(key);
           }
          catch (Throwable t) {
-            RoseLog.logE("SEPAL","Problem accessing REDIS",t);
+            RoseLog.logE("SEPAL","Problem accessing Property cache",t);
           }
          finally {
-            if (redis_lock != null) redis_lock.unlock();
+            if (cache_lock == null) cache_lock.unlock();
           }
        }
     }
+   
    if (patch_contents == null) {
       for (int i = 0; i < 2; ++i) {
+         RoseLog.logD("TRY CHATGPT " + i + " " + chatgpt_lock.isLocked());
          if (chatgpt_lock != null) chatgpt_lock.lock();
          try {
             // 1: getPatch(buggy_method: String, faulty_stmt_start_index: int, faulty_stmt_length: int, api_host: String, api_key: String)
@@ -258,22 +263,37 @@ private void accessChatGPT(RootControl ctrl,String bcnts)
          finally {
             if (chatgpt_lock != null) chatgpt_lock.unlock();
           }
+         try {
+            Thread.sleep(1000);
+          }
+         catch (InterruptedException e) { }
+         
        }
       if (patch_contents != null && key != null) {
-         if (redis_lock != null) redis_lock.lock();
-         try {
-            cache_base.set(key,patch_contents);
+         if (cache_lock != null) cache_lock.lock();
+         try (FileOutputStream ots = new FileOutputStream(cache_file)) {
+            property_cache.setProperty(key,patch_contents);
+            property_cache.storeToXML(ots,"SepalChatGPT");
           }
          catch (Throwable t) {
-            RoseLog.logE("SEPAL","Problem saving in REDIS",t);
+            RoseLog.logE("SEPAL","Problem saving properties",t);
           }
          finally {
-            if (redis_lock != null) redis_lock.unlock();
+            if (cache_lock != null) cache_lock.unlock();
           }
        }
     }
 }
 
+
+
+@SuppressWarnings("unused")
+private boolean equalsIgnoreSpaces(String s1,String s2) 
+{
+   String s1a = s1.replaceAll("\\s+","");
+   String s2a = s2.replaceAll("\\s+","");
+   return s1a.equals(s2a);
+}
 
 
 /********************************************************************************/
