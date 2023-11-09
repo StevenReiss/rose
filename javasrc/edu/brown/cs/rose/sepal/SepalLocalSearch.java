@@ -72,6 +72,8 @@ private static final int MAX_CHECK_PER_RESULT = 4;
 private static final double SEARCH_THRESHOLD = 1.0;
 private static final int MAX_RETURN = 128;
 
+private static boolean use_local_search = false;
+
 
 
 
@@ -111,6 +113,8 @@ public SepalLocalSearch()
 
 @Override public void process()
 {
+   if (!use_local_search) return;
+   
    RootControl ctrl = getProcessor().getController();
    ASTNode stmt = getResolvedStatementForLocation(null);
    if (stmt == null) return;

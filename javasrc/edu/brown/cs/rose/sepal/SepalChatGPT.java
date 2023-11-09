@@ -233,38 +233,42 @@ private void accessChatGPT(RootControl ctrl,String bcnts)
             RoseLog.logE("SEPAL","Problem accessing Property cache",t);
           }
          finally {
-            if (cache_lock == null) cache_lock.unlock();
+            if (cache_lock != null) cache_lock.unlock();
           }
        }
     }
+   
+   if (patch_contents != null && patch_contents.equals("?")) patch_contents = null;
    
    if (patch_contents == null) {
       for (int i = 0; i < 2; ++i) {
          RoseLog.logD("TRY CHATGPT " + i + " " + chatgpt_lock.isLocked());
          if (chatgpt_lock != null) chatgpt_lock.lock();
+         int spos = patch_node.getStartPosition() - enclosingmethod.getStartPosition();
          try {
             // 1: getPatch(buggy_method: String, faulty_stmt_start_index: int, faulty_stmt_length: int, api_host: String, api_key: String)
             // 2: getPatch(buggy_method: String, faulty_stmt_line: int, api_host: String, api_key: String)
             patch_contents = ChatgptRepair.getPatch(buggymethod,
-                  patch_node.getStartPosition() - enclosingmethod.getStartPosition(),
+                  spos,
                   patch_node.getLength(),
                   api_host, api_key);
             break;
           }
-         catch (com.plexpt.chatgpt.exception.ChatException e) {
-            RoseLog.logI("SEPAL","Rate limit: " + e);
-            // rate limit
-            return;
+         catch (NullPointerException e) {
+            RoseLog.logE("SEPAL","Fatal problem with CHATGPT",e);
+            patch_contents = "?";
+            break;
           }
          catch (Throwable e) {
             RoseLog.logE("SEPAL","Problem with chatgpt " + i + ":",e);
+            buggymethod = buggymethod.substring(0,spos+patch_node.getLength());
             // this can be retried successfully
           }
          finally {
             if (chatgpt_lock != null) chatgpt_lock.unlock();
           }
          try {
-            Thread.sleep(1000);
+            Thread.sleep(500);
           }
          catch (InterruptedException e) { }
          
@@ -281,6 +285,10 @@ private void accessChatGPT(RootControl ctrl,String bcnts)
          finally {
             if (cache_lock != null) cache_lock.unlock();
           }
+       }
+      
+      if (patch_contents.equals("?")) {
+         patch_contents = null;
        }
     }
 }
@@ -354,7 +362,7 @@ private void handlePartialStatements()
       patch_contents = "{ " + patch_contents + " }";
 //    patch_contents = null;
     }
-   else {
+   else if (patch_node instanceof Statement) {
       String tp = patch_contents.trim();
       if (!tp.endsWith(";") && !tp.endsWith("}")) {
          patch_contents += ";";
@@ -578,6 +586,15 @@ private String checkIfStatement(String patch)
       String p1 = patch.substring(idx1,idx2);
       String p2 = patch.substring(idx2);
       patch = p0 + "(" + p1 + ")" + p2;
+    }
+   else if (idx2 == patch.length()) {
+      // if (...) 
+      // Need to extract condition and map patch node to expression
+      IfStatement ifstmt = (IfStatement) patch_node;
+      patch_node = ifstmt.getExpression();
+      patch = patch.substring(idx1+1,idx2-1);
+      
+      // handle start of if here
     }
    return patch;
 }
