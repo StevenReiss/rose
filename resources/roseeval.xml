@@ -355,7 +355,7 @@
    <TEST NAME='Chart06'>
       <PROBLEM TYPE='ASSERTION' />
       <SOLUTION LINE='112' FILE='ShapeList.java'>
-	 <MATCH><![CDATA[ShapeList) obj]]></MATCH>						
+	 <MATCH><![CDATA[ShapeList) obj]]></MATCH>					
       </SOLUTION>
    </TEST>
 <!--			DOESN"T FAIL
@@ -561,7 +561,7 @@
    <TEST NAME='Lang43'>
       <PROBLEM TYPE='ASSERTION'/>
       <SOLUTION LINE='484-486' FILE='ExtendedMessageFormat.java'>
-	 <MATCH><![CDATA[next(pos)]]></MATCH>		
+	 <MATCH><![CDATA[next(pos)]]></MATCH>	
       </SOLUTION>
    </TEST>
    <TEST NAME='Lang47A'>
@@ -604,7 +604,7 @@
 	 <MATCH><![CDATA[newTypes, newValues, iChronology]]></MATCH>
       </SOLUTION>
    </TEST>
-   <TEST NAME='Time16' LOCAL='true' FRAMES='0' TIME='500000' >
+   <TEST NAME='Time16' LOCAL='true' FRAMES='0' TIME='500000' SKIP='2'>
       <PROBLEM TYPE='ASSERTION' />
       <SOLUTION LINE='722' FILE='DateTimeFormatter.java'>
 	 <MATCH><![CDATA[defaultYear]]></MATCH>

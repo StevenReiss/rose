@@ -35,8 +35,13 @@
 
 package edu.brown.cs.rose.stem;
 
+import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.w3c.dom.Element;
 
@@ -157,8 +162,29 @@ private int processGraphNodes(Element gelt,IvyXmlWriter xw)
 {
    Map<String,GraphNode> locs = new HashMap<>();
    
+   List<GraphNode> allnodes = new ArrayList<>();
    for (Element nelt : IvyXml.children(gelt,"NODE")) {
       GraphNode gn = new GraphNode(stem_control,nelt);
+      if (gn.shouldCheck()) allnodes.add(gn);
+    }
+   
+   Set<File> done = new HashSet<>();
+   for ( ; ; ) {
+      File workon = null;
+      for (GraphNode gn : allnodes) {
+         File gfile = gn.getFile();
+         if (done.contains(gfile)) continue;
+         if (workon == null) {
+            workon = gfile;
+            gn.getLineNumber();
+          }
+         else if (gfile.equals(workon)) gn.getLineNumber();
+       }
+      if (workon == null) break;
+      done.add(workon); 
+    }
+   
+   for (GraphNode gn : allnodes) {
       if (!gn.isValid()) continue;
       String id = gn.getLocationString();
       GraphNode ogn = locs.get(id);
@@ -209,6 +235,21 @@ private static class GraphNode {
       return true;
     }
    
+   boolean shouldCheck() {
+      if (node_location == null || node_reason == null) return false;
+      if (node_location.getFile() == null) return false;
+      if (!node_location.getFile().exists()) return false;
+      if (node_type == null) return false;
+      switch (node_type) {
+         case "MethodDeclaration" :
+            return false;
+         default :
+            
+       }
+      
+      return true;
+   }
+   
    double getPriority()                    { return node_priority; }
    
    String getLocationString() {
@@ -217,6 +258,14 @@ private static class GraphNode {
       s += ":" + node_location.getStartOffset();
       s += "-" + node_location.getEndOffset();
       return s;
+    }
+   
+   File getFile() {
+      return  node_location.getFile();
+    }
+   
+   int getLineNumber() {
+      return node_location.getLineNumber();
     }
    
    void outputXml(IvyXmlWriter xw) {

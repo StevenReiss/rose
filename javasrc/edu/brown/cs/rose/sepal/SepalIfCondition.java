@@ -261,7 +261,14 @@ private Expression invertInfixExpression(InfixExpression ifx,int check)
 private Expression invertBooleanCondition(Expression ex,boolean paren)
 {
    AST ast = ex.getAST();
-   Expression orig = (Expression) ASTNode.copySubtree(ast,ex);
+   Expression orig;
+   try {
+      orig = (Expression) ASTNode.copySubtree(ast,ex);
+    }
+   catch (Throwable t) {
+      RoseLog.logE("Problem copying subtree " + ex,t);
+      return null;
+    }
    
    if (paren) {
       ParenthesizedExpression porig = ast.newParenthesizedExpression();

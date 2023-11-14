@@ -22,6 +22,7 @@ import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.ExpressionStatement;
 import org.eclipse.jdt.core.dom.ForStatement;
 import org.eclipse.jdt.core.dom.IfStatement;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
 // import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.ReturnStatement;
 import org.eclipse.jdt.core.dom.Statement;
@@ -203,11 +204,23 @@ static {
 private void accessChatGPT(RootControl ctrl,String bcnts)
 {
    // get enclosing method
-   ASTNode enclosingmethod = patch_node.getParent();
+   ASTNode enclosingmethod = patch_node;
+   if (patch_node instanceof MethodDeclaration) {
+      MethodDeclaration md = (MethodDeclaration) patch_node;
+      patch_node = md.getBody();
+    }
    while (enclosingmethod != null && 
-         enclosingmethod.getNodeType() != ASTNode.METHOD_DECLARATION) {
+         (enclosingmethod.getNodeType() != ASTNode.METHOD_DECLARATION &&
+               enclosingmethod.getNodeType() != ASTNode.INITIALIZER)) {
       enclosingmethod = enclosingmethod.getParent();
       // TODO: also allow for fields in a type declaration -- need to change query, etc.
+    }
+   if (enclosingmethod == null) {
+      enclosingmethod = patch_node.getParent();
+      while (enclosingmethod != null && 
+            enclosingmethod.getNodeType() != ASTNode.TYPE_DECLARATION) {
+         enclosingmethod = enclosingmethod.getParent();
+       }
     }
    if (enclosingmethod == null) {
       RoseLog.logD("SEPAL","CHATGPT: No enclosing method");
