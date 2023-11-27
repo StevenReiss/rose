@@ -76,6 +76,8 @@ private static File cache_file;
 private static ReentrantLock chatgpt_lock = new ReentrantLock();
 private static ReentrantLock cache_lock = new ReentrantLock();
 
+private static boolean use_chat_gpt = false;
+
 
 static {
    BoardProperties props = BoardProperties.getProperties("Rose");
@@ -131,6 +133,8 @@ static {
 
 @Override public void process()
 {
+   if (!use_chat_gpt) return;
+   
    RoseLog.logD("SEPAL","Start CHATGPT check " + use_chatgpt + " " + getProcessor().haveGoodResult() +
          " " + getLocation().getLineNumber() + " " + getLocation().getFile());
 // if (getProcessor().haveGoodResult()) return;

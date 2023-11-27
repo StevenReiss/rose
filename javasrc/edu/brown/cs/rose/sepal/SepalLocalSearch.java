@@ -66,13 +66,14 @@ public class SepalLocalSearch extends RootRepairFinderDefault
 
 private BractSearch	search_engine;
 
-private static final int MAX_LOCAL_CHECK = 40;
-private static final int MAX_LOCAL_RESULTS = 10;
 private static final int MAX_CHECK_PER_RESULT = 4;
+private static final int MAX_LOCAL_CHECK = MAX_CHECK_PER_RESULT * 10;
+private static final int MAX_LOCAL_RESULTS = 10;
 private static final double SEARCH_THRESHOLD = 1.0;
 private static final int MAX_RETURN = 128;
 
-private static boolean use_local_search = false;
+private static boolean use_local_search = true;
+private static boolean use_if_good_result = false;
 
 
 
@@ -106,7 +107,7 @@ public SepalLocalSearch()
 
 @Override public double getFinderPriority()
 {
-   return 0.40;
+   return 0.47;
 }
 
 
@@ -114,7 +115,11 @@ public SepalLocalSearch()
 @Override public void process()
 {
    if (!use_local_search) return;
-   
+   if (!use_if_good_result && getProcessor().haveGoodResult()) return;
+
+   RoseLog.logD("SEPAL","Start SHARPFIX START " + use_local_search + " " + getProcessor().haveGoodResult() +
+	 " " + getLocation().getLineNumber() + " " + getLocation().getFile());
+
    RootControl ctrl = getProcessor().getController();
    ASTNode stmt = getResolvedStatementForLocation(null);
    if (stmt == null) return;
@@ -129,19 +134,23 @@ public SepalLocalSearch()
    int lno = getLocation().getLineNumber();
    String bcnts = ctrl.getSourceContents(bfile);
    ASTNode bnode = stmt;
-
+		
    int rct = 0;
    int fnd = 0;
    for (BractSearchResult sr : rslts) {
+      RoseLog.logD("SEPAL","SHARPFIX LOCAL CHECK " + sr.getFile() + " " +
+	    sr.getLineNumber() + " " + sr.getColumnNumber() + " " + stmt.toString());
       if (sr.getFile().equals(bfile) && sr.getLineNumber() == lno) continue;
       if (!sr.getFile().exists() || !sr.getFile().canRead()) continue;
-      if (++rct > MAX_LOCAL_RESULTS) break;
+      if (rct > MAX_LOCAL_RESULTS) continue;
       String ccnts = ctrl.getSourceContents(sr.getFile());
       ASTNode cnode = ctrl.getNewSourceStatement(sr.getFile(),sr.getLineNumber(),sr.getColumnNumber());
-      if (cnode == null) {
-	 --rct;
-	 continue;
-       }
+      if (cnode == null) continue;
+      RoseLog.logD("SEPAL","SHARPFIX LOCAL FOUND " + cnode);
+      if (cnode.getNodeType() != stmt.getNodeType()) continue;
+      if (cnode.toString().equals(stmt.toString())) continue;
+      RoseLog.logD("SEPAL","SHARPFIX LOCAL TRY " + cnode);
+      ++rct;
       List<PatchAsASTRewriteWithScore> patches;
 
       synchronized (search_engine) {
@@ -223,7 +232,7 @@ private boolean isRelevant(int lno,ASTNode stmt,PatchAsASTRewriteWithScore r)
 /*  This takes into account the other patch generation strategies and tries to	*/
 /*  prioritize search patches that are not likely to be found by them.	 It	*/
 /*  also removes patches that are too complex and therefore out of the scope of */
-/*  ROSE.									*/	
+/*  ROSE.									*/
 /*										*/
 /********************************************************************************/
 

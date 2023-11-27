@@ -75,7 +75,8 @@ private static final int MAX_CHECK_PER_RESULT = 4;
 private static final double SEARCH_THRESHOLD = 4.0;
 private static final int MAX_RETURN = 128;
 
-private static boolean use_global_search = false;
+private static boolean use_global_search = true;
+private static boolean use_if_good_result = false;
 
 
 
@@ -116,7 +117,8 @@ public SepalGlobalSearch()
 
 @Override public void process()
 {
-   if (getProcessor().haveGoodResult() || !use_global_search) return;
+   if (!use_global_search) return;
+   if (!use_if_good_result && getProcessor().haveGoodResult()) return;
    
    RootControl ctrl = getProcessor().getController();
    Statement stmt = (Statement) getResolvedStatementForLocation(null);
@@ -136,13 +138,16 @@ public SepalGlobalSearch()
    int rct = 0;
    int fnd = 0;
    for (BractSearchResult sr : rslts) {
-      if (++rct > MAX_GLOBAL_RESULTS) break;
+      RoseLog.logD("SEPAL","SHARPFIX GLOBAL found " + sr.getFile() + " " +
+            sr.getLineNumber() + " " + sr.getColumnNumber());
+      if (rct > MAX_GLOBAL_RESULTS) continue;
       String ccnts = sr.getFileContents();
       ASTNode cnode = findSourceNode(ccnts,sr.getLineNumber(),sr.getColumnNumber());
-      if (cnode == null) {
-         --rct;
-         continue;
-       }
+      if (cnode == null) continue;
+      if (cnode.getNodeType() != stmt.getNodeType()) continue;
+      if (cnode.toString().equals(stmt.toString())) continue;
+      ++rct;
+      RoseLog.logT("SEPAL","SHARPFIX GLOBAL " + cnode);
       List<PatchAsASTRewriteWithScore> patches;
       
       synchronized (search_engine) {
@@ -167,7 +172,7 @@ public SepalGlobalSearch()
          // might want to manipulate score a bit
          // rw.rewriteAST().getLength() < MAX_CHANGE_LENGTH
          String logdata = getClass().getName() + "@" + i + "@" + r.getType();
-         String desc = r.getDescription();
+         String desc = "S:" + r.getDescription();
          addRepair(rw,desc,logdata,score);
 //       System.err.println("GLOBAL " + i + " " + fnd + " " + rct + " " + lct + " " + desc);
          if (++lct > MAX_CHECK_PER_RESULT) break;
