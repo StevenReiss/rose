@@ -41,7 +41,9 @@ import java.util.Set;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.Statement;
+import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
@@ -51,6 +53,7 @@ import org.eclipse.text.edits.TextEdit;
 import org.w3c.dom.Element;
 
 import edu.brown.cs.ivy.file.IvyFile;
+import edu.brown.cs.ivy.file.IvyFormat;
 
 public abstract class RootRepairFinderDefault implements RootRepairFinder, RootConstants
 {
@@ -303,6 +306,94 @@ protected boolean isSameLine(ASTNode stmt,ASTNode node)
 }
 
 
+
+/********************************************************************************/
+/*                                                                              */
+/*      Compute a default description                                           */
+/*                                                                              */
+/********************************************************************************/
+
+protected String computeDescription(ASTNode patchnode,int sourceposition,int sourcelength,
+      String patchcontents,String filecontents)
+{
+   // get relevant node and node type
+   String what = null;
+   ASTNode usenode = patchnode;
+   ASTNode prevnode = usenode;
+   
+   if (sourceposition < 0) {
+      sourceposition = patchnode.getStartPosition();
+      sourcelength = patchnode.getLength();
+    }
+   
+   while (usenode != null && (usenode instanceof Expression || usenode instanceof Type)) {
+      prevnode = usenode;
+      switch (usenode.getNodeType()) {
+         case ASTNode.METHOD_INVOCATION :
+         case ASTNode.CONSTRUCTOR_INVOCATION :
+         case ASTNode.SUPER_CONSTRUCTOR_INVOCATION :
+            what = "Call";
+            break;
+         case ASTNode.CLASS_INSTANCE_CREATION :
+            what = "New";
+            break;
+         case ASTNode.LAMBDA_EXPRESSION :
+            what = "Lambda";
+            break;
+         case ASTNode.VARIABLE_DECLARATION_EXPRESSION :
+            what = "Declaration";
+            break;
+         default :
+            break;
+       }
+      if (what != null) break;
+      usenode = usenode.getParent();
+    }
+   
+   // now get original text and patched text
+   int pstart1 = prevnode.getStartPosition();
+   int plen1 = prevnode.getLength();
+   String origtxt = filecontents.substring(pstart1,pstart1+plen1);
+   String txt0 = origtxt.substring(0,sourceposition-pstart1);
+   String txt1 = patchcontents;
+   String txt2 = origtxt.substring(sourceposition-pstart1+sourcelength);
+   String newtxt = txt0 + txt1 + txt2;
+   
+   origtxt = IvyFormat.formatString(compress(origtxt));
+   newtxt = IvyFormat.formatString(compress(newtxt));
+   
+   return "Use " + newtxt + " instead of " + trunc(origtxt,24);
+}
+
+
+
+protected String trunc(String txt,int len)
+{
+   if (txt.length() < len) return txt;
+   return txt.substring(0,len-2) + "..";
+}
+
+
+protected String compress(String text)
+{
+   StringBuffer buf = new StringBuffer();
+   char havespace = 0;
+   for (int i = 0; i < text.length(); ++i) {
+      char ch = text.charAt(i);
+      if (Character.isWhitespace(ch)) {
+         if (havespace == 0) {
+            havespace = ch;
+          }
+       }
+      else {
+         if (havespace != 0) buf.append(havespace);
+         havespace = 0;
+         buf.append(ch);
+       }
+    }
+   
+   return buf.toString();
+}
 
 
 

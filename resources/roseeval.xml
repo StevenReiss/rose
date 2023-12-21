@@ -355,7 +355,7 @@
    <TEST NAME='Chart06'>
       <PROBLEM TYPE='ASSERTION' />
       <SOLUTION LINE='112' FILE='ShapeList.java'>
-	 <MATCH><![CDATA[ShapeList) obj]]></MATCH>					
+	 <MATCH><![CDATA[ShapeList) obj]]></MATCH>				
       </SOLUTION>
    </TEST>
 <!--			DOESN"T FAIL
@@ -561,7 +561,7 @@
    <TEST NAME='Lang43'>
       <PROBLEM TYPE='ASSERTION'/>
       <SOLUTION LINE='484-486' FILE='ExtendedMessageFormat.java'>
-	 <MATCH><![CDATA[next(pos)]]></MATCH>	
+	 <MATCH><![CDATA[next(pos)]]></MATCH>
       </SOLUTION>
    </TEST>
    <TEST NAME='Lang47A'>
@@ -803,6 +803,15 @@
       <PROBLEM TYPE='JUNIT' />
       <SOLUTION LINE='367'>
 	 <MATCH>+1</MATCH>
+      </SOLUTION>
+   </TEST>
+</SUITE>
+
+<SUITE NAME='mathv1' WORKSPACE='debug_mathv1' PROJECT='mathv1'>
+   <TEST NAME='testMultiplyNaNInf'>
+      <PROBLEM TYPE='JUNIT' />
+      <SOLUTION LINE='330'>
+	 <MATCH>Inf</MATCH>							
       </SOLUTION>
    </TEST>
 </SUITE>

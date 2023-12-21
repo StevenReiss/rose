@@ -18,7 +18,6 @@ import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.Assignment;
 import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.ExpressionStatement;
 import org.eclipse.jdt.core.dom.ForStatement;
 import org.eclipse.jdt.core.dom.IfStatement;
@@ -26,7 +25,6 @@ import org.eclipse.jdt.core.dom.MethodDeclaration;
 // import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.ReturnStatement;
 import org.eclipse.jdt.core.dom.Statement;
-import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.WhileStatement;
 import org.w3c.dom.Element;
 
@@ -491,89 +489,11 @@ private void computeDiff()
 
 private void getDescription(String bcnts)
 {
-   patch_description = null;
+   String d = computeDescription(patch_node,source_position,source_length,
+         patch_contents,bcnts);
    
-   // get relevant node and node type
-   String what = null;
-   ASTNode usenode = patch_node;
-   ASTNode prevnode = usenode;
-   
-   while (usenode != null && (usenode instanceof Expression || usenode instanceof Type)) {
-      prevnode = usenode;
-      switch (usenode.getNodeType()) {
-         case ASTNode.METHOD_INVOCATION :
-         case ASTNode.CONSTRUCTOR_INVOCATION :
-         case ASTNode.SUPER_CONSTRUCTOR_INVOCATION :
-            what = "Call";
-            break;
-         case ASTNode.CLASS_INSTANCE_CREATION :
-            what = "New";
-            break;
-         case ASTNode.LAMBDA_EXPRESSION :
-            what = "Lambda";
-            break;
-         case ASTNode.VARIABLE_DECLARATION_EXPRESSION :
-            what = "Declaration";
-            break;
-         default :
-            break;
-       }
-      if (what != null) break;
-      usenode = usenode.getParent();
-    }
-   
-   // now get original text and patched text
-// int pstart = patch_node.getStartPosition();
-// int plen = patch_node.getLength();
-   int pstart1 = prevnode.getStartPosition();
-   int plen1 = prevnode.getLength();
-   String origtxt = bcnts.substring(pstart1,pstart1+plen1);
-   String txt0 = origtxt.substring(0,source_position-pstart1);
-   String txt1 = patch_contents;
-   String txt2 = origtxt.substring(source_position-pstart1+source_length);
-// if (source_length > 0) {
-//    txt2 = origtxt.substring(pstart - pstart1 + source_length,plen1);
-//  }
-// else {
-//    txt2 = "";
-//  }
-   String newtxt = txt0 + txt1 + txt2;
-   
-   origtxt = IvyFormat.formatString(compress(origtxt));
-   newtxt = IvyFormat.formatString(compress(newtxt));
-   
-   patch_description = "G: Use " + newtxt + " instead of " + trunc(origtxt,24);
+   patch_description = "G: " + d;
 }
-
-
-private String trunc(String txt,int len)
-{
-   if (txt.length() < len) return txt;
-   return txt.substring(0,len-2) + "..";
-}
-
-
-private String compress(String text)
-{
-   StringBuffer buf = new StringBuffer();
-   char havespace = 0;
-   for (int i = 0; i < text.length(); ++i) {
-      char ch = text.charAt(i);
-      if (Character.isWhitespace(ch)) {
-         if (havespace == 0) {
-            havespace = ch;
-          }
-       }
-      else {
-         if (havespace != 0) buf.append(havespace);
-         havespace = 0;
-         buf.append(ch);
-       }
-    }
-   
-   return buf.toString();
-}
-
 
 
 
