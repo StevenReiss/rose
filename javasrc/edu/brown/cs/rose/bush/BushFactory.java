@@ -164,6 +164,8 @@ public static void initialize(BudaRoot root)
 
 public static void postLoad()
 {
+   if (!BumpClient.getBump().getOptionBool("bubbles.useRose")) return;
+   
    BoardProperties bp = BoardProperties.getProperties("Rose");
    BumpClient bc = BumpClient.getBump();
 
@@ -563,7 +565,6 @@ private void startRoseAnalysis(BumpThread bt)
 {
    CommandArgs args = null;
    if (bt != null) args = new CommandArgs("THREAD",bt.getId());
-
 
    sendRoseMessage("START",args,null);
 
