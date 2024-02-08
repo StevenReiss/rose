@@ -20,14 +20,11 @@ end
 
 set CP = ${CP}:/pro/rose/resources
 
-set WHAT = $*
-
-if ( X$WHAT == X ) then
-   set WHAT = ( quix chart lang math3 math time closure mockito )
-endif
+set WHAT = ( $* )
 
 java --version
-echo $CP
+echo java -Xmx16000m -cp ${CP} edu.brown.cs.rose.roseeval.RoseEvalRunner -RX $WHAT
+
 
 
 java -Xmx16000m -cp ${CP} edu.brown.cs.rose.roseeval.RoseEvalRunner -RX $WHAT |& tee ~/RoseEval/$i.out
