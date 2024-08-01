@@ -158,17 +158,21 @@ private static boolean  use_fait_files = true;
 
 private static AtomicInteger id_counter = new AtomicInteger((int)(Math.random()*256000.0));
 
-private static final String [] OPENS;
+public static final String [] OPENS;
 
 static {
    OPENS = new String [] { "java.desktop/sun.font",
          "java.base/jdk.internal.icu.impl",
-         "java.desktop/sun.awt", "java.desktop/sun.swing",
-         "java.desktop/javax.swing", "java.base/jdk.internal.math", "java.base/sun.nio.cs", 
+         "java.desktop/sun.awt",
+         "java.desktop/sun.swing",
+         "java.desktop/javax.swing", 
+         "java.base/jdk.internal.math", 
+         "java.base/sun.nio.cs", 
          "java.base/java.nio",
          "java.base/sun.util.locale.provider",
          "java.base/jdk.internal.math",
          "java.base/jdk.internal.misc",
+         "java.base/sun.util.calendar",
     };
 }
 
@@ -1170,7 +1174,8 @@ private boolean startSeede()
           }
          else {   
             try {
-               exec = new IvyExec(args,null,IvyExec.ERROR_OUTPUT);     // make IGNORE_OUTPUT to clean up otuput
+               // make IGNORE_OUTPUT to clean up output
+               exec = new IvyExec(args,null,IvyExec.ERROR_OUTPUT);     
                isnew = true;
                seede_started = true;
                RoseLog.logD("STEM","Run " + exec.getCommand());

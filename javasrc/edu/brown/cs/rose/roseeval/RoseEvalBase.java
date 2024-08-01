@@ -738,9 +738,16 @@ private void shutdownBedrock(String workspace,String project)
 private LaunchData startLaunch(MintControl mc,String proj,String name)
 {
    stopped_thread = null;
-
+   
+   String dargs = null;
+   for (String s : StemMain.OPENS) { 
+      String arg = "--add-opens=" + s + "=ALL-UNNAMED";
+      if (dargs == null) dargs = arg;
+      else dargs += " " + arg;
+    }
+   
    CommandArgs args = new CommandArgs("NAME",name,"MODE","debug","BUILD","TRUE",
-	 "REGISTER","TRUE");
+	 "REGISTER","TRUE","VMARG",dargs);
    MintDefaultReply rply = new MintDefaultReply();
    sendBubblesMessage(mc,"START",proj,args,null,rply);
    Element xml = rply.waitForXml();
