@@ -148,14 +148,15 @@ private void work()
       uselocs.add(at_location);
     }
    
-   // can we restrict locations by what is actually executed here
-   
    if (sort_locations) {
       Collections.sort(uselocs,new LocationSorter());
     }
    
-   RoseLog.logI("BRACT","Start processing " + uselocs.size() + " " +
-         location_classes.size());
+   long time0 = System.currentTimeMillis() - start_time;
+   RoseLog.logI("BRACT","TIME for location finding: " + time0);
+   
+   RoseLog.logI("BRACT","Start processing " + uselocs.size() + " locations, " +
+         location_classes.size() + " classes");
    
    if (for_problem != null) {
       for (Class<?> cls : processor_classes) {
@@ -170,6 +171,8 @@ private void work()
        }
     }
    
+   RoseLog.logI("BRACT","Processing tasks " + tasks.size());
+   
    for (ProcessorTask pt : tasks) {
       pt.waitForDone();
     }
@@ -183,9 +186,14 @@ private void work()
       for (RootTask rt : t) rt.waitForDone();
     }
    
-   long t1 = System.currentTimeMillis();
-   RootMetrics.noteCommand("BRACT","ENDREPAIR",t1-start_time,num_checked);
-   CommandArgs args = new CommandArgs("NAME",reply_id,"CHECKED",num_checked);
+   long time1 = System.currentTimeMillis() - start_time;
+   RoseLog.logI("BRACT","TIME for repair generation and checking: " + (time1-time0));
+   RoseLog.logI("BRACT","NUMBER CHECKED " + num_checked + " TIME " + time1);
+   RootMetrics.noteCommand("BRACT","ENDREPAIR",time1,num_checked);
+   CommandArgs args = new CommandArgs("NAME",reply_id,"CHECKED",num_checked,
+         "FAULTTIME",time0,"REPAIRTIME",time1-time0,
+         "SETUPTIME",base_validator.getSetupTime()); 
+
    rose_control.sendRoseMessage("ENDSUGGEST",args,null,-1);
 }
 

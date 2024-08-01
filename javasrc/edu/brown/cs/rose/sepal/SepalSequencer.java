@@ -1,34 +1,34 @@
 /********************************************************************************/
-/*                                                                              */
-/*              SepalSequencer.java                                             */
-/*                                                                              */
-/*      Find patch suggestions using Sequncer                                   */
-/*                                                                              */
+/*										*/
+/*		SepalSequencer.java						*/
+/*										*/
+/*	Find patch suggestions using Sequncer					*/
+/*										*/
 /********************************************************************************/
-/*      Copyright 2011 Brown University -- Steven P. Reiss                    */
+/*	Copyright 2011 Brown University -- Steven P. Reiss		      */
 /*********************************************************************************
- *  Copyright 2011, Brown University, Providence, RI.                            *
- *                                                                               *
- *                        All Rights Reserved                                    *
- *                                                                               *
- *  Permission to use, copy, modify, and distribute this software and its        *
- *  documentation for any purpose other than its incorporation into a            *
- *  commercial product is hereby granted without fee, provided that the          *
- *  above copyright notice appear in all copies and that both that               *
- *  copyright notice and this permission notice appear in supporting             *
- *  documentation, and that the name of Brown University not be used in          *
- *  advertising or publicity pertaining to distribution of the software          *
- *  without specific, written prior permission.                                  *
- *                                                                               *
- *  BROWN UNIVERSITY DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS                *
- *  SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND            *
- *  FITNESS FOR ANY PARTICULAR PURPOSE.  IN NO EVENT SHALL BROWN UNIVERSITY      *
- *  BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY          *
- *  DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,              *
- *  WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS               *
- *  ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE          *
- *  OF THIS SOFTWARE.                                                            *
- *                                                                               *
+ *  Copyright 2011, Brown University, Providence, RI.				 *
+ *										 *
+ *			  All Rights Reserved					 *
+ *										 *
+ *  Permission to use, copy, modify, and distribute this software and its	 *
+ *  documentation for any purpose other than its incorporation into a		 *
+ *  commercial product is hereby granted without fee, provided that the 	 *
+ *  above copyright notice appear in all copies and that both that		 *
+ *  copyright notice and this permission notice appear in supporting		 *
+ *  documentation, and that the name of Brown University not be used in 	 *
+ *  advertising or publicity pertaining to distribution of the software 	 *
+ *  without specific, written prior permission. 				 *
+ *										 *
+ *  BROWN UNIVERSITY DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS		 *
+ *  SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND		 *
+ *  FITNESS FOR ANY PARTICULAR PURPOSE.  IN NO EVENT SHALL BROWN UNIVERSITY	 *
+ *  BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY 	 *
+ *  DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,		 *
+ *  WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS		 *
+ *  ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE 	 *
+ *  OF THIS SOFTWARE.								 *
+ *										 *
  ********************************************************************************/
 
 
@@ -52,13 +52,13 @@ public class SepalSequencer extends RootRepairFinderDefault
 
 
 /********************************************************************************/
-/*                                                                              */
-/*      Private Storage                                                         */
-/*                                                                              */
+/*										*/
+/*	Private Storage 							*/
+/*										*/
 /********************************************************************************/
 
 
-private ApplicationQuery        sequencer_connect;
+private ApplicationQuery	sequencer_connect;
 
 private boolean use_sequencer = false;
 
@@ -69,9 +69,9 @@ private static final double SEARCH_THRESHOLD = 0.01;
 
 
 /********************************************************************************/
-/*                                                                              */
-/*      Constructors                                                            */
-/*                                                                              */
+/*										*/
+/*	Constructors								*/
+/*										*/
 /********************************************************************************/
 
 public SepalSequencer()
@@ -83,11 +83,11 @@ public SepalSequencer()
 @Override synchronized protected void localSetup()
 {
 // if (pingServer()) return;
-   
+
 // String [] args = new String[] { };
 // ApplicationServerRegulation asr = new ApplicationServerRegulation(args);
 // asr.startServer();
-   
+
    sequencer_connect = new ApplicationQuery();
    if (!sequencer_connect.ping()) {
       String [] args = new String[] { };
@@ -99,9 +99,9 @@ public SepalSequencer()
 
 
 /********************************************************************************/
-/*                                                                              */
-/*      Processing methods                                                      */
-/*                                                                              */
+/*										*/
+/*	Processing methods							*/
+/*										*/
 /********************************************************************************/
 
 @Override public double getFinderPriority()
@@ -114,11 +114,11 @@ public SepalSequencer()
 @Override public void process()
 {
    if (getProcessor().haveGoodResult() || !use_sequencer) return;
-   
+
    RootControl ctrl = getProcessor().getController();
    Statement stmt = (Statement) getResolvedStatementForLocation(null);
    if (stmt == null) return;
-   
+
    File bfile = getLocation().getFile();
    int lno = getLocation().getLineNumber();
    String bcnts = ctrl.getSourceContents(bfile);
@@ -142,7 +142,7 @@ public SepalSequencer()
       if (edit == null) continue;
       if (++rct > MAX_LOCAL_RESULTS) break;
       String logdata = getClass().getName() + "@" + rr.getType() + "@" + f;
-      String desc = rr.getDescription();
+      String desc = "Q:" + rr.getDescription();
       addRepair(edit,desc,logdata,f);
       if (++fnd > MAX_LOCAL_CHECK) break;
     }
@@ -150,32 +150,32 @@ public SepalSequencer()
 
 
 
-private boolean isRepairRelevant(RepairResult rr,int lno) 
+private boolean isRepairRelevant(RepairResult rr,int lno)
 {
    String typ = rr.getType();
    int rlno = rr.getLineNumber();
-   
+
    switch (typ) {
       case "REPLACE_OP" :
       case "REPLACE_NAME" :
       case "REPLACE_LITERAL" :
       case "DELETE" :
-         return false;
+	 return false;
       case "REPLACE_EXPR" :
       case "REPLACE_STATEMENT" :
       case "REPLACE" :
       case "REPLACE_PRIMITIVE_TYPE" :
-         if (rlno != lno) 
-            return false;
-         break;
+	 if (rlno != lno)
+	    return false;
+	 break;
       default :
-         if (rlno != lno) return false;
-         break;
+	 if (rlno != lno) return false;
+	 break;
     }
-   
+
    // reject illogical repairs as well
    // ( x < x ), (x). (E && E). E && (E). E || E. E || (E)
-   
+
    return true;
 }
 
@@ -183,7 +183,7 @@ private boolean isRepairRelevant(RepairResult rr,int lno)
 
 
 
-}       // end of class SepalSequencer
+}	// end of class SepalSequencer
 
 
 

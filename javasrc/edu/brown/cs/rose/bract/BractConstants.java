@@ -60,7 +60,7 @@ char MATCH_PATTERN = 'R';
 char ESCAPE_PATTERN = 'X';
 
 
-public class PatternMap extends HashMap<String,Object> {
+public final class PatternMap extends HashMap<String,Object> {
 
    private static final long serialVersionUID = 1;
 
@@ -79,13 +79,13 @@ public class PatternMap extends HashMap<String,Object> {
 
 
 public interface BractSearchResult {
-   
+
    double getScore();
    File getFile();
    String getFileContents();
    int getLineNumber();
    int getColumnNumber();
-   
+
 }
 
 

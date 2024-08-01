@@ -82,6 +82,7 @@ private double          location_priority;
 private double          repair_priority;
 private double          finder_priority;
 private Map<File,ValidateExecution> testfile_map;
+private long            setup_time;
 
 private static final int        MAX_CHECKED_OK = 100;
 private static final int        MIN_CHECKED_OK = 60;
@@ -111,6 +112,7 @@ ValidateContext(RootControl ctrl,RootProblem p,String fid)
    if (frame_id == null) frame_id = for_launch.getFrame();
    
    testfile_map = new HashMap<>();
+   setup_time = 0;
 }
 
 
@@ -145,15 +147,14 @@ private ValidateContext(RootControl ctrl)
 
 @Override public RootProblem getProblem()               { return for_problem; }
 
-
-
 BudLaunch getLaunch()                                   { return for_launch; }
-
-
 
 RootControl getControl()                                { return root_control; }
 
 ValidateExecution getBaseExecution()                    { return base_execution; }
+
+@Override public long getSetupTime()                    { return setup_time; }
+void setSetupTime(long t)                               { setup_time = t; }
 
 @Override public ValidateTrace getExecutionTrace()     
 {
@@ -358,7 +359,7 @@ void setupBaseExecution(boolean showall,boolean tostring,boolean toarray)
    
    ValidateChangedItems valuechanges = new ValidateChangedItems(for_launch,frame_id,for_problem);
    runBaseExecution(null);
-   RoseLog.logD("VALIDATE","Problem time " + base_execution.getSeedeResult().getProblemTime());
+   RoseLog.logI("VALIDATE","BASE EXECUTION STEPS " + base_execution.getSeedeResult().getProblemTime());
    if (base_execution.getSeedeResult().getProblemTime() >= 0) return;
    
    List<ValidateAction> pchanges = valuechanges.getParameterActions();

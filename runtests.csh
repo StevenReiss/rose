@@ -1,4 +1,4 @@
-#! /bin/csh -f
+run/bin/csh -f
 
 echo ALL $*
 

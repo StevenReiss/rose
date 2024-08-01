@@ -127,6 +127,8 @@ public RootControl getControl()                 { return root_control; }
 
 public RootValidate createValidate(RootProblem prob,String frameid,RootLocation atloc,boolean showall,boolean tostring,boolean toarray)
 {
+   long time0 = System.currentTimeMillis();
+   
    BudLaunch bl = new BudLaunch(root_control,prob);
    
    if (frameid == null) {
@@ -136,7 +138,7 @@ public RootValidate createValidate(RootProblem prob,String frameid,RootLocation 
        }
       RoseLog.logD("VALIDATE","Use start from test case " + frameid);
     }
-
+  
    if (frameid == null) {
       RoseLog.logD("VALIDATE","Create start location");
       ValidateStartLocator ssl = new ValidateStartLocator(prob,bl,atloc);
@@ -148,6 +150,10 @@ public RootValidate createValidate(RootProblem prob,String frameid,RootLocation 
    
    ctx.setupBaseExecution(showall,tostring,toarray);
    
+   long time1 = System.currentTimeMillis() - time0;
+   RoseLog.logI("VALIDATE","BASE EXECUTION TIME " + time1);
+   ctx.setSetupTime(time1);
+    
    return ctx;
 }
 

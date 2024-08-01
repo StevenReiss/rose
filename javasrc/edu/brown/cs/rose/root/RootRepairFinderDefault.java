@@ -252,7 +252,10 @@ private void addRepair(ASTRewrite rw,Element editxml,String desc,String logdata,
       try {
          TextEdit te1 = te.copy();
          te1.apply(doc);
-         if (isRepairDone(doc.get())) return;
+         if (isRepairDone(doc.get())) {
+            RoseLog.logI("ROOT","DUPLICATE repair skipped " + desc); 
+            return;
+          }
          int newline = doc.getLineOfOffset(pos.getOffset());
          int newline1 = doc.getLineOfOffset(pos1.getOffset());
          int newline2 = doc.getLineOfOffset(pos2.getOffset());

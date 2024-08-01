@@ -687,7 +687,12 @@ private void handleParameterValuesCommand(MintMessage msg) throws RoseException
       for (Element nodes : IvyXml.children(e,"NODES")) {
          RoseLog.logD("STEM","RESULT OF LOCATION QUERY " + IvyXml.convertXmlToString(nodes));
          Map<String,RootLocation> done = new HashMap<>();
+         int ctr0 = 0;
+         int ctr1 = 0;
+         int ctr2 = 0;
+         int ctr3 = 0;
          for (Element n : IvyXml.children(nodes,"NODE")) {
+            ++ctr0;
             double p = IvyXml.getAttrDouble(n,"PRIORITY");
             String reason = IvyXml.getAttrString(n,"REASON");
             Element locelt = IvyXml.getChild(n,"LOCATION");
@@ -698,10 +703,14 @@ private void handleParameterValuesCommand(MintMessage msg) throws RoseException
             loc.setReason(reason);
             RoseLog.logD("STEM","Consider file " + loc.getFile() + " " + loc.getLineNumber());
             //TODO:  need to map location line number to start of statement
-            if (!isLocationRelevant(loc,prob)) continue;
+            if (!isLocationRelevant(loc,prob)) {
+               ++ctr3;
+               continue;
+             }
             String s = loc.getFile().getPath() + "@" + loc.getStatementLine();
             if (execlocs != null && !execlocs.contains(s)) {
                RoseLog.logD("STEM","IGNORE location " + s + " because it isn't executed");
+               ++ctr1;
                continue;
              }
             usefiles.add(loc.getFile());
@@ -709,11 +718,16 @@ private void handleParameterValuesCommand(MintMessage msg) throws RoseException
             if (oloc != null) {
                double p2 = oloc.getPriority();
                if (p1 > p2) oloc.setPriority(p1);
+               ++ctr2;
              }
             else {
+               RoseLog.logD("STEM","USE LOCATION " + loc);
                rslt.add(loc);
              }
           }
+         RoseLog.logI("STEM","LOOK AT " + ctr0 + " LOCATIONS, ELIMINATE " + ctr1 + 
+              " DUP " + ctr2 + " IRRELEVANT " + ctr3 + " USE " + (ctr0-ctr1-ctr2-ctr3) + 
+              " FILES " + usefiles.size());
        }
       if (!usefiles.isEmpty()) {
          Set<File> sfiles = new HashSet<>();

@@ -138,7 +138,8 @@ protected void startEvaluations(String workspace,String project)
    File f3 = new File(f2,fnm);
    try {
       output_file = new PrintWriter(f3);
-      output_file.println("Name,# Results,# Displayed,Correct Rank,Total Time,Fix Time,Fix Count,Seede Count,# Checked");
+      output_file.println("Name,# Results,# Displayed,Correct Rank,Total Time,Fix Time,Fix Count,Seede Count,"  
+            + "# Checked,Fault Time,Setup Time,Repair Time");
     }
    catch (IOException e) {
       System.err.println("Can't create " + fnm);
@@ -409,14 +410,19 @@ private void processSuggestions(String name,SuggestionSet ss,RoseEvalSolution so
     }
 
    int ct = ss.getNumChecked();
+   long ft = ss.getFaultTime();
+   long st = ss.getSetupTime();
+   long rt = ss.getRepairTime();
 
    if (output_file != null) {
       output_file.println(name + "," + ctr + "," + showctr + "," + fnd + "," +
-	    time + "," + fixtime + "," + fixcnt + "," + fixseede + "," + ct);
+	    time + "," + fixtime + "," + fixcnt + "," + fixseede + "," + ct + 
+            "," + ft + "," + st + "," + rt);
     }
 
    System.err.println("PROCESS SUGGESTIONS: " + name +": " + ctr + " " + showctr + " " +
-	 fnd + " " + time + " " + fixtime + " " + fixcnt + " " + fixseede + " " + ct);
+	 fnd + " " + time + " " + fixtime + " " + fixcnt + " " + fixseede + " " + ct + " " +
+         ft + " " + st + " " + rt);
 }
 
 
@@ -1073,7 +1079,10 @@ private class SuggestHandler implements MintHandler {
 	 if (ss != null) ss.addSuggestion(e);
 	 break;
       case "ENDSUGGEST" :
-	 if (ss != null) ss.endSuggestions(IvyXml.getAttrInt(e,"CHECKED"));
+	 if (ss != null) ss.endSuggestions(IvyXml.getAttrInt(e,"CHECKED"),
+               IvyXml.getAttrLong(e,"FAULTTIME",0),
+               IvyXml.getAttrLong(e,"REPAIRTIME",0),
+               IvyXml.getAttrLong(e,"SETUPTIME",0));
 	 break;
       case "TESTCREATE" :
 	 if (tr != null) tr.handleTestResult(e);
@@ -1091,10 +1100,17 @@ private static class SuggestionSet {
    private List<Element> suggest_nodes;
    private boolean is_done;
    private int num_checked;
+   private long fault_time;
+   private long repair_time;
+   private long setup_time;
 
    SuggestionSet() {
       suggest_nodes = new ArrayList<>();
       is_done = false;
+      num_checked = 0;
+      fault_time = 0;
+      repair_time = 0;
+      setup_time = 0;
     }
 
    synchronized void addSuggestion(Element xml) {
@@ -1103,8 +1119,11 @@ private static class SuggestionSet {
        }
     }
 
-   synchronized void endSuggestions(int ct) {
+   synchronized void endSuggestions(int ct,long ft,long rt,long st) {
       num_checked = ct;
+      fault_time = ft;
+      repair_time = rt;
+      setup_time = st;
       is_done = true;
       notifyAll();
     }
@@ -1125,6 +1144,9 @@ private static class SuggestionSet {
     }
 
    int getNumChecked()		{ return num_checked; }
+   long getFaultTime()          { return fault_time; }
+   long getRepairTime()         { return repair_time; }
+   long getSetupTime()          { return setup_time; }
 
 }	// end of inner class SuggestionSet
 

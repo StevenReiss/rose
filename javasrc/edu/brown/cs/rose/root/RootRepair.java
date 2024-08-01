@@ -1,34 +1,34 @@
 /********************************************************************************/
-/*                                                                              */
-/*              RootRepair.java                                                 */
-/*                                                                              */
-/*      Generic description of a potential repair #x2c6;#x2c6;                              */
-/*                                                                              */
+/*										*/
+/*		RootRepair.java 						*/
+/*										*/
+/*	Generic description of a potential repair #x2c6;#x2c6;				    */
+/*										*/
 /********************************************************************************/
-/*      Copyright 2011 Brown University -- Steven P. Reiss                    */
+/*	Copyright 2011 Brown University -- Steven P. Reiss		      */
 /*********************************************************************************
- *  Copyright 2011, Brown University, Providence, RI.                            *
- *                                                                               *
- *                        All Rights Reserved                                    *
- *                                                                               *
- *  Permission to use, copy, modify, and distribute this software and its        *
- *  documentation for any purpose other than its incorporation into a            *
- *  commercial product is hereby granted without fee, provided that the          *
- *  above copyright notice appear in all copies and that both that               *
- *  copyright notice and this permission notice appear in supporting             *
- *  documentation, and that the name of Brown University not be used in          *
- *  advertising or publicity pertaining to distribution of the software          *
- *  without specific, written prior permission.                                  *
- *                                                                               *
- *  BROWN UNIVERSITY DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS                *
- *  SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND            *
- *  FITNESS FOR ANY PARTICULAR PURPOSE.  IN NO EVENT SHALL BROWN UNIVERSITY      *
- *  BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY          *
- *  DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,              *
- *  WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS               *
- *  ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE          *
- *  OF THIS SOFTWARE.                                                            *
- *                                                                               *
+ *  Copyright 2011, Brown University, Providence, RI.				 *
+ *										 *
+ *			  All Rights Reserved					 *
+ *										 *
+ *  Permission to use, copy, modify, and distribute this software and its	 *
+ *  documentation for any purpose other than its incorporation into a		 *
+ *  commercial product is hereby granted without fee, provided that the 	 *
+ *  above copyright notice appear in all copies and that both that		 *
+ *  copyright notice and this permission notice appear in supporting		 *
+ *  documentation, and that the name of Brown University not be used in 	 *
+ *  advertising or publicity pertaining to distribution of the software 	 *
+ *  without specific, written prior permission. 				 *
+ *										 *
+ *  BROWN UNIVERSITY DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS		 *
+ *  SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND		 *
+ *  FITNESS FOR ANY PARTICULAR PURPOSE.  IN NO EVENT SHALL BROWN UNIVERSITY	 *
+ *  BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY 	 *
+ *  DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,		 *
+ *  WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS		 *
+ *  ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE 	 *
+ *  OF THIS SOFTWARE.								 *
+ *										 *
  ********************************************************************************/
 
 
@@ -48,37 +48,37 @@ abstract public class RootRepair implements RootConstants
 
 
 /********************************************************************************/
-/*                                                                              */
-/*      Private Storage                                                         */
-/*                                                                              */
+/*										*/
+/*	Private Storage 							*/
+/*										*/
 /********************************************************************************/
 
-private String          repair_finder;
-private double          finder_priority;
-private String          repair_description;
-private String          repair_logdata;
-private String          repair_id;
-private double          repair_priority;
-private double          validate_score;
-private RootEdit        repair_edit;
-private RootLocation    repair_location;
-private RootLineMap     line_map;
-private long            repair_time;
-private int             repair_count;
-private long            repair_seede;
+private String		repair_finder;
+private double		finder_priority;
+private String		repair_description;
+private String		repair_logdata;
+private String		repair_id;
+private double		repair_priority;
+private double		validate_score;
+private RootEdit	repair_edit;
+private RootLocation	repair_location;
+private RootLineMap	line_map;
+private long		repair_time;
+private int		repair_count;
+private long		repair_seede;
 
 
 
 /********************************************************************************/
-/*                                                                              */
-/*      Constructors                                                            */
-/*                                                                              */
+/*										*/
+/*	Constructors								*/
+/*										*/
 /********************************************************************************/
 
 
 protected RootRepair(RootRepairFinder finder,String desc,double pri,
       RootLocation loc,RootEdit edit,RootLineMap linemap,String logdata)
-{ 
+{
    repair_finder = finder.getClass().getName();
    finder_priority = finder.getFinderPriority();
    repair_description = desc;
@@ -116,9 +116,9 @@ protected RootRepair(Element xml,RootLocation loc)
 
 
 /********************************************************************************/
-/*                                                                              */
-/*      Access methods                                                          */
-/*                                                                              */
+/*										*/
+/*	Access methods								*/
+/*										*/
 /********************************************************************************/
 
 public String getDescription()
@@ -167,7 +167,7 @@ public long getMappedLine(File file,long line)
 }
 
 
-public String getLogData()      
+public String getLogData()
 {
    return repair_logdata;
 }
@@ -197,9 +197,9 @@ public void setSeedeCount(long ct)
 
 
 /********************************************************************************/
-/*                                                                              */
-/*      Output methods                                                          */
-/*                                                                              */
+/*										*/
+/*	Output methods								*/
+/*										*/
 /********************************************************************************/
 
 public void outputXml(IvyXmlWriter xw)
@@ -228,7 +228,7 @@ protected void localOutputXml(IvyXmlWriter xw)
 
 
 
-}       // end of class RootRepair
+}	// end of class RootRepair
 
 
 

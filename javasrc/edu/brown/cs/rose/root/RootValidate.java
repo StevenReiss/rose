@@ -51,6 +51,7 @@ public interface RootValidate extends RootConstants
 /********************************************************************************/
 
 RootProblem getProblem();
+long getSetupTime();
 
 
 /********************************************************************************/

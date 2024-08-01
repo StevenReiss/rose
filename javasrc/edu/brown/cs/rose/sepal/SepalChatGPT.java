@@ -74,13 +74,14 @@ private static File cache_file;
 private static ReentrantLock chatgpt_lock = new ReentrantLock();
 private static ReentrantLock cache_lock = new ReentrantLock();
 
-private static boolean use_chat_gpt = false;
+private static boolean use_chat_gpt = true;
 
 
 static {
    BoardProperties props = BoardProperties.getProperties("Rose");
    api_host = props.getString("Rose.chatgpt.host",null);
    api_key = props.getString("Rose.chatgpt.key",null);
+   use_chat_gpt = props.getBoolean("Rose.use.chatgpt",use_chat_gpt);
    if (api_host != null && api_host.contains("XXXXXX")) api_host = null;
    if (api_key != null && api_key.contains("XXXXXX")) api_key = null;
    if (api_host != null && api_key != null) use_chatgpt = true;
@@ -132,11 +133,11 @@ static {
 @Override public void process()
 {
    if (!use_chat_gpt) return;
+   if (!use_chatgpt) return;
    
    RoseLog.logD("SEPAL","Start CHATGPT check " + use_chatgpt + " " + getProcessor().haveGoodResult() +
          " " + getLocation().getLineNumber() + " " + getLocation().getFile());
 // if (getProcessor().haveGoodResult()) return;
-   if (!use_chatgpt) return;
 
    RootControl ctrl = getProcessor().getController();
    patch_node = getResolvedStatementForLocation(null);
@@ -302,7 +303,7 @@ private void accessChatGPT(RootControl ctrl,String bcnts)
           }
        }
       
-      if (patch_contents.equals("?")) {
+      if (patch_contents != null &&  patch_contents.equals("?")) {
          patch_contents = null;
        }
     }

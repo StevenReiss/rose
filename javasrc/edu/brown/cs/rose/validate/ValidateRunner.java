@@ -85,6 +85,7 @@ ValidateRunner(ValidateContext ctx,RootProcessor rp,RootRepair rr)
    // check if we want to use SEEDE here rather than after edit
    if (!base_context.canCheckResult(for_repair.getLocation().getPriority(),
          for_repair.getFinderPriority())) {
+      RoseLog.logI("VALIDATE","SKIPPING VALIDATION for " + for_repair);
       noteDone();
       return;
     }

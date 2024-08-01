@@ -54,6 +54,7 @@ import edu.brown.cs.rose.root.RootLocation;
 import edu.brown.cs.rose.root.RootMetrics;
 import edu.brown.cs.rose.root.RootProblem;
 import edu.brown.cs.rose.root.RoseException;
+import edu.brown.cs.rose.root.RoseLog;
 
 abstract class StemQueryHistory extends StemQueryBase implements StemConstants
 {
@@ -152,6 +153,9 @@ protected void outputGraph(Element hrslt,IvyXmlWriter xw) throws RoseException
     }
    xw.end("NODES");
    xw.end("RESULT");
+   
+   RoseLog.logI("STEM","Location query counts, GRAPH: " + tsz + 
+         " NODES: " + lsz + " TIME: " + ttim);
    
    RootMetrics.noteCommand("STEM","HISTORYRESULT",tsz,lsz,ttim);
 }
