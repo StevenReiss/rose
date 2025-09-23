@@ -199,7 +199,7 @@ private void work()
 
 
 
-private class LocationSorter implements Comparator<RootLocation> {
+private final class LocationSorter implements Comparator<RootLocation> {
    
    @Override public int compare(RootLocation l1,RootLocation l2) {
       return Double.compare(l2.getPriority(),l1.getPriority());

@@ -210,7 +210,7 @@ public void outputXml(IvyXmlWriter xw)
 
 
 
-abstract protected void localOutputXml(IvyXmlWriter xw);
+protected abstract void localOutputXml(IvyXmlWriter xw);
 
 
 

@@ -42,7 +42,7 @@ import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
 import edu.brown.cs.rose.root.RoseLog;
 
-class RoseEvalProblem implements RoseEvalConstants
+final class RoseEvalProblem implements RoseEvalConstants
 {
 
 

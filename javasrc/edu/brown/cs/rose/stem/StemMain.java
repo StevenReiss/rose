@@ -95,7 +95,7 @@ import edu.brown.cs.rose.sepal.SepalForLoopIndex;
 import edu.brown.cs.rose.sepal.SepalIndexFixer;
 import edu.brown.cs.rose.validate.ValidateFactory;
 
-public class StemMain implements StemConstants, MintConstants, RootControl
+public final class StemMain implements StemConstants, MintConstants, RootControl
 {
 
 
@@ -106,7 +106,7 @@ public class StemMain implements StemConstants, MintConstants, RootControl
 /*										*/
 /********************************************************************************/
 
-public static void main(String ... args)
+public static void main(String... args)
 {
    StemMain sm = new StemMain(args);
    sm.process();
@@ -156,7 +156,7 @@ private static boolean  use_computed_files = false;
 private static boolean  use_fait_files = true;
 // only loaded files will be reported
 
-private static AtomicInteger id_counter = new AtomicInteger((int)(Math.random()*256000.0));
+private static AtomicInteger id_counter = new AtomicInteger((int) (Math.random()*256000.0));
 
 public static final String [] OPENS;
 
@@ -214,7 +214,8 @@ private StemMain(String [] args)
    
    // Try to fix problem with class loading
    RoseLog.logD("STEM","CLASSPATH = " + System.getProperty("java.class.path"));
-   ASTNode n = JcompAst.parseSourceFile("package test; public class Test { /** testing */ @Override protected Test() { " +
+   ASTNode n = JcompAst.parseSourceFile("package test; public class Test { " + 
+         "/** testing */ @Override protected Test() { " +
          " try { int non = 1; ++non; non++;  } catch (Throwable t) { }  } }");
    RoseLog.logD("STEM","Test parse yields " + n);
    new SepalCommonProblems();
@@ -484,7 +485,7 @@ private boolean startFaitProcess()
    args.add(IvyExecQuery.getJavaPath());
 
    if (dbgargs != null && dbgargs.contains("###")) {
-      int port = (int)(Math.random() * 1000 + 3000);
+      int port = (int) (Math.random() * 1000 + 3000);
       RoseLog.logI("STEM","Fait debugging port " + port);
       dbgargs = dbgargs.replace("###",Integer.toString(port));
     }
@@ -1039,7 +1040,9 @@ private void handleInsertTest(MintMessage msg)
 /*                                                                              */
 /********************************************************************************/
 
+// CHECKSTYLE:OFF
 private boolean startSeede()
+// CHECKSTYLE:ON
 {
    RoseLog.logD("STEM","START SEEDE " + seede_running + " " + seede_started);
    
@@ -1068,7 +1071,7 @@ private boolean startSeede()
    args.add(IvyExecQuery.getJavaPath());
    
    if (dbgargs != null && dbgargs.contains("###")) {
-      int port = (int)(Math.random() * 1000 + 3000);
+      int port = (int) (Math.random() * 1000 + 3000);
       RoseLog.logI("STEM","Seede debugging port " + port);
       dbgargs = dbgargs.replace("###",Integer.toString(port));
     }
@@ -1359,7 +1362,7 @@ private boolean startSeede()
 /*										*/
 /********************************************************************************/
 
-private class UpdateHandler implements MintHandler {
+private final class UpdateHandler implements MintHandler {
 
    @Override public void receive(MintMessage msg,MintArguments args) {
       RoseLog.logD("STEM","Fait message: " + msg.getText());
@@ -1446,7 +1449,7 @@ synchronized Element waitForAnalysis()
 /*										*/
 /********************************************************************************/
 
-private class CommandHandler implements MintHandler {
+private final class CommandHandler implements MintHandler {
 
    @Override public void receive(MintMessage msg,MintArguments args) {
       String cmd = args.getArgument(0);
@@ -1516,7 +1519,7 @@ private class CommandHandler implements MintHandler {
 /*										*/
 /********************************************************************************/
 
-private class EclipseHandler implements MintHandler {
+private final class EclipseHandler implements MintHandler {
 
    @Override public void receive(MintMessage msg,MintArguments args) {
       String cmd = args.getArgument(0);
@@ -1587,7 +1590,7 @@ private class EclipseHandler implements MintHandler {
 /*										*/
 /********************************************************************************/
 
-private class BubblesHandler implements MintHandler {
+private final class BubblesHandler implements MintHandler {
 
    @Override public void receive(MintMessage msg,MintArguments args) {
       String cmd = args.getArgument(0);
@@ -1644,7 +1647,7 @@ private class WaitForExit extends Thread {
 	 for ( ; ; ) {
 	    if (checkEclipse()) break;
 	    try {
-	       mon.wait(30000l);
+	       mon.wait(30000L);
 	     }
 	    catch (InterruptedException e) { }
 	  }
@@ -1653,7 +1656,7 @@ private class WaitForExit extends Thread {
 	    if (!checkEclipse()) is_done = true;
 	    else {
 	       try {
-		  mon.wait(30000l);
+		  mon.wait(30000L);
 		}
 	       catch (InterruptedException e) { }
 	     }

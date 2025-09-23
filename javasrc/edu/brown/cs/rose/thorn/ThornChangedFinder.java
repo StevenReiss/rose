@@ -660,7 +660,7 @@ private class ChangedVisitor extends ASTVisitor {
 
 
 
-private static class AssignFinder extends ASTVisitor {
+private static final class AssignFinder extends ASTVisitor {
    
    private JcompSymbol found_name;
    

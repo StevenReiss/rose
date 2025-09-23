@@ -357,7 +357,7 @@ private void updateShow()
 }
 
 
-private class PanelSelector implements ActionListener {
+private final class PanelSelector implements ActionListener {
 
    @Override public void actionPerformed(ActionEvent evt) {
       JComboBox<?> cbx = (JComboBox<?>) evt.getSource();
@@ -658,7 +658,7 @@ private interface ValuePanel {
 /*                                                                              */
 /********************************************************************************/
 
-private class LocationPanel extends DataPanel {
+private final class LocationPanel extends DataPanel {
 
    private static final long serialVersionUID = 1;
    
@@ -673,7 +673,7 @@ private class LocationPanel extends DataPanel {
 
 
 
-private class ExceptionPanel extends DataPanel {
+private final class ExceptionPanel extends DataPanel {
 
    private static final long serialVersionUID = 1;
    
@@ -686,7 +686,7 @@ private class ExceptionPanel extends DataPanel {
 }       // end of inner class ExceptionPanel
 
 
-private class AssertionPanel extends DataPanel {
+private final class AssertionPanel extends DataPanel {
 
    private static final long serialVersionUID = 1;
    
@@ -949,7 +949,7 @@ private class ExpressionPanel extends VarExprPanel {
 
 private class ElementsFinder implements Runnable {
 
-   VarExprPanel for_panel;
+   private VarExprPanel for_panel;
    
    ElementsFinder(VarExprPanel pnl) {
       for_panel = pnl;
@@ -1301,7 +1301,7 @@ private class EnableWhenReady extends Thread {
 /*                                                                              */
 /********************************************************************************/
 
-private class AdvancedButton implements ActionListener {
+private final class AdvancedButton implements ActionListener {
   
    @Override public void actionPerformed(ActionEvent evt) {
       BoardLog.logD("BUSH","Enable advanced panel");
@@ -1467,7 +1467,7 @@ private static class VariableValue {
 
 
 
-private static class VariableValueSet extends SwingListSet<VariableValue> {
+private static final class VariableValueSet extends SwingListSet<VariableValue> {
    
    private static final long serialVersionUID = 1;
    

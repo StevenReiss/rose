@@ -262,7 +262,8 @@ private void accessChatGPT(RootControl ctrl,String bcnts)
          if (chatgpt_lock != null) chatgpt_lock.lock();
          int spos = patch_node.getStartPosition() - enclosingmethod.getStartPosition();
          try {
-            // 1: getPatch(buggy_method: String, faulty_stmt_start_index: int, faulty_stmt_length: int, api_host: String, api_key: String)
+            // 1: getPatch(buggy_method: String, faulty_stmt_start_index: int, 
+            //      faulty_stmt_length: int, api_host: String, api_key: String)
             // 2: getPatch(buggy_method: String, faulty_stmt_line: int, api_host: String, api_key: String)
             patch_contents = ChatgptRepair.getPatch(buggymethod,
                   spos,
@@ -366,8 +367,8 @@ private void handlePartialStatements()
 {
    if ((patch_node instanceof IfStatement || 
          patch_node instanceof WhileStatement ||
-         patch_node instanceof ForStatement) 
-         && patch_contents.endsWith("{")) {
+         patch_node instanceof ForStatement) &&
+         patch_contents.endsWith("{")) {
       int idx4 = source_text.indexOf("{");
       if (idx4 > 0) {
          source_text = source_text.substring(0,idx4+1);
@@ -412,7 +413,7 @@ private void computeDiff()
          patmatch = ppos;
        }
       else if (Character.isWhitespace(repch)) {
-         if (repch == '\n') ++ rlin;
+         if (repch == '\n') ++rlin;
          ++rpos;
        }
       else if (Character.isWhitespace(patch)) {
@@ -604,7 +605,7 @@ private void checkInsertAfter(String bcnts)
    TextEdit te = new InsertEdit(xepos,insert);
    RootEdit redit = new RootEdit(bfile,te);
    Element edit = redit.getTextEditXml();
-   setLocation (nloc);
+   setLocation(nloc);
    double prob = 0.50;
    // reduce priority for multiline patches
    addRepair(edit,desc,getClass().getName() + "@ChatGPT",prob);

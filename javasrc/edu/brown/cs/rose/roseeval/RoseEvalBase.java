@@ -138,8 +138,8 @@ protected void startEvaluations(String workspace,String project)
    File f3 = new File(f2,fnm);
    try {
       output_file = new PrintWriter(f3);
-      output_file.println("Name,# Results,# Displayed,Correct Rank,Total Time,Fix Time,Fix Count,Seede Count,"  
-            + "# Checked,Fault Time,Setup Time,Repair Time");
+      output_file.println("Name,# Results,# Displayed,Correct Rank,Total Time,Fix Time,Fix Count,Seede Count," +
+            "# Checked,Fault Time,Setup Time,Repair Time");
     }
    catch (IOException e) {
       System.err.println("Can't create " + fnm);
@@ -263,7 +263,8 @@ private SuggestionSet runTest(MintControl ctrl,RoseEvalFrameData fd,String oprob
 private RoseEvalTestResult runPicotTest(MintControl ctrl,RoseEvalFrameData fd,String prob,
       RoseEvalTest test)
 {
-   String id = "PICOT_" + source_id + "_" + random_gen.nextInt(100000);  CommandArgs args = new CommandArgs("REPLYID",id);
+   String id = "PICOT_" + source_id + "_" + random_gen.nextInt(100000);  
+   CommandArgs args = new CommandArgs("REPLYID",id);
    if (test.getUpFrames() >= 0) args.put("UPFRAMES",test.getUpFrames());
 
    RoseEvalTestResult tr = new RoseEvalTestResult();
@@ -297,7 +298,7 @@ protected void getChangedVariables(MintControl ctrl,RoseEvalFrameData fd,String 
 	 "PROJECT",fd.getProject(ctrl),
 	 "LAUNCH",fd.getLaunchId(),
 	 "FRAME",fd.getId(),
-	 "THREAD",fd.getThreadId() );
+	 "THREAD",fd.getThreadId());
    Element xml = sendStemReply(ctrl,"CHANGEDITEMS",args,prob);
    assert IvyXml.isElement(xml,"RESULT");
 
@@ -637,7 +638,10 @@ private MintControl setupBedrock(String workspace,String project)
 	    new IvyExec(cmd);
 	  }
 	 else {
-	    try { Thread.sleep(100); } catch (InterruptedException e) { }
+	    try {
+	       Thread.sleep(100);
+	    }
+catch (InterruptedException e) { }
 	  }
        }
     }
@@ -912,7 +916,7 @@ private static void sendBubblesMessage(MintControl mc,String cmd,String proj,Map
 /*										*/
 /********************************************************************************/
 
-private class IDEHandler implements MintHandler {
+private final class IDEHandler implements MintHandler {
 
 @Override public void receive(MintMessage msg,MintArguments args) {
    String cmd = args.getArgument(0);
@@ -1069,7 +1073,7 @@ private void waitForTerminate()
 /*										*/
 /********************************************************************************/
 
-private class SuggestHandler implements MintHandler {
+private final class SuggestHandler implements MintHandler {
 
 @Override public void receive(MintMessage msg,MintArguments args) {
    String cmd = args.getArgument(0);

@@ -60,16 +60,18 @@ public class SepalIndexFixer extends RootRepairFinderDefault implements BractCon
 /*                                                                              */
 /********************************************************************************/
 
-private static final BractAstPattern    for_pattern;
-private static final BractAstPattern    index_pattern;
+private static BractAstPattern    for_pattern;
+private static BractAstPattern    index_pattern;
 
 static {
    for_pattern = BractAstPattern.statement(
          "for (int Vi = Ey; Ex; Vi += Id) Sbody;",  
-         "for (int Vi = Ey; Ex; Vi -= Id) Sbody;"); 
+         "for (int Vi = Ey; Ex; Vi -= Id) Sbody;"
+   ); 
          
    index_pattern = BractAstPattern.expression(
-         "Ea[Vi]", "Ea[Vi+Id1]", "Ea[Vi-Id1]" );
+         "Ea[Vi]", "Ea[Vi+Id1]", "Ea[Vi-Id1]"
+   );
 }
 
 

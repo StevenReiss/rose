@@ -80,7 +80,7 @@ public SepalSequencer()
 }
 
 
-@Override synchronized protected void localSetup()
+@Override protected synchronized void localSetup()
 {
 // if (pingServer()) return;
 

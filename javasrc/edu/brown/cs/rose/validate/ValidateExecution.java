@@ -109,7 +109,7 @@ ValidateContext getContext()            { return for_context; }
 
 void start(RootControl rc)
 {
-   synchronized(this) {
+   synchronized (this) {
       seede_result = null;
       exec_state = ExecState.PENDING;
     }
@@ -121,7 +121,8 @@ void start(RootControl rc)
          "CONTINUOUS",false,"MAXTIME",for_context.getMaxTime(),"MAXDEPTH",100);
    Element r1 = rc.sendSeedeMessage(session_id,"EXEC",args,null);
    if (!IvyXml.isElement(r1,"RESULT")) {
-      RoseLog.logD("VALIDATE","Exec setup returned: " + IvyXml.convertXmlToString(r1));     exec_state = ExecState.READY;
+      RoseLog.logD("VALIDATE","Exec setup returned: " + IvyXml.convertXmlToString(r1));  
+      exec_state = ExecState.READY;
       return;
     }
 }

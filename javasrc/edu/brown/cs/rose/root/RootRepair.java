@@ -43,7 +43,7 @@ import org.w3c.dom.Element;
 import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.ivy.xml.IvyXmlWriter;
 
-abstract public class RootRepair implements RootConstants
+public abstract class RootRepair implements RootConstants
 {
 
 

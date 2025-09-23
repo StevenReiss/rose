@@ -92,7 +92,7 @@ public SepalGlobalSearch()
 }
 
 
-@Override synchronized protected void localSetup()
+@Override protected synchronized void localSetup()
 {
    if (search_engine == null) {
       search_engine = BractSearch.getGlobalSearch();
@@ -261,11 +261,11 @@ private void restrictPatches(int lno,Statement stmt,List<PatchAsASTRewriteWithSc
    
    patches.sort(new PatchComparer());
    
-   int patch_num = patches.size();
-   float basic_score = 1f / ((1f + patch_num) * patch_num / 2);
-   for (int i=0; i<patch_num; i++) {
+   int patchnum = patches.size();
+   float basicscore = 1f / ((1f + patchnum) * patchnum / 2);
+   for (int i=0; i<patchnum; i++) {
       PatchAsASTRewriteWithScore p = patches.get(i);
-      p.setScore(basic_score * (patch_num-i));
+      p.setScore(basicscore * (patchnum-i));
     }
 }
 
@@ -298,7 +298,7 @@ private static int getTypeScore(String t)
    return patch_type.size() + 1;
 }
 
-private static class PatchComparer implements Comparator<PatchAsASTRewriteWithScore> {
+private static final class PatchComparer implements Comparator<PatchAsASTRewriteWithScore> {
    
    @Override public int compare(PatchAsASTRewriteWithScore p1,PatchAsASTRewriteWithScore p2) {
       String t1 = p1.getType();

@@ -55,7 +55,7 @@ import edu.brown.cs.ivy.file.IvyFile;
 import edu.brown.cs.ivy.jcomp.JcompAst;
 import edu.brown.cs.ivy.jcomp.JcompType;
 
-public class RoseEvalCounter implements RoseEvalConstants
+public final class RoseEvalCounter implements RoseEvalConstants
 {
 
 

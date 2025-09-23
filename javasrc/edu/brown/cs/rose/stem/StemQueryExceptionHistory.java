@@ -266,7 +266,7 @@ private abstract class ExceptionChecker extends ASTVisitor {
 /*                                                                              */
 /********************************************************************************/
 
-private class NullPointerChecker extends ExceptionChecker {
+private final class NullPointerChecker extends ExceptionChecker {
    
    @Override public void endVisit(ArrayAccess aa) {
       checkForNull(aa.getIndex());
@@ -298,8 +298,8 @@ private class NullPointerChecker extends ExceptionChecker {
       if (ex.getOperator() == InfixExpression.Operator.PLUS) {
          checkPlus(ex);
        }
-      else if (ex.getOperator() == InfixExpression.Operator.EQUALS) { }
-      else if (ex.getOperator() == InfixExpression.Operator.NOT_EQUALS) { }
+      else if (ex.getOperator() == InfixExpression.Operator.EQUALS) ;
+      else if (ex.getOperator() == InfixExpression.Operator.NOT_EQUALS) ;
       else {
          checkForNull(ex.getLeftOperand());
          checkForNull(ex.getRightOperand());
@@ -416,7 +416,7 @@ private class NullPointerChecker extends ExceptionChecker {
 /*                                                                              */
 /********************************************************************************/
 
-private class ArrayIndexOutOfBoundsChecker extends ExceptionChecker {
+private final class ArrayIndexOutOfBoundsChecker extends ExceptionChecker {
    
    @Override public void endVisit(ArrayAccess aa) {
       BudValue bv = evaluate("(" + aa.getArray().toString() + ").length");
@@ -432,7 +432,7 @@ private class ArrayIndexOutOfBoundsChecker extends ExceptionChecker {
 
 
 
-private class IndexOutOfBoundsChecker extends ExceptionChecker {
+private final class IndexOutOfBoundsChecker extends ExceptionChecker {
 
    @Override public void endVisit(MethodInvocation mi) {
       if (mi.getExpression() == null) return;
@@ -480,7 +480,7 @@ private class IndexOutOfBoundsChecker extends ExceptionChecker {
 }       // end of inner class IndexOutOfBoundsChecker
 
 
-private class StringIndexOutOfBoundsChecker extends ExceptionChecker {
+private final class StringIndexOutOfBoundsChecker extends ExceptionChecker {
    
    @Override public void endVisit(MethodInvocation mi) {
       JcompType jt = JcompAst.getExprType(mi.getExpression());
@@ -552,7 +552,7 @@ private class StringIndexOutOfBoundsChecker extends ExceptionChecker {
 /*                                                                              */
 /********************************************************************************/
 
-private class ClassCastChecker extends ExceptionChecker {
+private final class ClassCastChecker extends ExceptionChecker {
    
    @Override public void endVisit(CastExpression c) {
       BudValue cbv = evaluate(c.getExpression().toString());

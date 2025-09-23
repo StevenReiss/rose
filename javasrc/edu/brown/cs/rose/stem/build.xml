@@ -35,7 +35,6 @@
 		target='10' source='10'
 		includeantruntime='false' excludes='scan/**' >
 	 <classpath refid='rose.classpath' />
-	 <compilerarg value='-Xlint:all' />
       </javac>
    </target>
 

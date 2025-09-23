@@ -61,7 +61,7 @@ private int             max_line;
 /*                                                                              */
 /********************************************************************************/
 
-RootLineMap(File file,int ... pos)
+RootLineMap(File file,int... pos)
 {
    for_file = file;
    known_lines = new HashMap<>();

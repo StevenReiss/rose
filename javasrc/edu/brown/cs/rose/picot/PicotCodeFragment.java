@@ -94,7 +94,7 @@ String getCode()
 /*                                                                              */
 /********************************************************************************/
 
-static PicotCodeFragment append(PicotCodeFragment ... frags)
+static PicotCodeFragment append(PicotCodeFragment... frags)
 {
    PicotCodeFragment pcf = null;
    
@@ -124,7 +124,7 @@ PicotCodeFragment append(String addcode,boolean line)
    return new PicotCodeFragment(code);
 }
 
-PicotCodeFragment append(String code1,String ... code2)
+PicotCodeFragment append(String code1,String... code2)
 {
    String code = code_string;
    if (code1 != null) code += code1;

@@ -160,7 +160,7 @@ private void handleReturn(ReturnStatement s)
 /*                                                                              */
 /********************************************************************************/
 
-private class FieldScanner extends ASTVisitor {
+private final class FieldScanner extends ASTVisitor {
    
    @Override public boolean visit(MethodDeclaration md) {
       return false;

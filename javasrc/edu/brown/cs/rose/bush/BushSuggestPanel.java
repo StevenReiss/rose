@@ -291,7 +291,8 @@ private void showPreviewBubble(RootRepair repair)
    int e2 = e0;
    int e3 = e1;
 
-   DefaultStyledDocument d1,d2;
+   DefaultStyledDocument d1;
+   DefaultStyledDocument d2;
    try {
       String text = bfo.getText(m0,m1-m0);
       d1 = new DefaultStyledDocument();
@@ -494,7 +495,7 @@ private class SuggestRenderer implements ListCellRenderer<BushRepair> {
 
 
 
-private class SuggestMouser extends MouseAdapter {
+private final class SuggestMouser extends MouseAdapter {
 
    @Override public void mouseClicked(MouseEvent e) {
       if (e.getClickCount() == 2) {
@@ -517,7 +518,7 @@ private class SuggestMouser extends MouseAdapter {
 /*										*/
 /********************************************************************************/
 
-private class SuggestListModel extends DefaultListModel<BushRepair> {
+private final class SuggestListModel extends DefaultListModel<BushRepair> {
 
    private static final long serialVersionUID = 1;
 
@@ -614,7 +615,8 @@ private class RepairAction extends AbstractAction {
       RootEdit redit = for_repair.getEdit();
       Element tedit = redit.getTextEditXml();
 
-      BoardLog.logD("BUSH","MAKE REPAIR " + for_repair.getDescription() + " " + redit.getFile() + " " + IvyXml.convertXmlToString(redit.getTextEditXml()));
+      BoardLog.logD("BUSH","MAKE REPAIR " + for_repair.getDescription() + " " +
+            redit.getFile() + " " + IvyXml.convertXmlToString(redit.getTextEditXml()));
 
       if (IvyXml.isElement(tedit,"REPAIREDIT")) tedit = IvyXml.getChild(tedit,"EDIT");
       BaleFactory.getFactory().applyEdits(redit.getFile(),tedit);
@@ -631,7 +633,7 @@ private class SourceAction extends AbstractAction implements Runnable {
    private static final long serialVersionUID = 1;
 
    SourceAction(RootRepair r) {
-      super ("Show source for " + r.getDescription());
+      super("Show source for " + r.getDescription());
       for_repair = r;
       source_bubble = null;
     }

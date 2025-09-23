@@ -85,7 +85,7 @@ import edu.brown.cs.rose.root.RootTestCase;
 import edu.brown.cs.rose.root.RoseLog;
 
 
-public class BushFactory implements BushConstants, BumpConstants, BaleConstants
+public final class BushFactory implements BushConstants, BumpConstants, BaleConstants
 {
 
 
@@ -214,7 +214,7 @@ private void setupHandlers()
 /*										*/
 /********************************************************************************/
 
-static void metrics(String cmd,Object ... args)
+static void metrics(String cmd,Object... args)
 {
    CommandArgs cmdargs = new CommandArgs("WHO","BUSH","WHAT",cmd);
    IvyXmlWriter xw = new IvyXmlWriter();
@@ -402,7 +402,7 @@ private boolean startRoseServer()
    args.add(IvyExecQuery.getJavaPath());
 
    if (dbgargs != null && dbgargs.contains("###")) {
-      int port = (int)(Math.random() * 1000 + 3000);
+      int port = (int) (Math.random() * 1000 + 3000);
       BoardLog.logI("BUSH","Fait debugging port " + port);
       dbgargs = dbgargs.replace("###",Integer.toString(port));
     }
@@ -793,7 +793,7 @@ private void handleRunEvent(BumpRunEvent evt)
 
 
 
-private class RoseRunEventHandler implements BumpRunEventHandler {
+private final class RoseRunEventHandler implements BumpRunEventHandler {
 
    @Override public void handleProcessEvent(BumpRunEvent evt) {
       handleRunEvent(evt);
@@ -1150,7 +1150,7 @@ private static class RoseSuggestAction extends AbstractAction implements Runnabl
 /*										*/
 /********************************************************************************/
 
-private class RoseHandler implements MintHandler {
+private final class RoseHandler implements MintHandler {
 
    @Override public void receive(MintMessage msg,MintArguments args) {
       String cmd = args.getArgument(0);
@@ -1182,7 +1182,7 @@ private class RoseHandler implements MintHandler {
 /*										*/
 /********************************************************************************/
 
-private static class CockerStarter implements Runnable {
+private static final class CockerStarter implements Runnable {
 
    @Override public void run() {
       BushIndex idx = new BushIndex();

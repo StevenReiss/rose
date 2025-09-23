@@ -45,7 +45,7 @@ import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.rose.root.RootThreadPool;
 import edu.brown.cs.rose.root.RoseLog;
 
-public class RoseEvalRunner extends RoseEvalBase
+public final class RoseEvalRunner extends RoseEvalBase
 {
 
 

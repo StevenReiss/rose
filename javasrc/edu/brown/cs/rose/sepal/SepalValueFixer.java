@@ -216,7 +216,8 @@ private void computeStringDifference(AST ast,List<ValueFix> rslt,String s1,Strin
 
 private void computeNumericDifferece(AST ast,List<ValueFix> rslt,String typ,String s1,String s2)
 {
-   long l1,l2;
+   long l1;
+   long l2;
    try {
       l1 = Long.parseLong(s1);
       l2 = Long.parseLong(s2);
@@ -242,7 +243,8 @@ private void computeNumericDifferece(AST ast,List<ValueFix> rslt,String typ,Stri
 
 private void computeFloatDifferece(AST ast,List<ValueFix> rslt,String typ,String s1,String s2)
 {
-   double l1,l2;
+   double l1;
+   double l2;
    try {
       l1 = Double.parseDouble(s1);
       l2 = Double.parseDouble(s2);
@@ -457,7 +459,7 @@ private class ValueFixMethod extends ValueFix {
    private String method_name;
    private Expression [] method_args;
 
-   ValueFixMethod(String nm,Expression ... args) {
+   ValueFixMethod(String nm,Expression... args) {
       method_name = nm;
       method_args = args;
     }

@@ -67,14 +67,14 @@ public class SepalArgOrder extends RootRepairFinderDefault implements BractConst
 /*                                                                              */
 /********************************************************************************/
 
-private static final BractAstPattern call_pattern;
-private static final Set<String> symmetric_methods;
+private static final BractAstPattern CALL_PATTERN;
+private static final Set<String> SYMMETRIC_METHODS;
 
 static {
-   call_pattern = BractAstPattern.expression("Vrtn(Ea,Eb)","Vx.Vrtn(Ea,Eb)");
-   symmetric_methods = new HashSet<>();
-   symmetric_methods.add("java.lang.Math.min");
-   symmetric_methods.add("java.lang.Math.max");
+   CALL_PATTERN = BractAstPattern.expression("Vrtn(Ea,Eb)","Vx.Vrtn(Ea,Eb)");
+   SYMMETRIC_METHODS = new HashSet<>();
+   SYMMETRIC_METHODS.add("java.lang.Math.min");
+   SYMMETRIC_METHODS.add("java.lang.Math.max");
 }
 
 /********************************************************************************/
@@ -108,7 +108,7 @@ public SepalArgOrder()
    CompilationUnit cu = (CompilationUnit) stmt.getRoot();
    int ln0 = cu.getLineNumber(stmt.getStartPosition());
      
-   Map<ASTNode,PatternMap> matches = call_pattern.matchAll(stmt,null);
+   Map<ASTNode,PatternMap> matches = CALL_PATTERN.matchAll(stmt,null);
    if (matches == null || matches.isEmpty()) return;
    
    for (ASTNode n : matches.keySet()) {
@@ -139,7 +139,7 @@ private boolean isCalleeRelevant(JcompSymbol callee)
    if (callee == null) return false;
    JcompType jt = callee.getType();
    while (jt.isParameterizedType()) jt = jt.getBaseType();
-   if (symmetric_methods.contains(callee.getFullName())) return false;
+   if (SYMMETRIC_METHODS.contains(callee.getFullName())) return false;
 // if (callee.isBinarySymbol()) return false;
    JcompType t0 = null;
    for (JcompType jt1 : jt.getComponents()) {

@@ -521,7 +521,7 @@ private static class DiffStruct {
    private int line_index;
    private DiffStruct next_edit;
    
-   public DiffStruct(DiffStruct prior,boolean del,ValidateCall dat, int i) {
+   DiffStruct(DiffStruct prior,boolean del,ValidateCall dat, int i) {
       next_edit = prior;
       delete_count = (del ? 1 : 0);
       replace_data = dat;

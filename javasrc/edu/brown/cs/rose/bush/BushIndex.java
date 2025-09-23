@@ -163,7 +163,7 @@ private void addInitialComponents()
 /********************************************************************************/
 
 
-private class FileHandler implements BudaFileHandler {
+private final class FileHandler implements BudaFileHandler {
    
    public void handleSaveRequest()                      { }
    public void handleCommitRequest()                    { }
@@ -181,7 +181,7 @@ private class FileHandler implements BudaFileHandler {
 
 
 
-private class CockerUpdater implements Runnable {
+private final class CockerUpdater implements Runnable {
    
    @Override public void run() {
       cocker_index.update();
@@ -195,7 +195,7 @@ private class CockerUpdater implements Runnable {
 /*                                                                              */
 /********************************************************************************/
 
-private class StopOnExit extends Thread {
+private final class StopOnExit extends Thread {
    
    @Override public void run() {
       cocker_index.stop();

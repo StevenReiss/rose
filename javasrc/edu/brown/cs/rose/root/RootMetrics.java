@@ -50,7 +50,7 @@ import edu.brown.cs.bubbles.board.BoardProperties;
 import edu.brown.cs.bubbles.board.BoardUpload;
 import edu.brown.cs.ivy.exec.IvyExecQuery;
 
-public class RootMetrics implements RootConstants
+public final class RootMetrics implements RootConstants
 {
 
 
@@ -109,7 +109,7 @@ private RootMetrics()
 /*                                                                              */
 /********************************************************************************/
 
-public static void noteCommand(String src,String cmd,Object ... args)
+public static void noteCommand(String src,String cmd,Object... args)
 {
    RoseLog.logD("ROOT","COMMAND: " + cmd + "@" + src + ":" + Arrays.toString(args));
    
@@ -141,7 +141,7 @@ private void saveCommand(String cmd)
 {
    if (command_data == null) return;
    
-   synchronized(command_data) {
+   synchronized (command_data) {
       command_data.add(cmd);
     }
    
@@ -154,7 +154,7 @@ private void dumpCommands()
    if (command_data == null || command_data.size() == 0) return;
    
    List<String> oldmcds;
-   synchronized(command_data) {
+   synchronized (command_data) {
       oldmcds = command_data;
       command_data = new ArrayList<>();
     }
@@ -198,7 +198,7 @@ private void sendFile(File f,String type,boolean delete) throws IOException
 /*                                                                              */
 /********************************************************************************/
 
-private class DumpData extends Thread {
+private final class DumpData extends Thread {
    
    @Override public void run() {
       dumpCommands();

@@ -68,43 +68,43 @@ public class SepalCommonProblems extends RootRepairFinderDefault implements Brac
 /*                                                                              */
 /********************************************************************************/
 
-private static final BractAstPattern cond_pattern;
-private static final BractAstPattern cond_result;
+private static BractAstPattern cond_pattern;
+private static BractAstPattern cond_result;
 
-private static final BractAstPattern equal_pattern;
-private static final BractAstPattern neq_pattern;
-private static final BractAstPattern equal_result;
-private static final BractAstPattern neq_result;
+private static BractAstPattern equal_pattern;
+private static BractAstPattern neq_pattern;
+private static BractAstPattern equal_result;
+private static BractAstPattern neq_result;
 
-private static final BractAstPattern string_call;
-private static final BractAstPattern string_result;
+private static BractAstPattern string_call;
+private static BractAstPattern string_result;
 
-private static final BractAstPattern loop_pattern;
-private static final BractAstPattern loop_result;
+private static BractAstPattern loop_pattern;
+private static BractAstPattern loop_result;
 
-private static final BractAstPattern assign_pattern;
-private static final BractAstPattern assign_result;
+private static BractAstPattern assign_pattern;
+private static BractAstPattern assign_result;
 
-private static final BractAstPattern mult_pattern;
-private static final BractAstPattern mult_result;
+private static BractAstPattern mult_pattern;
+private static BractAstPattern mult_result;
 
-private static final BractAstPattern and_pattern;
-private static final BractAstPattern and_result;
+private static BractAstPattern and_pattern;
+private static BractAstPattern and_result;
 
-private static final BractAstPattern overflow_pattern;
-private static final BractAstPattern overflow_result;
+private static BractAstPattern overflow_pattern;
+private static BractAstPattern overflow_result;
 
-private static final BractAstPattern int_double_pattern;
-private static final BractAstPattern int_double_result;
+private static BractAstPattern int_double_pattern;
+private static BractAstPattern int_double_result;
 
-private static final BractAstPattern to_string_pattern;
-private static final BractAstPattern to_string_result;
+private static BractAstPattern to_string_pattern;
+private static BractAstPattern to_string_result;
 
-private static final BractAstPattern substring_pattern;
-private static final BractAstPattern substring_result;
+private static BractAstPattern substring_pattern;
+private static BractAstPattern substring_result;
 
-private static final BractAstPattern zero_pattern;
-private static final BractAstPattern zero_result;
+private static BractAstPattern zero_pattern;
+private static BractAstPattern zero_result;
 
 
 static {

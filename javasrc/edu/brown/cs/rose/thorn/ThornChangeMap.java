@@ -54,7 +54,7 @@ public class ThornChangeMap extends HashMap<JcompSymbol,ThornChangedItem> implem
 /*                                                                              */
 /********************************************************************************/
 
-private final static long serialVersionUID = 1;
+private static final long serialVersionUID = 1;
 
 
 

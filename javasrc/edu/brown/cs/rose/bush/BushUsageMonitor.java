@@ -138,7 +138,7 @@ private void handleEvent(BussEntry ent,String what)
 /*										*/
 /********************************************************************************/
 
-private static class EditorListener implements BaleContextListener {
+private static final class EditorListener implements BaleContextListener {
 
    @Override public BudaBubble getHoverBubble(BaleContextConfig cfg) {
       return null;

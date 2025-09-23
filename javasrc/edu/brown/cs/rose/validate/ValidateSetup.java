@@ -441,9 +441,9 @@ private ValidateValue getValueAtTime(ASTNode n,long time)
          // acccess array here
        }
     }
-   else if (n instanceof NumberLiteral) { }
-   else if (n instanceof NullLiteral) { }
-   else if (n instanceof BooleanLiteral) { } 
+   else if (n instanceof NumberLiteral) ;
+   else if (n instanceof NullLiteral) ;
+   else if (n instanceof BooleanLiteral) ;
    
    if (lhs != null && lval == null) {
       lval = getValueAtTime(lhs,time);

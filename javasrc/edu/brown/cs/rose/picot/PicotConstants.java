@@ -88,7 +88,7 @@ enum PicotEffectType {
 enum PicotAccessorType {
    VARIABLE,
    FIELD,
-   ARRAY ,
+   ARRAY,
 }
 
 

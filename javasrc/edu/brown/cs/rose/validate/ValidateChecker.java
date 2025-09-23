@@ -278,9 +278,12 @@ private class ValidateCheckerException extends ValidateProblemChecker {
       ValidateValue origexc = original_execution.getException();
       if (origexc != null && execution_matcher.getMatchProblemContext() != null) {
          ValidateValue checkexc = check_execution.getException();
-         if (checkexc == null) return false;
-         else if (origexc.getDataType().equals(checkexc.getDataType())) return true;
-         else return false;
+         if (checkexc == null) {
+            return false;
+          }
+         else {
+            return origexc.getDataType().equals(checkexc.getDataType());
+          }
        }
       return false;
     }

@@ -53,7 +53,7 @@ import edu.brown.cs.rose.root.RootProblem;
 import edu.brown.cs.rose.root.RootTestCase;
 import edu.brown.cs.rose.root.RootValidate;
 import edu.brown.cs.rose.root.RoseLog;
-public class ValidateFactory implements ValidateConstants
+public final class ValidateFactory implements ValidateConstants
 {
 
 
@@ -63,7 +63,7 @@ public class ValidateFactory implements ValidateConstants
 /*                                                                              */
 /********************************************************************************/
 
-public synchronized static  ValidateFactory getFactory(RootControl rc)
+public static synchronized ValidateFactory getFactory(RootControl rc)
 {
    ValidateFactory vf = factory_map.get(rc);
    if (vf == null) {
@@ -125,7 +125,8 @@ public RootControl getControl()                 { return root_control; }
 /*										*/
 /********************************************************************************/
 
-public RootValidate createValidate(RootProblem prob,String frameid,RootLocation atloc,boolean showall,boolean tostring,boolean toarray)
+public RootValidate createValidate(RootProblem prob,String frameid,
+      RootLocation atloc,boolean showall,boolean tostring,boolean toarray)
 {
    long time0 = System.currentTimeMillis();
    
@@ -198,7 +199,7 @@ void unregister(String ssid)
 /*                                                                              */
 /********************************************************************************/
 
-private class SeedeHandler implements MintHandler {
+private final class SeedeHandler implements MintHandler {
    
    @Override public void receive(MintMessage msg,MintArguments args) {
       String txt = msg.getText();

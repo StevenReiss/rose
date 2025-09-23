@@ -127,9 +127,12 @@ PicotMethodDataBinary(JcompSymbol js,JcompTyper typer)
 /*                                                                              */
 /********************************************************************************/
 
+// CHECKSTYLE:OFF
 private void processInstruction(JcodeInstruction jins)
+// CHECKSTYLE:ON
 {
-   PicotEffectItem itm0,itm1;
+   PicotEffectItem itm0;
+   PicotEffectItem itm1;
    int i0;
    JcompType rty;
    JcodeInstruction nins = null;
@@ -247,10 +250,10 @@ private void processInstruction(JcodeInstruction jins)
          current_context.push(PicotEffectItem.createConstantItem(2.0f,jcomp_typer));
          break;
       case LCONST_0 :
-         current_context.push(PicotEffectItem.createConstantItem(0l,jcomp_typer));
+         current_context.push(PicotEffectItem.createConstantItem(0L,jcomp_typer));
          break;
       case LCONST_1 :
-         current_context.push(PicotEffectItem.createConstantItem(1l,jcomp_typer));
+         current_context.push(PicotEffectItem.createConstantItem(1L,jcomp_typer));
          break;        
       case DLOAD : case DLOAD_0 : case DLOAD_1 : case DLOAD_2 : case DLOAD_3 :
       case FLOAD : case FLOAD_0 : case FLOAD_1 : case FLOAD_2 : case FLOAD_3 :

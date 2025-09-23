@@ -80,10 +80,10 @@ private Map<JcompType,Set<PicotCodeFragment>> computed_values;
 private Map<String,RootTraceValue> variable_values;
 
 
-private static final PicotCodeFragment bad_fragment;
+private static final PicotCodeFragment BAD_FRAGMENT;
 
 static {
-   bad_fragment = new PicotCodeFragment("<<BAD>>");
+   BAD_FRAGMENT = new PicotCodeFragment("<<BAD>>");
 }
 
 
@@ -157,10 +157,10 @@ PicotCodeFragment getPreviousValue(String id)
    
    PicotCodeFragment rslt = value_map.get(id);
    
-   if (rslt == bad_fragment) return null;
+   if (rslt == BAD_FRAGMENT) return null;
    if (rslt != null) return rslt;
    
-   value_map.put(id,bad_fragment);
+   value_map.put(id,BAD_FRAGMENT);
    
    return null;
 }
@@ -209,7 +209,7 @@ private void setupContents()
 
 PicotValueContents fixupValues()
 {
-   if (setup_value == null || setup_value == false) return null;
+   if (setup_value == null || !setup_value) return null;
    if (value_result == null) return null;
    
    for (Map.Entry<String,RootTraceValue> ent : variable_values.entrySet()) {

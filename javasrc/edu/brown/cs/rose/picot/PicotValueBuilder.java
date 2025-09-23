@@ -93,8 +93,8 @@ private static final double SCORE_VALUE = 1;
 private static final double SCORE_ANY_VALUE = 2;
 
 
-private static final AtomicInteger variable_counter = new AtomicInteger(0);
-private static final AtomicInteger string_counter = new AtomicInteger(0);
+private static AtomicInteger variable_counter = new AtomicInteger(0);
+private static AtomicInteger string_counter = new AtomicInteger(0);
 
 
 
@@ -775,7 +775,7 @@ private List<ParameterData> getParameterValues(int pno,JcompType ptyp,
       JcompType fldtyp = fldsym.getType();
       if (fldtyp == ptyp) {
          PicotCodeFragment fldpcf = fldvals.get(fldsym);
-         if (fldpcf != null && ! used.contains(fldpcf)) {
+         if (fldpcf != null && !used.contains(fldpcf)) {
             rslt.add(new ParameterData(fldpcf.getCode(),fldsym.getName(),SCORE_ANY_FIELD));
             used.add(fldpcf);
           }

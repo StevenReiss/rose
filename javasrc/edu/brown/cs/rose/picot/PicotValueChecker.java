@@ -70,7 +70,7 @@ private String  test_id;
 
 private static AtomicInteger method_ctr; 
 static {
-   int rno = (int)(Math.random()*1000000);
+   int rno = (int) (Math.random()*1000000);
    method_ctr = new AtomicInteger(rno);
 }
 

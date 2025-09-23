@@ -57,7 +57,7 @@ import org.eclipse.jdt.core.dom.AST;
 import edu.brown.cs.ivy.jcomp.JcompAst;
 import edu.brown.cs.rose.root.RoseLog;
 
-public class BractAstPattern implements BractConstants
+public final class BractAstPattern implements BractConstants
 {
 
 
@@ -74,7 +74,7 @@ public static BractAstPattern statement(String... pat)
 }
 
 
-public static BractAstPattern statement(PatternMap defaults,String ... pat)
+public static BractAstPattern statement(PatternMap defaults,String... pat)
 {
    return new BractAstPattern(PatternType.STATEMENT,defaults,pat);
 }

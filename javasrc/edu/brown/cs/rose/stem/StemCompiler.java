@@ -183,7 +183,7 @@ static ASTNode getStatementOfNode(ASTNode node)
       if (node instanceof Statement) break;
       if (node instanceof FieldDeclaration) break;
       if (node instanceof MethodDeclaration) {
-         node = ((MethodDeclaration)node).getBody();
+         node = ((MethodDeclaration) node).getBody();
          break;
        }
       node = node.getParent();

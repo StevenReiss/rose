@@ -325,7 +325,7 @@ public void testRoseString()
 
 
 @Test
-public void testRoseLocation_3()
+public void testRoseLocation3()
 {
    String workspace = "rosetest";
    String project = "rosetest";
@@ -357,7 +357,7 @@ public void testRoseLocation_3()
 
 
 @Test
-public void testRoseAssertion_3()
+public void testRoseAssertion3()
 {
    String workspace = "rosetest";
    String project = "rosetest";
@@ -495,7 +495,7 @@ private Element getLocations(MintControl ctrl,FrameData fd,String prob)
          "PROJECT",fd.getProject(ctrl),
          "LAUNCH",fd.getLaunchId(),
          "FRAME",fd.getId(),
-         "THREAD",fd.getThreadId() );
+         "THREAD",fd.getThreadId());
    Element xml = sendStemReply(ctrl,"LOCATIONS",args,prob);
    Assert.assertTrue(IvyXml.isElement(xml,"RESULT"));
    
@@ -514,7 +514,7 @@ private void getChangedVariables(MintControl ctrl,FrameData fd,String prob)
          "PROJECT",fd.getProject(ctrl),
          "LAUNCH",fd.getLaunchId(),
          "FRAME",fd.getId(),
-         "THREAD",fd.getThreadId() );
+         "THREAD",fd.getThreadId());
    Element xml = sendStemReply(ctrl,"CHANGEDITEMS",args,prob);
    Assert.assertTrue(IvyXml.isElement(xml,"RESULT"));
    
@@ -718,7 +718,10 @@ private MintControl setupBedrock(String dir,String proj)
 	  }
 	 if (i == 0) new IvyExec(cmd);
 	 else {
-	    try { Thread.sleep(100); } catch (InterruptedException e) { }
+	    try {
+	       Thread.sleep(100);
+	    }
+catch (InterruptedException e) { }
 	  }
        }
     }
@@ -1009,7 +1012,7 @@ private static void sendBubblesMessage(MintControl mc,String cmd,String proj,Map
 /*                                                                              */
 /********************************************************************************/
 
-private class IDEHandler implements MintHandler {
+private final class IDEHandler implements MintHandler {
 
    @Override public void receive(MintMessage msg,MintArguments args) {
       String cmd = args.getArgument(0);
@@ -1133,7 +1136,7 @@ private String waitForStop()
 /*                                                                              */
 /********************************************************************************/
 
-private class SuggestHandler implements MintHandler {
+private final class SuggestHandler implements MintHandler {
 
    @Override public void receive(MintMessage msg,MintArguments args) {
       String cmd = args.getArgument(0);

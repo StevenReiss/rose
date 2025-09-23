@@ -93,7 +93,7 @@ ASTNode getSourceNode(String proj,File f,int offset,int line,boolean resolve,boo
 ASTNode getNewSourceStatement(File f,int line,int col);
 
 
-public default ASTNode getSourceNode(RootLocation loc,boolean resolve,boolean stmt)
+default ASTNode getSourceNode(RootLocation loc,boolean resolve,boolean stmt)
 {
    int line = -1;
    if (loc.getStartOffset() < 0) line = loc.getLineNumber();
@@ -102,13 +102,13 @@ public default ASTNode getSourceNode(RootLocation loc,boolean resolve,boolean st
 }
 
 
-public default ASTNode getSourceStatement(RootLocation loc,boolean resolve)
+default ASTNode getSourceStatement(RootLocation loc,boolean resolve)
 {
    return getSourceNode(loc,resolve,true);
 }
 
 
-public default ASTNode getSourceStatement(String proj,File f,int offset,int line,boolean resolve)
+default ASTNode getSourceStatement(String proj,File f,int offset,int line,boolean resolve)
 {
    return getSourceNode(proj,f,offset,line,resolve,true);
 }

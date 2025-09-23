@@ -61,7 +61,7 @@ class StemQueryLocationHistory extends StemQueryHistory implements BractConstant
 /*                                                                              */
 /********************************************************************************/
 
-private static final BractAstPattern expr_pattern;
+private static BractAstPattern expr_pattern;
 
 static {
    expr_pattern = BractAstPattern.expression("Ex == Ey","Ex != Ey",

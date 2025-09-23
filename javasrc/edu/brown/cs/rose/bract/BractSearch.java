@@ -48,7 +48,7 @@ import edu.brown.cs.ivy.leash.LeashResult;
 import edu.brown.cs.rose.root.RootControl;
 import edu.brown.cs.rose.root.RoseLog;
 
-public class BractSearch implements BractConstants
+public final class BractSearch implements BractConstants
 {
 
 
@@ -59,7 +59,7 @@ public class BractSearch implements BractConstants
 /*										*/
 /********************************************************************************/
 
-public synchronized static BractSearch getProjectSearch(RootControl ctrl)
+public static synchronized BractSearch getProjectSearch(RootControl ctrl)
 {
    if (local_engine == null) {
       local_engine = new BractSearch(ctrl);

@@ -51,7 +51,7 @@ import edu.brown.cs.rose.root.RootRepairFinder;
 import edu.brown.cs.rose.root.RootValidate;
 import edu.brown.cs.rose.root.RoseLog;
 
-public class BractFactory implements BractConstants
+public final class BractFactory implements BractConstants
 {
 
 

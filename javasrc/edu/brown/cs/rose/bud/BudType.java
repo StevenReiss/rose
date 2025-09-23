@@ -45,7 +45,7 @@ import edu.brown.cs.ivy.mint.MintConstants.CommandArgs;
 import edu.brown.cs.ivy.xml.IvyXml;
 import edu.brown.cs.rose.root.RootControl;
 
-abstract public class BudType
+public abstract class BudType
 {
 
 

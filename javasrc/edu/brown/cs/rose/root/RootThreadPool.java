@@ -45,7 +45,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import edu.brown.cs.ivy.file.IvyLog.LoggerThread;
 
-public class RootThreadPool implements RootConstants
+public final class RootThreadPool implements RootConstants
 {
 
 
@@ -90,7 +90,7 @@ private RootThreadPool()
 /*                                                                              */
 /********************************************************************************/
 
-public synchronized static void start(Runnable r) 
+public static synchronized void start(Runnable r) 
 {
    if (the_pool == null) {
       the_pool = new RootThreadPool();
@@ -116,7 +116,7 @@ public static void setMaxThreads(int max)
 /*                                                                              */
 /********************************************************************************/
 
-private static class OurThreadFactory implements ThreadFactory {
+private static final class OurThreadFactory implements ThreadFactory {
    
    @Override public Thread newThread(Runnable r) {
       Thread t = new ProcThread(r,thread_counter.incrementAndGet());
@@ -126,7 +126,7 @@ private static class OurThreadFactory implements ThreadFactory {
 }       // end of inner class OurThreadFactory
 
 
-private static class TaskComparator implements Comparator<Runnable> {
+private static final class TaskComparator implements Comparator<Runnable> {
    
    @Override public int compare(Runnable r1,Runnable r2) {
       double p1 = 0;

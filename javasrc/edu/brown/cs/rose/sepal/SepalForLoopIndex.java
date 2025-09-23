@@ -55,20 +55,19 @@ public class SepalForLoopIndex extends RootRepairFinderDefault
 /*                                                                              */
 /********************************************************************************/
 
-private static final BractAstPattern match_pattern;
-private static final BractAstPattern incr_pattern;
-private static final PatternMap match_values;
-private static final BractAstPattern result_pattern;
-private static final BractAstPattern delta_result;
-private static final BractAstPattern delta1_result;
+private static BractAstPattern match_pattern;
+private static BractAstPattern incr_pattern;
+private static PatternMap match_values;
+private static BractAstPattern result_pattern;
+private static BractAstPattern delta_result;
+private static BractAstPattern delta1_result;
 
 static {
    incr_pattern = BractAstPattern.expression(
          new PatternMap("delta",1),
          "++Vi", "Vi++", "Vi = Vi+Idelta","Vi = Idelta + Vi",
          "Vi+=Idelta");
-   match_pattern = BractAstPattern.statement( 
-         "for (int Vi = Iinit; Vi <= Varray.length; Pincr()) Sbody;",
+   match_pattern = BractAstPattern.statement("for (int Vi = Iinit; Vi <= Varray.length; Pincr()) Sbody;",
          "for (int Vi = Iinit; Vi <= Vcoll.size(); Pincr()) Sbody;",
          "for (int Vi = Iinit; Vi < Varray.length; Pincr()) Sbody;",
          "for (int Vi = Iinit; Vi < Vcoll.size(); Pincr()) Sbody;");
