@@ -169,9 +169,6 @@ protected ASTNode getSourceStatement() throws RoseException
 }
 
 
-
-
-
 protected ASTNode findNode(CompilationUnit cu,String text,int line) 
 {
    if (cu == null) return null;

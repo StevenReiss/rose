@@ -623,13 +623,6 @@ private class SubtreeSubst extends ASTVisitor {
 }       // end of inner class SubtreeSubst
 
 
-
-
-
-
-
-
-
 }       // end of class BractAstPattern
 
 

@@ -824,7 +824,7 @@ private class ProcessData {
 
    void clear() {
       for (ThreadData td : thread_map.values()) {
-	 td.clear();
+         td.clear();
        }
       thread_map.clear();
     }
@@ -832,23 +832,23 @@ private class ProcessData {
    void removeThread(BumpThread bth) {
       ThreadData td = thread_map.get(bth);
       if (td != null) {
-	 td.clear();
-	 thread_map.remove(bth);
+         td.clear();
+         thread_map.remove(bth);
        }
     }
 
    void clearThread(BumpThread bth) {
       ThreadData td = thread_map.get(bth);
       if (td != null) {
-	 td.clear();
+         td.clear();
        }
     }
 
    void setupThread(BumpThread bth) {
       ThreadData td = thread_map.get(bth);
       if (td == null) {
-	 td = new ThreadData(bth);
-	 thread_map.put(bth,td);
+         td = new ThreadData(bth);
+         thread_map.put(bth,td);
        }
       td.setup();
     }
@@ -898,11 +898,11 @@ private class ThreadData {
       BumpThreadStack stk = thread_id.getStack();
       if (stk == null) return;
       for (int i = 0; i < stk.getNumFrames(); ++i) {
-	 BumpStackFrame frame = stk.getFrame(i);
-	 if (frame.isSystem() || frame.isSynthetic()) continue;
-	 RoseAnnotation ra = new RoseAnnotation(thread_id,frame);
-	 annot_list.add(ra);
-	 bf.addAnnotation(ra);
+         BumpStackFrame frame = stk.getFrame(i);
+         if (frame.isSystem() || frame.isSynthetic()) continue;
+         RoseAnnotation ra = new RoseAnnotation(thread_id,frame);
+         annot_list.add(ra);
+         bf.addAnnotation(ra);
        }
     }
 
@@ -1049,10 +1049,10 @@ private class AskRoseAction extends AbstractAction implements Runnable {
    @Override public void run() {
       RoseStarter starter = new RoseStarter(for_thread);
       starter.start();
-
+   
       BushProblemPanel pnl = new BushProblemPanel(for_thread,for_frame,base_editor,bale_file);
       starter.setPanelId(pnl.getMetricId());
-
+   
       pnl.createBubble(base_editor);
    }
 

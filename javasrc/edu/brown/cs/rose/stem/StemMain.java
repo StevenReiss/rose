@@ -131,7 +131,6 @@ private boolean         seede_running;
 private String		session_id;
 private Element 	last_analysis;
 private boolean 	is_done;
-private Set<File>	added_files;
 private AnalysisState	analysis_state;
 private boolean 	local_fait;
 private boolean         local_seede;
@@ -141,6 +140,7 @@ private Map<File,String> project_map;
 private String          default_project;
 private LeashIndex      project_index;
 private LeashIndex      global_index;
+private Set<File>	added_files;
 private Set<File>       loaded_files;
 private Set<File>       seede_files;
 private boolean         run_debug;
@@ -149,9 +149,10 @@ private PicotFactory    picot_factory;
 private long            seede_timeout;
 
 private static boolean force_load = false;
+private static boolean pong_eclipse = false;
 
 
-private static boolean	use_all_files = false;
+private static boolean  use_all_files = false;
 private static boolean  use_computed_files = false;
 private static boolean  use_fait_files = true;
 // only loaded files will be reported
@@ -351,6 +352,11 @@ private void process()
    new WaitForExit().start();
 }
 
+
+static void pongEclipse()
+{
+   pong_eclipse = true;
+}
 
 
 /********************************************************************************/
@@ -1538,7 +1544,11 @@ private final class EclipseHandler implements MintHandler {
          case "PING1" :
          case "PING2" :
          case "PING3" :
-            msg.replyTo("<PONG/>");
+         case "PING4" :
+         case "PING5" :
+            if (pong_eclipse) {
+               msg.replyTo("<PONG/>");
+             }
             break;
          case "EDITERROR" :
          case "FILEERROR" :

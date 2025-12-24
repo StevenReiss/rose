@@ -177,7 +177,8 @@ private String findValidStart(String fid)
 	 if (f != null && f.exists() && f.canRead()) {
 	    String proj = null;
 	    if (f != null) proj = root_control.getProjectForFile(f);
-	    ASTNode n = root_control.getSourceNode(proj,f,-1,bf.getLineNumber(),true,false);
+	    ASTNode n = root_control.getSourceNode(proj,f,-1,
+                  bf.getLineNumber(),true,false);
 	    while (n != null) {
 	       if (n.getNodeType() == ASTNode.METHOD_DECLARATION) break;
 	       n = n.getParent();

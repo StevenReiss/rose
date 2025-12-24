@@ -716,12 +716,15 @@ private MintControl setupBedrock(String dir,String proj)
 	    if (!IvyXml.isElement(pxml,"PROJECT")) pxml = IvyXml.getChild(pxml,"PROJECT");
 	    return mc;
 	  }
-	 if (i == 0) new IvyExec(cmd);
+	 if (i == 0) {
+            StemMain.pongEclipse(); 
+            new IvyExec(cmd);
+          }
 	 else {
 	    try {
 	       Thread.sleep(100);
-	    }
-catch (InterruptedException e) { }
+             }
+            catch (InterruptedException e) { }
 	  }
        }
     }
