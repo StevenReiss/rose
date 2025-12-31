@@ -161,9 +161,6 @@ List<ValidateValue> getValues(ValidateTrace trace)
 
 
 
-
-
-
 }       // end of class ValidateVariable
 
 

@@ -2,7 +2,7 @@
 /*                                                                              */
 /*              ThornChangeData.java                                            */
 /*                                                                              */
-/*      description of class                                                    */
+/*      Information about a possibly changed item                               */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */

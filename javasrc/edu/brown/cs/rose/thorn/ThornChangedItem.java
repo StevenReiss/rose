@@ -171,6 +171,7 @@ ThornChangedItem setRelevant()
    return false;
 }
 
+
 }       // end of class ThornChangedData
 
 

@@ -116,11 +116,6 @@ ValidateContext(RootControl ctrl,RootProblem p,String fid)
 }
 
 
-
-
-
-
-
 private ValidateContext(RootControl ctrl)
 {
    root_control = ctrl;
@@ -135,8 +130,6 @@ private ValidateContext(RootControl ctrl)
    repair_priority = 1.0;
    finder_priority = 1.0;
 }
-
-
 
 
 /********************************************************************************/
@@ -313,8 +306,6 @@ public void runTestSession(ValidateExecution ve)
    ValidateTestSetupRunner vr = new ValidateTestSetupRunner(ve);
    RootThreadPool.start(vr);
 }
-
-
 
 
 

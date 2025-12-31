@@ -560,9 +560,6 @@ private class ValidateCheckerLocation extends ValidateProblemChecker {
 
 
 
-
-
-
 }       // end of class ValidateChecker
 
 

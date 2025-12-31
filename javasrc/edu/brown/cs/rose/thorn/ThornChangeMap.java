@@ -2,7 +2,7 @@
 /*                                                                              */
 /*              ThornChangeMap.java                                             */
 /*                                                                              */
-/*      description of class                                                    */
+/*      Map of changed items by symbol                                          */
 /*                                                                              */
 /********************************************************************************/
 /*      Copyright 2011 Brown University -- Steven P. Reiss                    */
