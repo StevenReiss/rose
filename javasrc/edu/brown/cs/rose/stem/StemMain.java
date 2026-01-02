@@ -712,7 +712,8 @@ private void handleParameterValuesCommand(MintMessage msg) throws RoseException
             p1 = p1 * p;
             loc.setPriority(p1);
             loc.setReason(reason);
-            RoseLog.logD("STEM","Consider file " + loc.getFile() + " " + loc.getLineNumber());
+            RoseLog.logD("STEM","Consider file " + loc.getFile() + " " + 
+                  loc.getLineNumber());
             //TODO:  need to map location line number to start of statement
             if (!isLocationRelevant(loc,prob)) {
                ++ctr3;
