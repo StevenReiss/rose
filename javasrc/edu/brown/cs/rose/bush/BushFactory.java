@@ -962,7 +962,7 @@ private class RoseAnnotation implements BaleAnnotation {
 
    @Override public void addPopupButtons(Component base,JPopupMenu menu) {
       if (for_thread != null && execute_pos != null) {
-	 menu.add(new AskRoseAction(for_thread,stack_frame,base,for_document));
+         menu.add(new AskRoseAction(for_thread,stack_frame,base,for_document));
        }
     }
 
