@@ -664,7 +664,6 @@ private final class LocationPanel extends DataPanel {
    
    @Override boolean isReady()                           { return true; }
    
-   
    @Override public BushProblem getProblem() {
       return new BushProblem(for_frame,RoseProblemType.LOCATION,null,null,null,null);
     }
