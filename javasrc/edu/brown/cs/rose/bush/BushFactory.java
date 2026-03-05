@@ -932,10 +932,10 @@ private class RoseAnnotation implements BaleAnnotation {
       if (for_document == null) return;
       int off = for_document.findLineOffset(fr.getLineNumber());
       try {
-	 execute_pos = for_document.createPosition(off);
+         execute_pos = for_document.createPosition(off);
        }
       catch (BadLocationException e) {
-	 BoardLog.logE("BUSH","Bad execution position",e);
+         BoardLog.logE("BUSH","Bad execution position",e);
        }
     }
 
