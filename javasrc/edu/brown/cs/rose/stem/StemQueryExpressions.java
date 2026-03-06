@@ -113,10 +113,6 @@ void process(StemMain sm,IvyXmlWriter xw) throws RoseException
 
 
 
-
-
-
-
 private static class ExprFinder extends ASTVisitor {
    
    private Map<String,ASTNode> expr_set;
