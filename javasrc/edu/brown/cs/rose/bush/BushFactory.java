@@ -1,34 +1,34 @@
 /********************************************************************************/
-/*										*/
-/*		BushFactory.java						*/
-/*										*/
-/*	Bubbles interface for Repairing Obvious Semantic Errors 		*/
-/*										*/
+/*                                                                              */
+/*              BushFactory.java                                                */
+/*                                                                              */
+/*      Bubbles interface for Repairing Obvious Semantic Errors                 */
+/*                                                                              */
 /********************************************************************************/
-/*	Copyright 2011 Brown University -- Steven P. Reiss		      */
+/*      Copyright 2011 Brown University -- Steven P. Reiss                    */
 /*********************************************************************************
- *  Copyright 2011, Brown University, Providence, RI.				 *
- *										 *
- *			  All Rights Reserved					 *
- *										 *
- *  Permission to use, copy, modify, and distribute this software and its	 *
- *  documentation for any purpose other than its incorporation into a		 *
- *  commercial product is hereby granted without fee, provided that the 	 *
- *  above copyright notice appear in all copies and that both that		 *
- *  copyright notice and this permission notice appear in supporting		 *
- *  documentation, and that the name of Brown University not be used in 	 *
- *  advertising or publicity pertaining to distribution of the software 	 *
- *  without specific, written prior permission. 				 *
- *										 *
- *  BROWN UNIVERSITY DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS		 *
- *  SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND		 *
- *  FITNESS FOR ANY PARTICULAR PURPOSE.  IN NO EVENT SHALL BROWN UNIVERSITY	 *
- *  BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY 	 *
- *  DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,		 *
- *  WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS		 *
- *  ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE 	 *
- *  OF THIS SOFTWARE.								 *
- *										 *
+ *  Copyright 2011, Brown University, Providence, RI.                            *
+ *                                                                               *
+ *                        All Rights Reserved                                    *
+ *                                                                               *
+ *  Permission to use, copy, modify, and distribute this software and its        *
+ *  documentation for any purpose other than its incorporation into a            *
+ *  commercial product is hereby granted without fee, provided that the          *
+ *  above copyright notice appear in all copies and that both that               *
+ *  copyright notice and this permission notice appear in supporting             *
+ *  documentation, and that the name of Brown University not be used in          *
+ *  advertising or publicity pertaining to distribution of the software          *
+ *  without specific, written prior permission.                                  *
+ *                                                                               *
+ *  BROWN UNIVERSITY DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS                *
+ *  SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND            *
+ *  FITNESS FOR ANY PARTICULAR PURPOSE.  IN NO EVENT SHALL BROWN UNIVERSITY      *
+ *  BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY          *
+ *  DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,              *
+ *  WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS               *
+ *  ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE          *
+ *  OF THIS SOFTWARE.                                                            *
+ *                                                                               *
  ********************************************************************************/
 
 
@@ -90,17 +90,17 @@ public final class BushFactory implements BushConstants, BumpConstants, BaleCons
 
 
 /********************************************************************************/
-/*										*/
-/*	Private Storage 							*/
-/*										*/
+/*                                                                              */
+/*      Private Storage                                                         */
+/*                                                                              */
 /********************************************************************************/
 
-private Map<BumpProcess,ProcessData>	process_map;
-private boolean 	rose_running;
-private boolean 	rose_started;
-private boolean 	rose_failed;
-private boolean 	rose_ready;
-private MintControl	mint_control;
+private Map<BumpProcess,ProcessData>    process_map;
+private boolean         rose_running;
+private boolean         rose_started;
+private boolean         rose_failed;
+private boolean         rose_ready;
+private MintControl     mint_control;
 private Map<String,BushRepairAdder> current_repairs;
 private static BushFactory the_factory = null;
 private static AtomicInteger id_counter = new AtomicInteger();
@@ -110,9 +110,9 @@ private static boolean project_setup_required = true;
 
 
 /********************************************************************************/
-/*										*/
-/*	Constructors								*/
-/*										*/
+/*                                                                              */
+/*      Constructors                                                            */
+/*                                                                              */
 /********************************************************************************/
 
 public static synchronized BushFactory getFactory()
@@ -138,9 +138,9 @@ private BushFactory()
 
 
 /********************************************************************************/
-/*										*/
-/*	Setup methods								*/
-/*										*/
+/*                                                                              */
+/*      Setup methods                                                           */
+/*                                                                              */
 /********************************************************************************/
 
 public static void setup()
@@ -175,7 +175,7 @@ public static void postLoad()
    Element xml = bc.getAllProjects(5000);
    if (xml != null) {
       for (Element pe : IvyXml.children(xml,"PROJECT")) {
-	 String pnm = IvyXml.getAttrString(pe,"NAME");
+         String pnm = IvyXml.getAttrString(pe,"NAME");
          if (skipproj != null && skipproj.contains(pnm)) nostart = true;
        }
     }
@@ -184,8 +184,8 @@ public static void postLoad()
    try {
       Class<?> bsean = BemaMain.findClass("edu.brown.cs.faitbb.bsean.BseanFactory");
       if (bsean == null) {
-	 RoseLog.logE("BUSH","Can't find BseanFactory");
-	 return;
+         RoseLog.logE("BUSH","Can't find BseanFactory");
+         return;
        }
       Method m = bsean.getMethod("beginAnalysis");
       m.invoke(null);
@@ -209,9 +209,9 @@ private void setupHandlers()
 
 
 /********************************************************************************/
-/*										*/
-/*	Metrics commands							*/
-/*										*/
+/*                                                                              */
+/*      Metrics commands                                                        */
+/*                                                                              */
 /********************************************************************************/
 
 static void metrics(String cmd,Object... args)
@@ -220,7 +220,7 @@ static void metrics(String cmd,Object... args)
    IvyXmlWriter xw = new IvyXmlWriter();
    for (int i = 0; i < args.length; ++i) {
       if (args[i] != null) {
-	 xw.textElement("ARG",String.valueOf(args[i]));
+         xw.textElement("ARG",String.valueOf(args[i]));
        }
     }
    getFactory().sendRoseMessage("METRICS",cmdargs,xw.toString());
@@ -229,9 +229,9 @@ static void metrics(String cmd,Object... args)
 
 
 /********************************************************************************/
-/*										*/
-/*	Add fix annotations							*/
-/*										*/
+/*                                                                              */
+/*      Add fix annotations                                                     */
+/*                                                                              */
 /********************************************************************************/
 
 void addFixAnnotations(BushProblem prob,List<BushLocation> locs,String mid)
@@ -250,11 +250,11 @@ void addFixAnnotations(BushProblem prob,List<BushLocation> locs,String mid)
       int ln = bl.getLineNumber();
       boolean fnd = false;
       for (BushLocation ubl : uselocs) {
-	 if (!ubl.getFile().equals(bl.getFile())) continue;
-	 int uln = ubl.getLineNumber();
-	 if (uln != ln) continue;
-	 fnd = true;
-	 break;
+         if (!ubl.getFile().equals(bl.getFile())) continue;
+         int uln = ubl.getLineNumber();
+         if (uln != ln) continue;
+         fnd = true;
+         break;
        }
       if (!fnd) uselocs.add(bl);
     }
@@ -268,9 +268,9 @@ void addFixAnnotations(BushProblem prob,List<BushLocation> locs,String mid)
 
 
 /********************************************************************************/
-/*										*/
-/*	Handle repair suggestions						*/
-/*										*/
+/*                                                                              */
+/*      Handle repair suggestions                                               */
+/*                                                                              */
 /********************************************************************************/
 
 void startRepairSuggestor(BushProblem prob,BushLocation loc,BushRepairAdder adder)
@@ -342,9 +342,9 @@ private void handleEndSuggestion(Element xml)
 
 
 /********************************************************************************/
-/*										*/
-/*	Start server								*/
-/*										*/
+/*                                                                              */
+/*      Start server                                                            */
+/*                                                                              */
 /********************************************************************************/
 
 
@@ -363,17 +363,17 @@ private class RoseStarter extends Thread {
       BoardLog.logD("BUSH","Start rose");
       waitForRose();
       BoardLog.logD("BUSH","Rose running " + rose_started + " " + rose_running + " " +
-	    rose_failed + " " + rose_ready);
+            rose_failed + " " + rose_ready);
       startRoseAnalysis(for_thread);
       BoardLog.logD("BUSH","Rose START returned " + rose_ready);
 
       synchronized (this) {
-	 while (panel_id == null) {
-	    try {
-	       wait(1000);
-	     }
-	    catch (InterruptedException e) { }
-	  }
+         while (panel_id == null) {
+            try {
+               wait(1000);
+             }
+            catch (InterruptedException e) { }
+          }
        }
     }
 
@@ -382,7 +382,7 @@ private class RoseStarter extends Thread {
       notifyAll();
     }
 
-}	// end of inner class RoseStarter
+}       // end of inner class RoseStarter
 
 
 
@@ -410,7 +410,7 @@ private boolean startRoseServer()
    if (dbgargs != null) {
       StringTokenizer tok = new StringTokenizer(dbgargs);
       while (tok.hasMoreTokens()) {
-	 args.add(tok.nextToken());
+         args.add(tok.nextToken());
        }
     }
 
@@ -450,43 +450,43 @@ private boolean startRoseServer()
       mint_control.send("<ROSE CMD='PING' />",rply,MINT_MSG_FIRST_NON_NULL);
       String rslt = rply.waitForString(1000);
       if (rslt != null) {
-	 synchronized (this) {
-	    rose_running = true;
-	    notifyAll();
-	  }
-	 break;
+         synchronized (this) {
+            rose_running = true;
+            notifyAll();
+          }
+         break;
        }
       if (i == 0) {
-	 try {
-	    exec = new IvyExec(args,null,IvyExec.ERROR_OUTPUT);     // make IGNORE_OUTPUT to clean up output
-	    isnew = true;
-	    BoardLog.logD("BUSH","Run " + exec.getCommand());
-	  }
-	 catch (IOException e) {
-	    break;
-	  }
+         try {
+            exec = new IvyExec(args,null,IvyExec.ERROR_OUTPUT);     // make IGNORE_OUTPUT to clean up output
+            isnew = true;
+            BoardLog.logD("BUSH","Run " + exec.getCommand());
+          }
+         catch (IOException e) {
+            break;
+          }
        }
       else {
-	 try {
-	    if (exec != null) {
-	       int sts = exec.exitValue();
-	       BoardLog.logD("BUSH","Rose server disappeared with status " + sts);
-	       break;
-	     }
-	  }
-	 catch (IllegalThreadStateException e) { }
+         try {
+            if (exec != null) {
+               int sts = exec.exitValue();
+               BoardLog.logD("BUSH","Rose server disappeared with status " + sts);
+               break;
+             }
+          }
+         catch (IllegalThreadStateException e) { }
        }
 
       try {
-	 Thread.sleep(2000);
+         Thread.sleep(2000);
        }
       catch (InterruptedException e) { }
     }
    if (!rose_running) {
       BoardLog.logE("BUSH","Unable to start rose server: " + args);
       synchronized (this) {
-	 rose_failed = true;
-	 notifyAll();
+         rose_failed = true;
+         notifyAll();
        }
       return true;
     }
@@ -500,7 +500,7 @@ synchronized boolean waitForRose()
    while (!rose_running && !rose_failed) {
       if (!rose_started) startRoseServer();
       try {
-	 wait(1000);
+         wait(1000);
        }
       catch (InterruptedException e) { }
     }
@@ -516,7 +516,7 @@ synchronized boolean waitForRoseReady()
 
    while (rose_running && !rose_ready) {
       try {
-	 wait(1000);
+         wait(1000);
        }
       catch (InterruptedException e) { }
     }
@@ -536,15 +536,15 @@ private String decodeClassPath(String xcp,File jarfile)
    while (tok.hasMoreTokens()) {
       String elt = tok.nextToken();
       if (!elt.startsWith("/") &&  !elt.startsWith("\\")) {
-	 if (elt.equals("eclipsejar")) {
-	    elt = setup.getEclipsePath();
-	  }
-	 else if (elt.equals("rose.jar") && jarfile != null) {
-	    elt = jarfile.getPath();
-	  }
-	 else {
-	    elt = setup.getLibraryPath(elt);
-	  }
+         if (elt.equals("eclipsejar")) {
+            elt = setup.getEclipsePath();
+          }
+         else if (elt.equals("rose.jar") && jarfile != null) {
+            elt = jarfile.getPath();
+          }
+         else {
+            elt = setup.getLibraryPath(elt);
+          }
        }
       if (buf.length() > 0) buf.append(File.pathSeparator);
       buf.append(elt);
@@ -556,9 +556,9 @@ private String decodeClassPath(String xcp,File jarfile)
 
 
 /********************************************************************************/
-/*										*/
-/*	Start analysis for rose 						*/
-/*										*/
+/*                                                                              */
+/*      Start analysis for rose                                                 */
+/*                                                                              */
 /********************************************************************************/
 
 private void startRoseAnalysis(BumpThread bt)
@@ -577,9 +577,9 @@ private void startRoseAnalysis(BumpThread bt)
 
 
 /********************************************************************************/
-/*										*/
-/*	Ensure Projects setup for SEEDE 					*/
-/*										*/
+/*                                                                              */
+/*      Ensure Projects setup for SEEDE                                         */
+/*                                                                              */
 /********************************************************************************/
 
 private void fixupProjects()
@@ -589,86 +589,86 @@ private void fixupProjects()
    Element xml = bc.getAllProjects();
    if (xml != null) {
       for (Element pe : IvyXml.children(xml,"PROJECT")) {
-	 String pnm = IvyXml.getAttrString(pe,"NAME");
-	 boolean havepoppy = false;
-	 boolean haveseede = false;
-	 Element delpath = null;
-	 Element opxml = bc.getProjectData(pnm,false,true,false,false,false);
-	 if (opxml != null) {
-	    Element cpe = IvyXml.getChild(opxml,"CLASSPATH");
-	    for (Element rpe : IvyXml.children(cpe,"PATH")) {
-	       String bn = null;
-	       String ptyp = IvyXml.getAttrString(rpe,"TYPE");
-	       if (ptyp != null && ptyp.equals("SOURCE")) {
-		  bn = IvyXml.getTextElement(rpe,"OUTPUT");
-		}
-	       else {
-		  bn = IvyXml.getTextElement(rpe,"BINARY");
-		}
-	       if (bn == null) continue;
-	       if (bn.contains("poppy.jar")) {
-		  File bfn = new File(bn);
-		  if (bfn.exists()) {
-		     havepoppy = true;
-		   }
-		  else {
-		     delpath = rpe;
-		   }
-		}
-	       if (bn.contains("seede")) haveseede = true;
-	     }
+         String pnm = IvyXml.getAttrString(pe,"NAME");
+         boolean havepoppy = false;
+         boolean haveseede = false;
+         Element delpath = null;
+         Element opxml = bc.getProjectData(pnm,false,true,false,false,false);
+         if (opxml != null) {
+            Element cpe = IvyXml.getChild(opxml,"CLASSPATH");
+            for (Element rpe : IvyXml.children(cpe,"PATH")) {
+               String bn = null;
+               String ptyp = IvyXml.getAttrString(rpe,"TYPE");
+               if (ptyp != null && ptyp.equals("SOURCE")) {
+                  bn = IvyXml.getTextElement(rpe,"OUTPUT");
+                }
+               else {
+                  bn = IvyXml.getTextElement(rpe,"BINARY");
+                }
+               if (bn == null) continue;
+               if (bn.contains("poppy.jar")) {
+                  File bfn = new File(bn);
+                  if (bfn.exists()) {
+                     havepoppy = true;
+                   }
+                  else {
+                     delpath = rpe;
+                   }
+                }
+               if (bn.contains("seede")) haveseede = true;
+             }
 
-	    if (haveseede && !havepoppy) {
-	       opxml = bc.getProjectData(pnm,false,false,true,false,false);
-	       Element cp = IvyXml.getChild(cpe,"CLASSES");
-	       for (Element fe : IvyXml.children(cp,"TYPE")) {
-		  String cnm = IvyXml.getAttrString(fe,"NAME");
-		  if (cnm.startsWith("edu.brown.cs.seede.poppy.")) {
-		     havepoppy = true;
-		     break;
-		   }
-		}
-	     }
-	    if (delpath != null) {
-	       IvyXmlWriter xwp = new IvyXmlWriter();
-	       xwp.begin("PROJECT");
-	       xwp.field("NAME",pnm);
-	       xwp.begin("PATH");
-	       xwp.field("TYPE","LIBRARY");
-	       xwp.field("DELETE",true);
-	       String src = IvyXml.getTextElement(delpath,"SOURCE");
-	       if (src != null) xwp.textElement("SOURCE",src);
-	       src = IvyXml.getTextElement(delpath,"OUTPUT");
-	       if (src != null) xwp.textElement("OUTPUT",src);
-	       src = IvyXml.getTextElement(delpath,"BINARY");
-	       if (src != null) xwp.textElement("BINARY",src);
-	       xwp.end("PATH");
-	       xwp.end("PROJECT");
-	       String cnts = xwp.toString();
-	       xwp.close();
-	       bc.editProject(pnm,cnts);
-	     }
-	    BoardLog.logD("BUSH","Fixup project " + pnm + " " + havepoppy);
-	    if (!havepoppy) {
-	       File poppyjar = new File(findPoppyJar());
-	       if (poppyjar.exists()) {
-		  IvyXmlWriter xwp = new IvyXmlWriter();
-		  xwp.begin("PROJECT");
-		  xwp.field("NAME",pnm);
-		  xwp.begin("PATH");
-		  xwp.field("TYPE","LIBRARY");
-		  xwp.field("NEW",true);
-		  xwp.field("BINARY",poppyjar.getPath());
-		  xwp.field("EXPORTED",false);
-		  xwp.field("OPTIONAL",true);
-		  xwp.end("PATH");
-		  xwp.end("PROJECT");
-		  String cnts = xwp.toString();
-		  xwp.close();
-		  bc.editProject(pnm,cnts);
-		}
-	     }
-	  }
+            if (haveseede && !havepoppy) {
+               opxml = bc.getProjectData(pnm,false,false,true,false,false);
+               Element cp = IvyXml.getChild(cpe,"CLASSES");
+               for (Element fe : IvyXml.children(cp,"TYPE")) {
+                  String cnm = IvyXml.getAttrString(fe,"NAME");
+                  if (cnm.startsWith("edu.brown.cs.seede.poppy.")) {
+                     havepoppy = true;
+                     break;
+                   }
+                }
+             }
+            if (delpath != null) {
+               IvyXmlWriter xwp = new IvyXmlWriter();
+               xwp.begin("PROJECT");
+               xwp.field("NAME",pnm);
+               xwp.begin("PATH");
+               xwp.field("TYPE","LIBRARY");
+               xwp.field("DELETE",true);
+               String src = IvyXml.getTextElement(delpath,"SOURCE");
+               if (src != null) xwp.textElement("SOURCE",src);
+               src = IvyXml.getTextElement(delpath,"OUTPUT");
+               if (src != null) xwp.textElement("OUTPUT",src);
+               src = IvyXml.getTextElement(delpath,"BINARY");
+               if (src != null) xwp.textElement("BINARY",src);
+               xwp.end("PATH");
+               xwp.end("PROJECT");
+               String cnts = xwp.toString();
+               xwp.close();
+               bc.editProject(pnm,cnts);
+             }
+            BoardLog.logD("BUSH","Fixup project " + pnm + " " + havepoppy);
+            if (!havepoppy) {
+               File poppyjar = new File(findPoppyJar());
+               if (poppyjar.exists()) {
+                  IvyXmlWriter xwp = new IvyXmlWriter();
+                  xwp.begin("PROJECT");
+                  xwp.field("NAME",pnm);
+                  xwp.begin("PATH");
+                  xwp.field("TYPE","LIBRARY");
+                  xwp.field("NEW",true);
+                  xwp.field("BINARY",poppyjar.getPath());
+                  xwp.field("EXPORTED",false);
+                  xwp.field("OPTIONAL",true);
+                  xwp.end("PATH");
+                  xwp.end("PROJECT");
+                  String cnts = xwp.toString();
+                  xwp.close();
+                  bc.editProject(pnm,cnts);
+                }
+             }
+          }
        }
     }
 }
@@ -685,9 +685,9 @@ private String findPoppyJar()
 
 
 /********************************************************************************/
-/*										*/
-/*	Send message to FAIT							*/
-/*										*/
+/*                                                                              */
+/*      Send message to FAIT                                                    */
+/*                                                                              */
 /********************************************************************************/
 
 Element sendRoseMessage(String cmd,CommandArgs args,String cnts)
@@ -703,7 +703,7 @@ Element sendRoseMessage(String cmd,CommandArgs args,String cnts)
    xw.field("CMD",cmd);
    if (args != null) {
       for (Map.Entry<String,Object> ent : args.entrySet()) {
-	 xw.field(ent.getKey(),ent.getValue());
+         xw.field(ent.getKey(),ent.getValue());
        }
     }
    if (cnts != null) {
@@ -725,12 +725,12 @@ Element sendRoseMessage(String cmd,CommandArgs args,String cnts)
       mc.send("<FAIT DO='PING' SID='*' />",rply,MINT_MSG_FIRST_NON_NULL);
       String prslt = prply.waitForString(3000);
       if (prslt == null) {
-	 rose_running = false;
-	 rose_started = false;
-	 startRoseServer();
-	 rply = new MintDefaultReply();
-	 mc.send(msg,rply,MINT_MSG_FIRST_NON_NULL);
-	 rslt = rply.waitForXml(0);
+         rose_running = false;
+         rose_started = false;
+         startRoseServer();
+         rply = new MintDefaultReply();
+         mc.send(msg,rply,MINT_MSG_FIRST_NON_NULL);
+         rslt = rply.waitForXml(0);
        }
     }
 
@@ -741,9 +741,9 @@ Element sendRoseMessage(String cmd,CommandArgs args,String cnts)
 
 
 /********************************************************************************/
-/*										*/
-/*	Handler for run events							*/
-/*										*/
+/*                                                                              */
+/*      Handler for run events                                                  */
+/*                                                                              */
 /********************************************************************************/
 
 private void handleRunEvent(BumpRunEvent evt)
@@ -754,40 +754,40 @@ private void handleRunEvent(BumpRunEvent evt)
 
    switch (evt.getEventType()) {
       case PROCESS_ADD :
-	 for (ProcessData pd1 : process_map.values()) {
-	    pd1.clear();
-	  }
-	 process_map.clear();
-	 pd = new ProcessData(proc);
-	 process_map.put(proc,pd);
-	 break;
+         for (ProcessData pd1 : process_map.values()) {
+            pd1.clear();
+          }
+         process_map.clear();
+         pd = new ProcessData(proc);
+         process_map.put(proc,pd);
+         break;
       case PROCESS_REMOVE :
-	 if (pd != null) {
-	    pd.clear();
-	    process_map.remove(proc);
-	  }
-	 break;
+         if (pd != null) {
+            pd.clear();
+            process_map.remove(proc);
+          }
+         break;
       case THREAD_REMOVE :
-	 if (pd != null) pd.removeThread(bth);
-	 break;
+         if (pd != null) pd.removeThread(bth);
+         break;
       case THREAD_CHANGE :
-	 BumpThreadState state = bth.getThreadState();
-	 if (state.isStopped()) {
-	    if (pd != null) {
-	       pd.clearThread(bth);
-	       pd.setupThread(bth);
-	     }
-	    // handle stopped
-	  }
-	 else if (state.isRunning()) {
-	    if (pd != null) pd.clearThread(bth);
-	  }
-	 else {
-	    if (pd != null) pd.removeThread(bth);
-	  }
-	 break;
+         BumpThreadState state = bth.getThreadState();
+         if (state.isStopped()) {
+            if (pd != null) {
+               pd.clearThread(bth);
+               pd.setupThread(bth);
+             }
+            // handle stopped
+          }
+         else if (state.isRunning()) {
+            if (pd != null) pd.clearThread(bth);
+          }
+         else {
+            if (pd != null) pd.removeThread(bth);
+          }
+         break;
       default :
-	 break;
+         break;
     }
 }
 
@@ -803,15 +803,15 @@ private final class RoseRunEventHandler implements BumpRunEventHandler {
       handleRunEvent(evt);
     }
 
-}	// end of inner class RoseRunEventHandler
+}       // end of inner class RoseRunEventHandler
 
 
 
 
 /********************************************************************************/
-/*										*/
-/*	Starting data								*/
-/*										*/
+/*                                                                              */
+/*      Starting data                                                           */
+/*                                                                              */
 /********************************************************************************/
 
 private class ProcessData {
@@ -857,7 +857,7 @@ private class ProcessData {
       return thread_map.get(bth);
     }
 
-}	// end of inner class ProcessData
+}       // end of inner class ProcessData
 
 
 
@@ -883,11 +883,11 @@ private class ThreadData {
    synchronized void clear() {
       BaleFactory bf = BaleFactory.getFactory();
       for (RoseAnnotation annot : annot_list) {
-	 bf.removeAnnotation(annot);
+         bf.removeAnnotation(annot);
        }
       annot_list.clear();
       for (RoseFixAnnotation fannot : fix_annots) {
-	 bf.removeAnnotation(fannot);
+         bf.removeAnnotation(fannot);
        }
       fix_annots.clear();
     }
@@ -906,15 +906,15 @@ private class ThreadData {
        }
     }
 
-}	// end of inner class ThreadData
+}       // end of inner class ThreadData
 
 
 
 
 /********************************************************************************/
-/*										*/
-/*	Annotation for triggering ROSE						*/
-/*										*/
+/*                                                                              */
+/*      Annotation for triggering ROSE                                          */
+/*                                                                              */
 /********************************************************************************/
 
 private class RoseAnnotation implements BaleAnnotation {
@@ -948,17 +948,17 @@ private class RoseAnnotation implements BaleAnnotation {
       return execute_pos.getOffset();
     }
 
-   @Override public Icon getIcon(BudaBubble bb) 		{ return null; }
+   @Override public Icon getIcon(BudaBubble bb)                 { return null; }
 
-   @Override public String getToolTip() 			{ return null; }
+   @Override public String getToolTip()                         { return null; }
 
-   @Override public Color getLineColor(BudaBubble bb)		{ return null; }
+   @Override public Color getLineColor(BudaBubble bb)           { return null; }
 
-   @Override public Color getBackgroundColor()			{ return null; }
+   @Override public Color getBackgroundColor()                  { return null; }
 
-   @Override public boolean getForceVisible(BudaBubble bb)	{ return false; }
+   @Override public boolean getForceVisible(BudaBubble bb)      { return false; }
 
-   @Override public int getPriority()				{ return 0; }
+   @Override public int getPriority()                           { return 0; }
 
    @Override public void addPopupButtons(Component base,JPopupMenu menu) {
       if (for_thread != null && execute_pos != null) {
@@ -966,14 +966,14 @@ private class RoseAnnotation implements BaleAnnotation {
        }
     }
 
-}	// end of inner class RoseAnnotation
+}       // end of inner class RoseAnnotation
 
 
 
 /********************************************************************************/
-/*										*/
-/*	Annotation for showing a Rose potential fix location			*/
-/*										*/
+/*                                                                              */
+/*      Annotation for showing a Rose potential fix location                    */
+/*                                                                              */
 /********************************************************************************/
 
 private class RoseFixAnnotation implements BaleAnnotation {
@@ -1004,24 +1004,24 @@ private class RoseFixAnnotation implements BaleAnnotation {
       return "<html>Potential repair location for " + for_problem.getDescription();
     }
 
-   @Override public Color getLineColor(BudaBubble bb)		{ return null; }
-   @Override public Color getBackgroundColor()			{ return null; }
-   @Override public boolean getForceVisible(BudaBubble bb)	{ return false; }
+   @Override public Color getLineColor(BudaBubble bb)           { return null; }
+   @Override public Color getBackgroundColor()                  { return null; }
+   @Override public boolean getForceVisible(BudaBubble bb)      { return false; }
 
-   @Override public int getPriority()				{ return 10; }
+   @Override public int getPriority()                           { return 10; }
 
    @Override public void addPopupButtons(Component base,JPopupMenu menu) {
       menu.add(new RoseSuggestAction(for_problem,for_location,base,null,metric_id));
     }
 
-}	// end of inner class RoseFixAnnotation
+}       // end of inner class RoseFixAnnotation
 
 
 
 /********************************************************************************/
-/*										*/
-/*	Trigger action								*/
-/*										*/
+/*                                                                              */
+/*      Trigger action                                                          */
+/*                                                                              */
 /********************************************************************************/
 
 private class AskRoseAction extends AbstractAction implements Runnable {
@@ -1056,14 +1056,14 @@ private class AskRoseAction extends AbstractAction implements Runnable {
       pnl.createBubble(base_editor);
    }
 
-}	// end of inner class AskRoseAction
+}       // end of inner class AskRoseAction
 
 
 
 /********************************************************************************/
-/*										*/
-/*	Find suggestions action 						*/
-/*										*/
+/*                                                                              */
+/*      Find suggestions action                                                 */
+/*                                                                              */
 /********************************************************************************/
 
 private static class RoseSuggestAction extends AbstractAction implements Runnable {
@@ -1079,7 +1079,7 @@ private static class RoseSuggestAction extends AbstractAction implements Runnabl
 
    RoseSuggestAction(BushProblem p,BushLocation l,Component c,BushProblemPanel pnl,String mid) {
       super("Suggest Repairs for " + p.getDescription() +
-	    (l != null ? " here" : ""));
+            (l != null ? " here" : ""));
       for_problem = p;
       for_location = l;
       from_component = c;
@@ -1090,26 +1090,26 @@ private static class RoseSuggestAction extends AbstractAction implements Runnabl
 
    @Override public void actionPerformed(ActionEvent e) {
       if (for_problem.getCurrentTest() == null) {
-	 BoardThreadPool.start(this);
+         BoardThreadPool.start(this);
        }
       else {
-	 create_bubble = true;
-	 SwingUtilities.invokeLater(this);
+         create_bubble = true;
+         SwingUtilities.invokeLater(this);
        }
     }
 
    @Override public void run() {
       if (create_bubble) {
-	 metrics("SUGGEST",metric_id,for_problem.getProblemType(),for_problem.getProblemDetail(),
-	       for_problem.getOriginalValue(),for_problem.getTargetValue());
-	 // add metrics here
-	 BushSuggestPanel pnl = new BushSuggestPanel(from_component,for_problem,for_location,metric_id);
-	 pnl.createBubble();
-	 BushFactory.getFactory().startRepairSuggestor(for_problem,for_location,pnl);
-	 if (problem_panel != null) problem_panel.noteWorking(false);
+         metrics("SUGGEST",metric_id,for_problem.getProblemType(),for_problem.getProblemDetail(),
+               for_problem.getOriginalValue(),for_problem.getTargetValue());
+         // add metrics here
+         BushSuggestPanel pnl = new BushSuggestPanel(from_component,for_problem,for_location,metric_id);
+         pnl.createBubble();
+         BushFactory.getFactory().startRepairSuggestor(for_problem,for_location,pnl);
+         if (problem_panel != null) problem_panel.noteWorking(false);
        }
       else {
-	 setupDefaultTest();
+         setupDefaultTest();
        }
     }
 
@@ -1119,23 +1119,23 @@ private static class RoseSuggestAction extends AbstractAction implements Runnabl
       String body = xw.toString();
       xw.close();
       if (for_location != null) {
-	 xw = new IvyXmlWriter();
-	 for_location.outputXml(xw);
-	 body += xw.toString();
-	 xw.close();
+         xw = new IvyXmlWriter();
+         for_location.outputXml(xw);
+         body += xw.toString();
+         xw.close();
        }
       CommandArgs args = new CommandArgs();
       Element rslt = BushFactory.getFactory().sendRoseMessage("STARTFRAME",args,body);
       String startframe = IvyXml.getAttrString(rslt,"STARTFRAME");
       String startrtn = IvyXml.getAttrString(rslt,"CLASS") + "." +
-	    IvyXml.getAttrString(rslt,"METHOD") + IvyXml.getAttrString(rslt,"SIGNATURE");
+            IvyXml.getAttrString(rslt,"METHOD") + IvyXml.getAttrString(rslt,"SIGNATURE");
       RootTestCase rtc = new RootTestCase(startframe,startrtn);
       for_problem.setCurrentTest(rtc);
       create_bubble = true;
       SwingUtilities.invokeLater(this);
     }
 
-}	// end of inner class RoseSuggestAction
+}       // end of inner class RoseSuggestAction
 
 
 
@@ -1145,9 +1145,9 @@ private static class RoseSuggestAction extends AbstractAction implements Runnabl
 
 
 /********************************************************************************/
-/*										*/
-/*	Handle messages from ROSE						*/
-/*										*/
+/*                                                                              */
+/*      Handle messages from ROSE                                               */
+/*                                                                              */
 /********************************************************************************/
 
 private final class RoseHandler implements MintHandler {
@@ -1156,30 +1156,30 @@ private final class RoseHandler implements MintHandler {
       String cmd = args.getArgument(0);
       BoardLog.logD("BUSH","ROSE message : " +  cmd + " " + msg.getText());
       switch (cmd) {
-	 case "SUGGEST" :
-	    handleSuggestion(msg.getXml());
-	    msg.replyTo("<OK/>");
-	    break;
-	 case "ENDSUGGEST" :
-	    handleEndSuggestion(msg.getXml());
-	    msg.replyTo("<OK/>");
-	    break;
-	 case "TESTCREATE" :
-	    BushTestGenerator.handleTestGenerated(msg.getXml());
-	    msg.replyTo("<OK/>");
-	    break;
+         case "SUGGEST" :
+            handleSuggestion(msg.getXml());
+            msg.replyTo("<OK/>");
+            break;
+         case "ENDSUGGEST" :
+            handleEndSuggestion(msg.getXml());
+            msg.replyTo("<OK/>");
+            break;
+         case "TESTCREATE" :
+            BushTestGenerator.handleTestGenerated(msg.getXml());
+            msg.replyTo("<OK/>");
+            break;
        }
     }
 
-}	// end of inner class RoseHandler
+}       // end of inner class RoseHandler
 
 
 
 
 /********************************************************************************/
-/*										*/
-/*	Background task to start up cocker					*/
-/*										*/
+/*                                                                              */
+/*      Background task to start up cocker                                      */
+/*                                                                              */
 /********************************************************************************/
 
 private static final class CockerStarter implements Runnable {
@@ -1189,11 +1189,11 @@ private static final class CockerStarter implements Runnable {
       idx.start();
     }
 
-}	// end of inner class CockerStarter
+}       // end of inner class CockerStarter
 
 
 
-}	// end of class BushFactory
+}       // end of class BushFactory
 
 
 

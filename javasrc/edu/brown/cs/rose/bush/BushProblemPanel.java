@@ -1,34 +1,34 @@
 /********************************************************************************/
-/*										*/
-/*		BushProblemPanel.java						*/
-/*										*/
-/*	Panel for getting a description of the problm to be fixed		*/
-/*										*/
+/*                                                                              */
+/*              BushProblemPanel.java                                           */
+/*                                                                              */
+/*      Panel for getting a description of the problm to be fixed               */
+/*                                                                              */
 /********************************************************************************/
-/*	Copyright 2011 Brown University -- Steven P. Reiss		      */
+/*      Copyright 2011 Brown University -- Steven P. Reiss                    */
 /*********************************************************************************
- *  Copyright 2011, Brown University, Providence, RI.				 *
- *										 *
- *			  All Rights Reserved					 *
- *										 *
- *  Permission to use, copy, modify, and distribute this software and its	 *
- *  documentation for any purpose other than its incorporation into a		 *
- *  commercial product is hereby granted without fee, provided that the 	 *
- *  above copyright notice appear in all copies and that both that		 *
- *  copyright notice and this permission notice appear in supporting		 *
- *  documentation, and that the name of Brown University not be used in 	 *
- *  advertising or publicity pertaining to distribution of the software 	 *
- *  without specific, written prior permission. 				 *
- *										 *
- *  BROWN UNIVERSITY DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS		 *
- *  SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND		 *
- *  FITNESS FOR ANY PARTICULAR PURPOSE.  IN NO EVENT SHALL BROWN UNIVERSITY	 *
- *  BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY 	 *
- *  DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,		 *
- *  WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS		 *
- *  ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE 	 *
- *  OF THIS SOFTWARE.								 *
- *										 *
+ *  Copyright 2011, Brown University, Providence, RI.                            *
+ *                                                                               *
+ *                        All Rights Reserved                                    *
+ *                                                                               *
+ *  Permission to use, copy, modify, and distribute this software and its        *
+ *  documentation for any purpose other than its incorporation into a            *
+ *  commercial product is hereby granted without fee, provided that the          *
+ *  above copyright notice appear in all copies and that both that               *
+ *  copyright notice and this permission notice appear in supporting             *
+ *  documentation, and that the name of Brown University not be used in          *
+ *  advertising or publicity pertaining to distribution of the software          *
+ *  without specific, written prior permission.                                  *
+ *                                                                               *
+ *  BROWN UNIVERSITY DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS                *
+ *  SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND            *
+ *  FITNESS FOR ANY PARTICULAR PURPOSE.  IN NO EVENT SHALL BROWN UNIVERSITY      *
+ *  BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY          *
+ *  DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,              *
+ *  WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS               *
+ *  ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE          *
+ *  OF THIS SOFTWARE.                                                            *
+ *                                                                               *
  ********************************************************************************/
 
 
@@ -104,24 +104,24 @@ class BushProblemPanel implements BushConstants
 
 
 /********************************************************************************/
-/*										*/
-/*	Private Storage 							*/
-/*										*/
+/*                                                                              */
+/*      Private Storage                                                         */
+/*                                                                              */
 /********************************************************************************/
 
-private BumpThread	for_thread;
-private BumpStackFrame	for_frame;
+private BumpThread      for_thread;
+private BumpStackFrame  for_frame;
 private String          exception_type;
-private Component	base_editor;
+private Component       base_editor;
 private BaleFileOverview bale_file;
-private VariablePanel	variable_panel;
+private VariablePanel   variable_panel;
 private ExpressionPanel  expression_panel;
 private DataPanel       exception_panel;
 private DataPanel       assertion_panel;
 private DataPanel       location_panel;
 private DataPanel       other_panel;
 private DataPanel       none_panel;
-private JPanel		content_panel;
+private JPanel          content_panel;
 private JButton         show_button;
 private JButton         suggest_button;
 private JButton         testcase_button;
@@ -148,9 +148,9 @@ static {
 
 
 /********************************************************************************/
-/*										*/
-/*	Constructors								*/
-/*										*/
+/*                                                                              */
+/*      Constructors                                                            */
+/*                                                                              */
 /********************************************************************************/
 
 BushProblemPanel(BumpThread th,BumpStackFrame frm,Component base,BaleFileOverview doc)
@@ -185,9 +185,9 @@ String getMetricId()
 
 
 /********************************************************************************/
-/*										*/
-/*	Activation methods							*/
-/*										*/
+/*                                                                              */
+/*      Activation methods                                                      */
+/*                                                                              */
 /********************************************************************************/
 
 BudaBubble createBubble(Component src)
@@ -232,7 +232,7 @@ private JPanel createDisplay()
    pnl.addSeparator();
    pnl.addDescription("Thread",for_thread.getName());
    pnl.addDescription("Location",for_frame.getLineNumber() + " @ " +
-	 for_frame.getMethod());
+         for_frame.getMethod());
    pnl.addSeparator();
    
    List<String> choices = new ArrayList<>();
@@ -399,7 +399,7 @@ private final class PanelSelector implements ActionListener {
       updateSize();
     }
 
-}	// end of inner class PanelSelector
+}       // end of inner class PanelSelector
 
 
 
@@ -599,9 +599,9 @@ private class TestCaseHandler implements ActionListener {
 
 
 /********************************************************************************/
-/*										*/
-/*	Main panel								*/
-/*										*/
+/*                                                                              */
+/*      Main panel                                                              */
+/*                                                                              */
 /********************************************************************************/
 
 private class SimplePanel extends SwingGridPanel {
@@ -613,7 +613,7 @@ private class SimplePanel extends SwingGridPanel {
       setOpaque(true);
     }
 
-}	// end of inner class SimplePanel
+}       // end of inner class SimplePanel
 
 
 
@@ -639,16 +639,16 @@ private abstract static class DataPanel extends SwingGridPanel {
 
 
 /********************************************************************************/
-/*										*/
-/*	ValuePanel -- any panel with a value					*/
-/*										*/
+/*                                                                              */
+/*      ValuePanel -- any panel with a value                                    */
+/*                                                                              */
 /********************************************************************************/
 
 private interface ValuePanel {
 
    void setValue(String base,BumpRunValue value,String error);
 
-}	// end of inner interface ValuePanel
+}       // end of inner interface ValuePanel
 
 
 
@@ -700,9 +700,9 @@ private final class AssertionPanel extends DataPanel {
 
 
 /********************************************************************************/
-/*										*/
-/*	Variable panel								*/
-/*										*/
+/*                                                                              */
+/*      Variable panel                                                          */
+/*                                                                              */
 /********************************************************************************/
 
 private abstract class VarExprPanel extends DataPanel implements ActionListener, ValuePanel {
@@ -917,7 +917,7 @@ private class VariablePanel extends VarExprPanel {
       return getVariableValue(sfx,base,var);
     }
 
-}	// end of inner class VariablePanel
+}       // end of inner class VariablePanel
 
 
 
@@ -965,9 +965,9 @@ private class ElementsFinder implements Runnable {
 
 
 /********************************************************************************/
-/*										*/
-/*	Find alternative values for a value					*/
-/*										*/
+/*                                                                              */
+/*      Find alternative values for a value                                     */
+/*                                                                              */
 /********************************************************************************/
 
 private List<String> findAlternatives(BumpRunValue value)
@@ -975,37 +975,37 @@ private List<String> findAlternatives(BumpRunValue value)
    List<String> rslt = null;
    switch (value.getKind()) {
       case PRIMITIVE :
-	 String typ = value.getType();
-	 switch (typ) {
-	    case "int" :
-	    case "short" :
-	    case "byte" :
-	    case "long" :
-	    case "char" :
-	       rslt = findIntegerAlternatives(value);
-	       break;
-	    case "float" :
-	    case "double" :
-	       rslt = findFloatAlternatives(value);
-	       break;
-	    case "boolean" :
-	       rslt = findBooleanAlternatives(value);
-	       break;
-	    case "void" :
-	       break;
-	  }
-	 break;
+         String typ = value.getType();
+         switch (typ) {
+            case "int" :
+            case "short" :
+            case "byte" :
+            case "long" :
+            case "char" :
+               rslt = findIntegerAlternatives(value);
+               break;
+            case "float" :
+            case "double" :
+               rslt = findFloatAlternatives(value);
+               break;
+            case "boolean" :
+               rslt = findBooleanAlternatives(value);
+               break;
+            case "void" :
+               break;
+          }
+         break;
       case STRING :
-	 rslt = findStringAlterantives(value);
-	 break;
+         rslt = findStringAlterantives(value);
+         break;
       case CLASS :
       case OBJECT :
-	 rslt = findObjectAlternatives(value);
-	 break;
+         rslt = findObjectAlternatives(value);
+         break;
       case ARRAY :
-	 break;
+         break;
       case UNKNOWN :
-	 break;
+         break;
     }
 
    return rslt;
@@ -1099,21 +1099,21 @@ private List<String> findVariables()
    for (String s : for_frame.getVariables()) {
       BumpRunValue rv = for_frame.getValue(s);
       switch (rv.getKind()) {
-	 case CLASS :
-	 case PRIMITIVE :
-	 case STRING :
-	 case UNKNOWN :
-	    break;
-	 case OBJECT :
-	    if (s.equals("this")) {
-	       for (String fld : rv.getVariables()) {
+         case CLASS :
+         case PRIMITIVE :
+         case STRING :
+         case UNKNOWN :
+            break;
+         case OBJECT :
+            if (s.equals("this")) {
+               for (String fld : rv.getVariables()) {
                   String disp = fld.replace("?",".");
-		  rslt.add(disp);
-		}
-	     }
-	    break;
-	 case ARRAY :
-	    break;
+                  rslt.add(disp);
+                }
+             }
+            break;
+         case ARRAY :
+            break;
        }
     }
 
@@ -1154,14 +1154,14 @@ private List<String> findExpressions()
 
 
 /********************************************************************************/
-/*										*/
-/*	Handle evaluation results asynchronously				*/
-/*										*/
+/*                                                                              */
+/*      Handle evaluation results asynchronously                                */
+/*                                                                              */
 /********************************************************************************/
 
 private class EvalHandler implements BumpEvaluationHandler {
 
-   private ValuePanel	value_panel;
+   private ValuePanel   value_panel;
 
    EvalHandler(ValuePanel pnl) {
       value_panel = pnl;
@@ -1175,7 +1175,7 @@ private class EvalHandler implements BumpEvaluationHandler {
       value_panel.setValue(expr,null,err);
     }
 
-}	// end of inner class EvalHandler
+}       // end of inner class EvalHandler
 
 
 
@@ -1243,9 +1243,9 @@ private class NonePanel extends DataPanel {
 
 
 /********************************************************************************/
-/*										*/
-/*	PanelBubble -- bubble for this panel					*/
-/*										*/
+/*                                                                              */
+/*      PanelBubble -- bubble for this panel                                    */
+/*                                                                              */
 /********************************************************************************/
 
 private class PanelBubble extends BudaBubble {
@@ -1262,7 +1262,7 @@ private class PanelBubble extends BudaBubble {
       usage_monitor = null;
     }
 
-}	// end of inner class PanelBubble
+}       // end of inner class PanelBubble
 
 
 
@@ -1521,7 +1521,7 @@ private boolean editVariableValue(VariableValue vv)
 }
 
 
-}	// end of class BushProblemPanel
+}       // end of class BushProblemPanel
 
 
 
