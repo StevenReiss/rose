@@ -716,7 +716,6 @@ private class PreviewPanel extends SwingGridPanel {
          d.width += 2*MARGIN_WIDTH_PX + 6;
          codepanel.setPreferredSize(d);
        }
-      
     }
 
    RootRepair getRepair()                               { return for_repair; }
