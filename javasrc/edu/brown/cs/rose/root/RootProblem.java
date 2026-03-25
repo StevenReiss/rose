@@ -71,7 +71,7 @@ private boolean         ignore_driver;
 private List<String>    ignore_patterns;
 private int             max_up;
 
-private static double DEFAULT_PRECISION = 1e-6;
+private static final double DEFAULT_PRECISION = 1e-6;
 
 
 

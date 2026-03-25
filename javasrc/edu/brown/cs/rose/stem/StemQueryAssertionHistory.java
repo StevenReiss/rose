@@ -63,7 +63,7 @@ class StemQueryAssertionHistory extends StemQueryHistory
 /*                                                                              */
 /********************************************************************************/
 
-private static int THIS_INDEX = 999999;
+private static final int THIS_INDEX = 999999;
 
 
 

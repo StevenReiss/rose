@@ -109,7 +109,7 @@ private JLabel          done_label;
 private static boolean do_preview = true;
 
 private static final double THRESHOLD = 0.1;
-private final short MARGIN_WIDTH_PX = 35;
+private static final short MARGIN_WIDTH_PX = 35;
 
 private static final String PENDING = "Finding suggestions ...";
 
