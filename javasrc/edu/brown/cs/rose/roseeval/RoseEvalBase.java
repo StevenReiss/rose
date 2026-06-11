@@ -592,8 +592,8 @@ private MintControl setupBedrock(String workspace,String project)
     }
 
    RoseLog.logI("STEM","SETTING UP BEDROCK");
-   File ec1 = new File("/u/spr/eclipse-oxygenx/eclipse/eclipse");
-   File ec2 = new File("/u/spr/Eclipse/" + workspace);
+   File ec1 = new File("/pro/eclipse/java-2023-12/eclipse/eclipse");
+   File ec2 = new File("/home/spr/Eclipse/" + workspace);
    if (!ec1.exists()) {
       ec1 = new File(ECLIPSE_PATH_MAC);
       ec2 = new File(ECLIPSE_DIR_MAC + workspace);
@@ -611,7 +611,7 @@ private MintControl setupBedrock(String workspace,String project)
 // cmd += " -bhide";
    cmd += " -nosplash";
    cmd += " -vmargs -Dedu.brown.cs.bubbles.MINT=" + mc.getMintName();
-   cmd += " -vmargs -XstartOnFirstThread";
+// cmd += " -vmargs -XstartOnFirstThread";
 
    try {
       for (int i = 0; i < 250; ++i) {

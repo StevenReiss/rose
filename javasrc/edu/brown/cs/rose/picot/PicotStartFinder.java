@@ -109,7 +109,8 @@ BudStackFrame findStartingPoint()
          if (!bsf.isUserFrame()) continue;
          File f = bsf.getSourceFile();
          String proj = ctrl.getProjectForFile(f);
-         ASTNode stmt = ctrl.getSourceNode(proj,f,-1,bsf.getLineNumber(),true,true);
+         ASTNode stmt = ctrl.getSourceNode(proj,f,-1,
+               bsf.getLineNumber(),true,true);
          ASTNode mthd = null;
          for (ASTNode p = stmt; p != null; p = p.getParent()) {
             if (p instanceof MethodDeclaration) {
@@ -200,6 +201,7 @@ private double getConstructorProtection(JcompTyper typer,JcompType jt)
    
    if (jt.getOuterType() != null && !cjs.isStatic()) {
       double s1 = getConstructorProtection(typer,jt.getOuterType());
+      s1 = s1 * 0.5;            // handle nested classes by trying to avoid
       score = Math.min(score,s1);
     }
    
