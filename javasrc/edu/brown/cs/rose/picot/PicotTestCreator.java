@@ -152,7 +152,7 @@ PicotTestCreator(RootControl rc,String rid,Element xml)
          test = createTestCase();
        }
       catch (Throwable t) {
-         RoseLog.logE("Problem creating test case",t);
+         RoseLog.logE("PICOT","Problem creating test case",t);
        }
       RoseLog.logD("PICOT","TEST CREATION RESULT: " + test);
       if (test == null) args.put("STATUS","FAIL");

@@ -136,8 +136,6 @@ void finished()
 JcompTyper getJcompTyper()                      { return jcomp_typer; }
 
 
-
-
 PicotValueContext getInitializationContext()
 {
    if (!work_queue.isEmpty()) {
