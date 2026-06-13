@@ -292,7 +292,8 @@ private boolean setupCreationInitializations(Stack<PicotValueContext> done)
                      pat.getCodeFragment().getCode() + ";\n";
                PicotCodeFragment npcf = new PicotCodeFragment(decl);
                RoseLog.logD("PICOT","TRY: " + npcf.getCode());
-               PicotValueContext npvc = new PicotValueContext(startctx,npcf,variable,rtv);
+               PicotValueContext npvc = new PicotValueContext(startctx,
+                     npcf,variable,rtv);
                if (npvc.isValidSetup()) {
                   done.push(cur_context);
                   npvc.noteComputed(rtv,new PicotCodeFragment(variable));
@@ -312,7 +313,8 @@ private boolean setupCreationInitializations(Stack<PicotValueContext> done)
                      boolean chng = false;
                      for (PicotCodeFragment pcf : fixes) {
                         RoseLog.logD("PICOT","Use fixup: " + pcf);
-                        PicotValueContext nnpvc = new PicotValueContext(npvc,pcf,null,null);
+                        PicotValueContext nnpvc = new PicotValueContext(npvc,
+                              pcf,null,null);
                         if (nnpvc.isValidSetup()) {
                            chng = true;
                            npvc = nnpvc;
